@@ -22,6 +22,8 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'quote', slash: 'quote', label: 'Pull quote', hint: 'Hand-lettered citation', glyph: '“' },
   { type: 'poll', slash: 'poll', label: 'Street poll', hint: 'Ask the stream a question', glyph: '?' },
   { type: 'audio', slash: 'tape', label: 'Mixtape', hint: 'Voice memo or a 10-second hook', glyph: '♪' },
+  { type: 'strip', slash: 'strip', label: 'Mini comic', hint: 'Four panels in a row', glyph: '▮' },
+  { type: 'colophon', slash: 'colophon', label: 'Colophon', hint: 'Edition, press, thanks', glyph: '¶' },
 ]
 
 export function createBlock(type: BlockType, vibe: VibeId): Block {
@@ -91,6 +93,26 @@ export function createBlock(type: BlockType, vibe: VibeId): Block {
         type,
         src: '',
         caption: 'press play. hold the note.',
+      }
+    case 'strip':
+      return {
+        id: uid(),
+        type,
+        panels: [
+          { text: 'enter' },
+          { text: 'tear', src: artForVibe(vibe) },
+          { text: 'glue' },
+          { text: 'leave' },
+        ],
+      }
+    case 'colophon':
+      return {
+        id: uid(),
+        type,
+        edition: 'first printing · 40 copies',
+        press: 'kitchen table riso',
+        place: 'wherever the toner is cheap',
+        thanks: 'to the person who mailed first',
       }
   }
 }

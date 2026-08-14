@@ -49,6 +49,8 @@ export type ZineRow = {
   finish: string
   chain_key: string | null
   chain_open: number
+  series: string
+  issue_no: number | null
 }
 
 const SCHEMA = `
@@ -90,6 +92,8 @@ CREATE TABLE IF NOT EXISTS zines (
   finish TEXT NOT NULL DEFAULT 'clean',
   chain_key TEXT,
   chain_open INTEGER NOT NULL DEFAULT 0,
+  series TEXT NOT NULL DEFAULT '',
+  issue_no INTEGER,
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -172,6 +176,34 @@ CREATE TABLE IF NOT EXISTS page_stats (
   PRIMARY KEY (zine_id, page),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
 );
+CREATE TABLE IF NOT EXISTS bags (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
+CREATE TABLE IF NOT EXISTS reviews (
+  id TEXT PRIMARY KEY,
+  zine_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE (zine_id, user_id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS letters (
+  id TEXT PRIMARY KEY,
+  from_id TEXT NOT NULL,
+  to_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (from_id) REFERENCES users(id),
+  FOREIGN KEY (to_id) REFERENCES users(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -194,6 +226,8 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('finish')) db.exec(`ALTER TABLE zines ADD COLUMN finish TEXT NOT NULL DEFAULT 'clean'`)
   if (!zineNames.has('chain_key')) db.exec(`ALTER TABLE zines ADD COLUMN chain_key TEXT`)
   if (!zineNames.has('chain_open')) db.exec(`ALTER TABLE zines ADD COLUMN chain_open INTEGER NOT NULL DEFAULT 0`)
+  if (!zineNames.has('series')) db.exec(`ALTER TABLE zines ADD COLUMN series TEXT NOT NULL DEFAULT ''`)
+  if (!zineNames.has('issue_no')) db.exec(`ALTER TABLE zines ADD COLUMN issue_no INTEGER`)
   return db
 }
 
@@ -235,6 +269,8 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     finish: (['clean', 'riso', 'grain'].includes(row.finish) ? row.finish : 'clean') as FinishId,
     chainOpen: Boolean(row.chain_open),
     chainKey: opts?.includeSecret ? (row.chain_key ?? undefined) : undefined,
+    series: row.series || undefined,
+    issueNo: row.issue_no ?? undefined,
   }
 }
 

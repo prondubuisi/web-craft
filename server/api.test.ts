@@ -325,4 +325,56 @@ describe('social', () => {
     })
     expect(signed.status).toBe(200)
   })
+
+  it('saves a series, tucks a bag, takes a blurb, and mails a letter', async () => {
+    const client = app()
+    const author = await register(client, 'author8', 'strawberry1')
+    await client.request('/api/zines/run-one', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, title: 'run one', series: 'rooftop hours', issueNo: 1 }),
+    })
+    await client.request('/api/zines/run-one/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const saved = await json(await client.request('/api/zines/run-one', { headers: { authorization: author.cookie } }))
+    expect((saved.zine as { series: string }).series).toBe('rooftop hours')
+    expect((saved.zine as { issueNo: number }).issueNo).toBe(1)
+    const found = await json(await client.request('/api/stream?q=rooftop'))
+    expect((found.zines as { title: string }[]).some((z) => z.title === 'run one')).toBe(true)
+
+    const reader = await register(client, 'reader8', 'cartoon99')
+    const tucked = await client.request('/api/bag', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ zineId: 'run-one' }),
+    })
+    expect(tucked.status).toBe(200)
+    const bag = await json(await client.request('/api/bag', { headers: { authorization: reader.cookie } }))
+    expect((bag.bag as { zineId: string }[]).some((row) => row.zineId === 'run-one')).toBe(true)
+
+    const blurb = await client.request('/api/zines/run-one/reviews', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ body: 'too much rain. perfect.' }),
+    })
+    expect(blurb.status).toBe(200)
+    const wall = await json(await client.request('/api/zines/run-one/reviews'))
+    expect((wall.reviews as { body: string }[])[0]?.body).toContain('too much rain')
+
+    const mailed = await client.request('/api/mail', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ to: 'author8', body: 'save me issue two' }),
+    })
+    expect(mailed.status).toBe(200)
+    const inbox = await json(await client.request('/api/mail', { headers: { authorization: author.cookie } }))
+    expect((inbox.threads as { handle: string }[]).some((row) => row.handle === 'reader8')).toBe(true)
+    const thread = await json(
+      await client.request('/api/mail/reader8', { headers: { authorization: author.cookie } }),
+    )
+    expect((thread.letters as { body: string }[]).some((row) => row.body.includes('issue two'))).toBe(true)
+  })
 })

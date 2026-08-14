@@ -47,6 +47,8 @@ export function createSeed(): AppState {
       likes: 34,
       remixes: 6,
       published: true,
+      series: 'rooftop hours',
+      issueNo: 1,
       blocks: [
         { id: uid(), type: 'sfx', word: 'THWIP!' },
         { id: uid(), type: 'heading', text: 'after hours / bushwick', size: 'xl' },
@@ -93,6 +95,8 @@ export function createSeed(): AppState {
       likes: 9,
       remixes: 1,
       published: false,
+      series: 'rooftop hours',
+      issueNo: 2,
       blocks: [
         { id: uid(), type: 'heading', text: 'ghost notes', size: 'xl' },
         {
@@ -125,6 +129,8 @@ export function createSeed(): AppState {
       remixes: 44,
       published: true,
       tags: ['diary', 'market'],
+      series: 'booth notes',
+      issueNo: 1,
       blocks: [
         { id: uid(), type: 'heading', text: 'sunday market', size: 'xl' },
         { id: uid(), type: 'sfx', word: 'PING!' },
@@ -151,6 +157,16 @@ export function createSeed(): AppState {
           question: 'what are you buying first?',
           options: ['strawberry milk', 'apology robot', 'free bow', 'a sticker that beeps'],
         },
+        {
+          id: uid(),
+          type: 'strip',
+          panels: [
+            { text: 'line forms' },
+            { text: 'bow acquired', src: '/art/peni.jpg' },
+            { text: 'milk spilled' },
+            { text: 'come back next week' },
+          ],
+        },
       ],
     }),
     zine({
@@ -163,6 +179,8 @@ export function createSeed(): AppState {
       remixes: 71,
       published: true,
       tags: ['protest'],
+      series: 'confession',
+      issueNo: 13,
       blocks: [
         { id: uid(), type: 'heading', text: 'issue 13', size: 'xl' },
         {
@@ -186,6 +204,14 @@ export function createSeed(): AppState {
           cite: 'issue zero',
         },
         { id: uid(), type: 'glitch', text: 'REDACC TED' },
+        {
+          id: uid(),
+          type: 'colophon',
+          edition: 'thirteenth printing · still wet',
+          press: 'gutter press',
+          place: 'under the tracks',
+          thanks: 'to whoever left the umbrella',
+        },
       ],
     }),
     zine({
@@ -198,6 +224,8 @@ export function createSeed(): AppState {
       remixes: 22,
       published: true,
       tags: ['music'],
+      series: 'volume',
+      issueNo: 1,
       blocks: [
         { id: uid(), type: 'sfx', word: 'POW!' },
         { id: uid(), type: 'heading', text: 'LOUDER', size: 'xl' },
@@ -227,6 +255,8 @@ export function createSeed(): AppState {
       likes: 3,
       remixes: 0,
       published: true,
+      series: 'confession',
+      issueNo: 14,
       dropsAt: now + 15 * 60 * 1000,
       blocks: [
         { id: uid(), type: 'heading', text: 'midnight run', size: 'xl' },
@@ -257,6 +287,8 @@ export function createSeed(): AppState {
       remixes: 103,
       published: true,
       tags: ['fan-art'],
+      series: 'offset',
+      issueNo: 1,
       blocks: [
         { id: uid(), type: 'heading', text: 'dimension hop', size: 'xl' },
         { id: uid(), type: 'glitch', text: 'OFFSET THE WORLD' },

@@ -1,11 +1,15 @@
 import type {
+  BagItem,
   Comment,
   GuestNote,
+  Letter,
   Listing,
   ListingKind,
+  MailThread,
   Notice,
   PageStat,
   PollTally,
+  Review,
   ShelfItem,
   StreamSort,
   VibeId,
@@ -199,4 +203,25 @@ export const api = {
     req<{ liked: boolean; likes: number }>(`/api/zines/${id}/like`, { method: 'POST' }),
   view: (id: string) => req<{ views: number }>(`/api/zines/${id}/view`, { method: 'POST' }),
   remix: (id: string) => req<{ zine: Zine }>(`/api/zines/${id}/remix`, { method: 'POST' }),
+  bag: () => req<{ bag: BagItem[] }>('/api/bag'),
+  tuck: (zineId: string) =>
+    req<{ item: BagItem }>('/api/bag', {
+      method: 'POST',
+      body: JSON.stringify({ zineId }),
+    }),
+  dump: (zineId: string) => req<{ ok: boolean }>(`/api/bag/${zineId}`, { method: 'DELETE' }),
+  reviews: (id: string) => req<{ reviews: Review[] }>(`/api/zines/${id}/reviews`),
+  review: (id: string, body: string) =>
+    req<{ review: Review }>(`/api/zines/${id}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  mail: () => req<{ threads: MailThread[] }>('/api/mail'),
+  thread: (name: string) =>
+    req<{ handle: string; letters: Letter[] }>(`/api/mail/${encodeURIComponent(name)}`),
+  sendMail: (to: string, body: string) =>
+    req<{ letter: Letter }>('/api/mail', {
+      method: 'POST',
+      body: JSON.stringify({ to, body }),
+    }),
 }

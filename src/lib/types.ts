@@ -12,6 +12,8 @@ export type BlockType =
   | 'quote'
   | 'poll'
   | 'audio'
+  | 'strip'
+  | 'colophon'
 
 export type HeadingBlock = {
   id: string
@@ -99,6 +101,26 @@ export type AudioBlock = {
   caption: string
 }
 
+export type StripPanel = {
+  text: string
+  src?: string
+}
+
+export type StripBlock = {
+  id: string
+  type: 'strip'
+  panels: StripPanel[]
+}
+
+export type ColophonBlock = {
+  id: string
+  type: 'colophon'
+  edition: string
+  press: string
+  place: string
+  thanks: string
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -111,6 +133,8 @@ export type Block =
   | QuoteBlock
   | PollBlock
   | AudioBlock
+  | StripBlock
+  | ColophonBlock
 
 export type Visibility = 'public' | 'unlisted'
 export type FinishId = 'clean' | 'riso' | 'grain'
@@ -158,6 +182,36 @@ export type Comment = {
   createdAt: number
 }
 
+export type Review = {
+  id: string
+  zineId: string
+  author: string
+  body: string
+  createdAt: number
+}
+
+export type Letter = {
+  id: string
+  from: string
+  to: string
+  body: string
+  read: boolean
+  createdAt: number
+}
+
+export type MailThread = {
+  handle: string
+  last: Letter
+  unread: number
+}
+
+export type BagItem = {
+  zineId: string
+  title: string
+  owner: string
+  vibe?: VibeId
+}
+
 export type PollTally = {
   counts: number[]
   mine: number | null
@@ -192,9 +246,11 @@ export type Zine = {
   finish?: FinishId
   chainKey?: string
   chainOpen?: boolean
+  series?: string
+  issueNo?: number
 }
 
-export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop'
+export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail'
 
 export type Notice = {
   id: string

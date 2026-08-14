@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.7.0)_
+_Last reviewed: 2026-08-14 (0.8.0)_
 
 ## Overview
 
@@ -69,4 +69,4 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. None from `docs/IMPROVEMENTS.md` — the list is implemented as of 0.7.0.
+1. None from `docs/IMPROVEMENTS.md` — the list is implemented as of 0.8.0 (bag, series, blurbs, pen-pal mail, strip, colophon).

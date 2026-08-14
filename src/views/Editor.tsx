@@ -277,6 +277,24 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           onChange={(e) => patchZine(zine.id, { tags: parseTagField(e.target.value) })}
           aria-label="Tags"
         />
+        <input
+          value={zine.series ?? ''}
+          placeholder="series: rooftop hours"
+          onChange={(e) => patchZine(zine.id, { series: e.target.value })}
+          aria-label="Series"
+        />
+        <input
+          type="number"
+          min={1}
+          max={999}
+          value={zine.issueNo ?? ''}
+          placeholder="#"
+          onChange={(e) =>
+            patchZine(zine.id, { issueNo: e.target.value ? Number(e.target.value) : undefined })
+          }
+          aria-label="Issue number"
+          style={{ minWidth: 72, width: 72 }}
+        />
         <div className="vibe-picks">
           {(['clean', 'riso', 'grain'] as FinishId[]).map((id) => (
             <button

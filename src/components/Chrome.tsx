@@ -23,6 +23,7 @@ export function Topbar() {
         <NavLink to="/studio">Studio</NavLink>
         <NavLink to="/explore">Stream</NavLink>
         <NavLink to="/board">Board</NavLink>
+        <NavLink to="/mail">Letters</NavLink>
         {session ? <NavLink to={`/u/${session.name}`}>@{session.name}</NavLink> : null}
         <Inbox />
       </nav>
@@ -67,7 +68,13 @@ function Inbox() {
               {notices.map((item) => (
                 <li key={item.id} className={item.read ? '' : 'fresh'}>
                   <Link
-                    to={item.zineId ? `/z/${item.zineId}` : profilePath(item.actor)}
+                    to={
+                      item.kind === 'mail'
+                        ? `/mail/${item.actor.replace(/^@/, '')}`
+                        : item.zineId
+                          ? `/z/${item.zineId}`
+                          : profilePath(item.actor)
+                    }
                     onClick={() => setOpen(false)}
                   >
                     {noticeCopy(item)}

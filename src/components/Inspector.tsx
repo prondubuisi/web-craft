@@ -217,6 +217,41 @@ export function Inspector({
           />
         </label>
       ) : null}
+      {block.type === 'strip' ? (
+        <>
+          <label>Panels</label>
+          <div className="cta-row" style={{ marginTop: 8 }}>
+            <button
+              className="tray-item"
+              disabled={block.panels.length >= 6}
+              onClick={() =>
+                onChange({ ...block, panels: [...block.panels, { text: `beat ${block.panels.length + 1}` }] }, true)
+              }
+            >
+              add
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.panels.length <= 2}
+              onClick={() => onChange({ ...block, panels: block.panels.slice(0, -1) }, true)}
+            >
+              drop last
+            </button>
+          </div>
+        </>
+      ) : null}
+      {block.type === 'colophon' ? (
+        <>
+          <label>Press</label>
+          <div className="vibe-picks">
+            {['kitchen table riso', 'gutter press', 'xerox after midnight', 'a borrowed copier'].map((press) => (
+              <button key={press} className="tray-item" onClick={() => onChange({ ...block, press }, true)}>
+                {press}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
