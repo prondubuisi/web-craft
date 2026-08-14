@@ -398,5 +398,21 @@ export function BlockView({
           </ol>
         </nav>
       )
+    case 'insert':
+      return (
+        <aside className="insert-block">
+          <div className="issue-chip">IT FELL OUT</div>
+          <Field
+            className="hand"
+            value={block.title}
+            multiline={false}
+            onChange={onChange ? (title) => onChange({ ...block, title }) : undefined}
+          />
+          <Field
+            value={block.text}
+            onChange={onChange ? (text) => onChange({ ...block, text }) : undefined}
+          />
+        </aside>
+      )
   }
 }

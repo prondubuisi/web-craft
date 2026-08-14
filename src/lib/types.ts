@@ -16,6 +16,7 @@ export type BlockType =
   | 'colophon'
   | 'blackout'
   | 'contents'
+  | 'insert'
 
 export type HeadingBlock = {
   id: string
@@ -140,6 +141,13 @@ export type ContentsBlock = {
   lines: ContentsLine[]
 }
 
+export type InsertBlock = {
+  id: string
+  type: 'insert'
+  title: string
+  text: string
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -156,6 +164,7 @@ export type Block =
   | ColophonBlock
   | BlackoutBlock
   | ContentsBlock
+  | InsertBlock
 
 export type Visibility = 'public' | 'unlisted'
 export type FinishId = 'clean' | 'riso' | 'grain'
@@ -269,6 +278,7 @@ export type BadgeId =
   | 'jammer'
   | 'fest-goer'
   | 'collector'
+  | 'compiler'
 
 export type Zine = {
   id: string
@@ -302,6 +312,20 @@ export type Zine = {
   editionSize?: number
   claimed?: number
   claimedByMe?: boolean
+  errata?: string
+  includes?: CompItem[]
+}
+
+export type CompItem = {
+  zineId: string
+  title: string
+  owner: string
+}
+
+export type Loan = {
+  zineId: string
+  title: string
+  dueAt: number
 }
 
 export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail' | 'archive'

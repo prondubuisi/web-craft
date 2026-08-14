@@ -29,6 +29,8 @@ import {
   claimLocal,
   loadCork,
   saveCork,
+  checkoutLocal,
+  loadLoans,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -169,6 +171,15 @@ describe('corkboard', () => {
   it('saves pins', () => {
     saveCork('you', [{ id: 'p1', text: 'clip', x: 20, y: 30, rotation: -4 }])
     expect(loadCork('you')[0]?.text).toBe('clip')
+  })
+})
+
+describe('library loans', () => {
+  it('checks out an issue once', () => {
+    const first = checkoutLocal('you', 'z1', 'issue 13')
+    expect(first).toHaveLength(1)
+    expect(checkoutLocal('you', 'z1', 'issue 13')).toHaveLength(1)
+    expect(loadLoans('you')[0]?.title).toBe('issue 13')
   })
 })
 

@@ -262,6 +262,9 @@ export function Inspector({
           </button>
         </div>
       ) : null}
+      {block.type === 'insert' ? (
+        <p className="serif">This is a loose flyer. It should feel like it was never bound.</p>
+      ) : null}
       {block.type === 'colophon' ? (
         <>
           <label>Press</label>

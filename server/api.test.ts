@@ -512,4 +512,46 @@ describe('social', () => {
     const desk = await json(await client.request('/api/cork', { headers: { authorization: a.cookie } }))
     expect((desk.pins as { text: string }[])[0]?.text).toBe('clip this')
   })
+
+  it('saves errata, stocks a compilation, and checks out an archived issue', async () => {
+    const client = app()
+    const author = await register(client, 'binder1', 'strawberry1')
+    await client.request('/api/zines/inner', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, title: 'inner pages' }),
+    })
+    await client.request('/api/zines/inner/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    await client.request('/api/zines/comp', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({
+        ...sample,
+        title: 'the binder',
+        errata: 'page 1 was wet',
+        includes: [{ zineId: 'inner', title: 'inner pages', owner: '@binder1' }],
+      }),
+    })
+    await client.request('/api/zines/comp/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const saved = await json(await client.request('/api/zines/comp', { headers: { authorization: author.cookie } }))
+    expect((saved.zine as { errata: string }).errata).toBe('page 1 was wet')
+    expect((saved.zine as { includes: { title: string }[] }).includes[0]?.title).toBe('inner pages')
+    const fan = await register(client, 'loaner1', 'cartoon99')
+    await client.request('/api/zines/comp/nominate', { method: 'POST', headers: { authorization: fan.cookie } })
+    const other = await register(client, 'loaner2', 'cartoon99')
+    await client.request('/api/zines/comp/nominate', { method: 'POST', headers: { authorization: other.cookie } })
+    const loan = await client.request('/api/zines/comp/checkout', {
+      method: 'POST',
+      headers: { authorization: fan.cookie },
+    })
+    expect(loan.status).toBe(200)
+  })
 })

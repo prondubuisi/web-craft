@@ -25,6 +25,7 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   jammer: { label: 'JAMMER', blurb: 'Dropped into a live jam' },
   'fest-goer': { label: 'FEST GOER', blurb: 'Collected three passport stamps' },
   collector: { label: 'COLLECTOR', blurb: 'Claimed three numbered copies' },
+  compiler: { label: 'COMPILER', blurb: 'Dropped a compilation' },
 }
 
 export function computeBadges(
@@ -43,6 +44,7 @@ export function computeBadges(
   if (remixPoints > 0 || owned.some((z) => z.remixedFrom)) badges.push('remixer')
   if (new Set(owned.map((z) => z.vibe)).size >= 5) badges.push('multiverse')
   if (owned.some((z) => z.jamId)) badges.push('jammer')
+  if (owned.some((z) => (z.includes ?? []).length > 0)) badges.push('compiler')
   if (stamps >= 3) badges.push('fest-goer')
   if (claims >= 3) badges.push('collector')
   return badges
@@ -202,6 +204,7 @@ export function createSeed(): AppState {
       archived: true,
       editionSize: 13,
       claimed: 13,
+      errata: 'page 2: it rained harder than we printed.',
       blocks: [
         { id: uid(), type: 'heading', text: 'issue 13', size: 'xl' },
         {
@@ -234,6 +237,12 @@ export function createSeed(): AppState {
           id: uid(),
           type: 'contents',
           lines: [{ label: 'cover — rain' }, { label: 'inside — redacted' }, { label: 'back — umbrella' }],
+        },
+        {
+          id: uid(),
+          type: 'insert',
+          title: 'wet flyer',
+          text: 'umbrella left under the tracks. take it if it still drips.',
         },
         { id: uid(), type: 'glitch', text: 'REDACC TED' },
         {

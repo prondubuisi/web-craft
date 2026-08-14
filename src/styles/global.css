@@ -1638,6 +1638,31 @@ button.blackout-word.hid {
   color: #fff7d6;
 }
 
+.insert-block {
+  background: var(--accent-3);
+  color: #111;
+  border: 4px dashed var(--ink);
+  box-shadow: 7px 8px 0 var(--ink);
+  padding: 0.85rem 1rem;
+  transform: rotate(2.2deg);
+  margin: 0.8rem 8% 1rem 0;
+}
+
+.errata-slip {
+  background: #fff7d6;
+  color: #111;
+  border: 3px solid var(--ink);
+  box-shadow: 4px 5px 0 var(--ink);
+  padding: 0.55rem 0.7rem;
+  transform: rotate(-1.4deg);
+  margin-bottom: 0.9rem;
+  max-width: 28rem;
+}
+
+.comp-list {
+  margin-bottom: 0.9rem;
+}
+
 .wear-1 .zine-page,
 .wear-1 .flip-page {
   box-shadow:
@@ -2157,6 +2182,7 @@ button.blackout-word.hid {
 
   body.fold-print {
     background: #fff;
+    page: fold;
   }
 
   body.fold-print .preview-page {
@@ -2185,11 +2211,9 @@ button.blackout-word.hid {
     margin: 0.3in;
   }
 
-  body.fold-print {
-    @page {
-      size: landscape;
-      margin: 0.2in;
-    }
+  @page fold {
+    size: landscape;
+    margin: 0.2in;
   }
 }
 

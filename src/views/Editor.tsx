@@ -9,7 +9,7 @@ import type { Block, BlockType, FinishId, PreviewMode, VibeId, Visibility, Zine 
 import { formatTags, parseTagField } from '../lib/tags'
 import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
 import { demoJams, formatHint, jamForPublish, liveJam } from '../lib/jam'
-import { issuePath, slugify } from '../lib/zine'
+import { issuePath, isPublicDrop, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 type Snap = { title: string; vibe: VibeId; blocks: Block[] }
@@ -33,7 +33,7 @@ export function Editor() {
 }
 
 function EditorCanvas({ zine }: { zine: Zine }) {
-  const { patchZine, setBlocks, publishZine, deleteZine } = useZines()
+  const { patchZine, setBlocks, publishZine, deleteZine, zines } = useZines()
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
   const [slash, setSlash] = useState('')
@@ -309,6 +309,12 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           aria-label="B-side"
         />
         <input
+          value={zine.errata ?? ''}
+          placeholder="errata slip"
+          onChange={(e) => patchZine(zine.id, { errata: e.target.value })}
+          aria-label="Errata"
+        />
+        <input
           type="number"
           min={0}
           max={999}
@@ -330,6 +336,28 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               {id}
             </button>
           ))}
+        </div>
+        <div className="vibe-picks" aria-label="Compilation">
+          {zines
+            .filter((item) => item.id !== zine.id && isPublicDrop(item))
+            .slice(0, 8)
+            .map((item) => {
+              const on = (zine.includes ?? []).some((row) => row.zineId === item.id)
+              return (
+                <button
+                  key={item.id}
+                  className={`tray-item ${on ? 'on' : ''}`}
+                  onClick={() => {
+                    const includes = on
+                      ? (zine.includes ?? []).filter((row) => row.zineId !== item.id)
+                      : [...(zine.includes ?? []), { zineId: item.id, title: item.title, owner: item.owner }]
+                    patchZine(zine.id, { includes })
+                  }}
+                >
+                  + {item.title}
+                </button>
+              )
+            })}
         </div>
       </div>
 

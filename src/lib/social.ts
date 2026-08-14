@@ -3,6 +3,7 @@ import type {
   Comment,
   CorkPin,
   GuestNote,
+  Loan,
   Letter,
   Listing,
   ListingKind,
@@ -37,6 +38,7 @@ const FEST_KEY = 'zineverse.fest.v1'
 const STAMP_KEY = 'zineverse.stamps.v1'
 const CLAIM_KEY = 'zineverse.claims.v1'
 const CORK_KEY = 'zineverse.cork.v1'
+const LOAN_KEY = 'zineverse.loans.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -573,4 +575,28 @@ export function saveCork(owner: string, pins: CorkPin[]): CorkPin[] {
   all[owner.replace(/^@/, '')] = pins.slice(0, 40)
   writeJson(CORK_KEY, all)
   return all[owner.replace(/^@/, '')]
+}
+
+export const LOAN_MS = 7 * 86400_000
+
+export function loadLoans(owner: string): Loan[] {
+  const all = readJson<Record<string, Loan[]>>(LOAN_KEY, {})
+  const now = Date.now()
+  return (all[owner.replace(/^@/, '')] ?? []).filter((row) => row.dueAt > now)
+}
+
+export function checkoutLocal(owner: string, zineId: string, title: string): Loan[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, Loan[]>>(LOAN_KEY, {})
+  const now = Date.now()
+  const live = (all[key] ?? []).filter((row) => row.dueAt > now)
+  if (live.some((row) => row.zineId === zineId)) {
+    all[key] = live
+    writeJson(LOAN_KEY, all)
+    return live
+  }
+  const next = [{ zineId, title, dueAt: now + LOAN_MS }, ...live].slice(0, 12)
+  all[key] = next
+  writeJson(LOAN_KEY, all)
+  return next
 }
