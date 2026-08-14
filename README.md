@@ -47,4 +47,15 @@ Miles · Gwen · Peni · Ham · Noir — palettes, not templates. Halftone densi
 
 ## How state flows
 
-`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. If the Hono API is up and you are signed in, drafts also upsert to SQLite (`server/data/zineverse.sqlite`). Publish, likes, remixes, and the sealed-drop clock are enforced on the server. A snapshot link (`/s#…`) still works without an account. The GitHub Pages demo has no API, so it stays local-only unless `VITE_API_URL` is set at build time.
+`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. If the Hono API is up and you are signed in, drafts also upsert to SQLite (`server/data/zineverse.sqlite`). Publish, likes, remixes, and the sealed-drop clock are enforced on the server. A snapshot link (`/s#…`) still works without an account. The Pages build reads `VITE_API_URL` (repo Actions variable). Sessions use a Bearer token in `localStorage` so the static site can call a hosted API on another origin.
+
+## Host the API
+
+```bash
+flyctl auth login
+flyctl launch --copy-config --name zineverse-api --region iad --no-deploy
+flyctl volumes create zineverse_data --region iad --size 1
+flyctl deploy
+```
+
+Then set the GitHub Actions variable `VITE_API_URL` to `https://zineverse-api.fly.dev` and add secret `FLY_API_TOKEN` so later pushes redeploy.
