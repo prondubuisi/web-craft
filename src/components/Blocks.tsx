@@ -1,4 +1,4 @@
-import type { Block } from '../lib/types'
+import type { Block, PollTally } from '../lib/types'
 import { assetUrl } from '../lib/paths'
 import { Halftone } from './Chrome'
 
@@ -38,9 +38,13 @@ function Field({
 export function BlockView({
   block,
   onChange,
+  poll,
+  onVote,
 }: {
   block: Block
   onChange?: (next: Block) => void
+  poll?: PollTally
+  onVote?: (option: number) => void
 }) {
   switch (block.type) {
     case 'heading':
@@ -177,5 +181,71 @@ export function BlockView({
           ))}
         </div>
       )
+    case 'quote':
+      return (
+        <blockquote className="quote-block">
+          <Field
+            className="quote-text"
+            value={block.text}
+            onChange={onChange ? (text) => onChange({ ...block, text }) : undefined}
+          />
+          <cite>
+            <Field
+              className="hand"
+              value={block.cite}
+              multiline={false}
+              onChange={onChange ? (cite) => onChange({ ...block, cite }) : undefined}
+            />
+          </cite>
+        </blockquote>
+      )
+    case 'poll': {
+      const counts = poll?.counts ?? block.options.map(() => 0)
+      const total = counts.reduce((sum, n) => sum + n, 0)
+      return (
+        <div className="poll-block">
+          <div className="issue-chip">STREET POLL</div>
+          <Field
+            className="hand poll-q"
+            value={block.question}
+            onChange={onChange ? (question) => onChange({ ...block, question }) : undefined}
+          />
+          <div className="poll-opts">
+            {block.options.map((option, i) => {
+              const n = counts[i] ?? 0
+              const pct = total > 0 ? Math.round((n / total) * 100) : 0
+              const mine = poll?.mine === i
+              if (onChange) {
+                return (
+                  <Field
+                    key={i}
+                    className="poll-edit"
+                    value={option}
+                    multiline={false}
+                    onChange={(text) => {
+                      const options = block.options.map((o, idx) => (idx === i ? text : o))
+                      onChange({ ...block, options })
+                    }}
+                  />
+                )
+              }
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`poll-opt ${mine ? 'on' : ''}`}
+                  onClick={() => onVote?.(i)}
+                  disabled={!onVote}
+                >
+                  <span className="poll-bar" style={{ width: `${pct}%` }} />
+                  <span className="poll-label">{option}</span>
+                  <span className="poll-n">{total ? `${pct}%` : '—'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
   }
 }

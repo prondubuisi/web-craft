@@ -1,4 +1,4 @@
-import type { Zine } from './types'
+import type { Comment, PollTally, StreamSort, VibeId, Zine } from './types'
 
 export type Session = { name: string }
 
@@ -76,7 +76,35 @@ export const api = {
     setToken(null)
     return result
   },
-  stream: () => req<{ zines: Zine[] }>('/api/stream'),
+  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort }) => {
+    const params = new URLSearchParams()
+    if (opts?.q) params.set('q', opts.q)
+    if (opts?.vibe) params.set('vibe', opts.vibe)
+    if (opts?.sort && opts.sort !== 'new') params.set('sort', opts.sort)
+    const qs = params.toString()
+    return req<{ zines: Zine[] }>(`/api/stream${qs ? `?${qs}` : ''}`)
+  },
+  user: (name: string) =>
+    req<{ name: string; bio: string; remixPoints: number; createdAt: number; zines: Zine[] }>(
+      `/api/users/${encodeURIComponent(name)}`,
+    ),
+  updateMe: (bio: string) =>
+    req<{ name: string; bio: string }>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ bio }),
+    }),
+  comments: (id: string) => req<{ comments: Comment[] }>(`/api/zines/${id}/comments`),
+  comment: (id: string, body: string) =>
+    req<{ comment: Comment }>(`/api/zines/${id}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  polls: (id: string) => req<{ polls: Record<string, PollTally> }>(`/api/zines/${id}/polls`),
+  votePoll: (id: string, blockId: string, option: number) =>
+    req<PollTally>(`/api/zines/${id}/polls/${blockId}`, {
+      method: 'POST',
+      body: JSON.stringify({ option }),
+    }),
   mine: () => req<{ zines: Zine[] }>('/api/zines'),
   get: (id: string) => req<{ zine: Zine; sealed: boolean }>(`/api/zines/${id}`),
   upsert: (zine: Zine) =>

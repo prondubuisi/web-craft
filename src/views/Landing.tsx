@@ -13,6 +13,7 @@ const SAMPLE = {
   sfx: createBlock('sfx', 'miles'),
   glitch: createBlock('glitch', 'miles'),
   stack: createBlock('stack', 'miles'),
+  quote: createBlock('quote', 'miles'),
 }
 
 export function Landing() {
@@ -119,6 +120,10 @@ export function Landing() {
           <div className="comic-cell">
             <div className="kicker">/stack</div>
             <BlockView block={SAMPLE.stack} />
+          </div>
+          <div className="comic-cell">
+            <div className="kicker">/quote</div>
+            <BlockView block={SAMPLE.quote} />
           </div>
         </div>
         <p className="hand" style={{ marginTop: '1rem' }}>

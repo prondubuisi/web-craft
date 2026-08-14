@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { Comments } from '../components/Comments'
 import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
+import { loadLocalPolls, voteLocalPoll } from '../lib/social'
 import { useCountdown } from '../lib/useCountdown'
 import { api } from '../lib/api'
-import { coverSrc, isMine } from '../lib/zine'
+import type { PollTally } from '../lib/types'
+import { coverSrc, isMine, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Preview() {
@@ -17,6 +20,7 @@ export function Preview() {
   const zine = local ?? remote
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
+  const [polls, setPolls] = useState<Record<string, PollTally>>({})
   const drop = useCountdown(zine?.dropsAt)
   const locked = Boolean(zine && zine.published && !drop.live && !isMine(zine, session?.name))
 
@@ -31,6 +35,20 @@ export function Preview() {
   useEffect(() => {
     if (id && zine && !locked) recordView(id)
   }, [id])
+
+  const remoteSocial = Boolean(online && zine?.published && zine.owner !== 'you')
+
+  useEffect(() => {
+    if (!id || locked) return
+    if (remoteSocial) {
+      void api
+        .polls(id)
+        .then((res) => setPolls(res.polls))
+        .catch(() => setPolls(loadLocalPolls(id)))
+    } else {
+      setPolls(id ? loadLocalPolls(id) : {})
+    }
+  }, [id, remoteSocial, locked])
 
   if (!zine) {
     return (
@@ -86,12 +104,34 @@ export function Preview() {
             <>
               <div className="meta-line" style={{ marginBottom: '0.8rem' }}>
                 <span className="issue-chip">{zine.vibe}</span>
-                <span>{zine.owner}</span>
+                <Link className="owner-link" to={profilePath(zine.owner)}>
+                  {zine.owner}
+                </Link>
                 <span>{zine.views} views</span>
               </div>
               {zine.blocks.map((block) => (
                 <div key={block.id} className="block">
-                  <BlockView block={block} />
+                  <BlockView
+                    block={block}
+                    poll={polls[block.id]}
+                    onVote={
+                      block.type === 'poll'
+                        ? (option) => {
+                            if (online && session) {
+                              void api
+                                .votePoll(zine.id, block.id, option)
+                                .then((res) => setPolls((prev) => ({ ...prev, [block.id]: res })))
+                                .catch(() => undefined)
+                              return
+                            }
+                            setPolls((prev) => ({
+                              ...prev,
+                              [block.id]: voteLocalPoll(zine.id, block.id, option, block.options.length),
+                            }))
+                          }
+                        : undefined
+                    }
+                  />
                 </div>
               ))}
             </>
@@ -127,6 +167,7 @@ export function Preview() {
               </Link>
             ) : null}
           </div>
+          <Comments zineId={zine.id} locked={locked} remote={remoteSocial} />
         </article>
       </div>
     </div>

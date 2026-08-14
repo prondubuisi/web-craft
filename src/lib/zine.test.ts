@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Zine } from './types'
-import { coverSrc, formatCountdown, isDropLive, isMine, slugify } from './zine'
+import { coverSrc, filterStream, formatCountdown, isDropLive, isMine, ownerHandle, profilePath, slugify } from './zine'
 
 function zine(partial: Partial<Zine> = {}): Zine {
   return {
@@ -99,5 +99,30 @@ describe('slugify', () => {
 
   it('falls back when the title has no letters', () => {
     expect(slugify('!!!')).toBe('issue')
+  })
+})
+
+describe('profiles', () => {
+  it('strips the @ from a handle', () => {
+    expect(ownerHandle('@yuzu')).toBe('yuzu')
+    expect(profilePath('@yuzu')).toBe('/u/yuzu')
+  })
+})
+
+describe('filterStream', () => {
+  const issues = [
+    zine({ id: 'a', title: 'sunday market', vibe: 'peni', owner: '@yuzu', published: true, likes: 2, remixes: 9, dropsAt: 10 }),
+    zine({ id: 'b', title: 'LOUDER', vibe: 'ham', owner: '@wobble', published: true, likes: 8, remixes: 1, dropsAt: 20 }),
+    zine({ id: 'c', title: 'draft', vibe: 'miles', owner: 'you', published: false, likes: 99, remixes: 99 }),
+  ]
+
+  it('hides drafts and matches a query', () => {
+    expect(filterStream(issues, { q: 'market' }).map((z) => z.id)).toEqual(['a'])
+    expect(filterStream(issues, { q: 'wobble' }).map((z) => z.id)).toEqual(['b'])
+  })
+
+  it('filters by vibe and sorts by likes', () => {
+    expect(filterStream(issues, { vibe: 'ham' }).map((z) => z.id)).toEqual(['b'])
+    expect(filterStream(issues, { sort: 'likes' }).map((z) => z.id)).toEqual(['b', 'a'])
   })
 })

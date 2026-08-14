@@ -6,6 +6,7 @@ import { Studio } from './views/Studio'
 import { Editor } from './views/Editor'
 import { Preview } from './views/Preview'
 import { Explore } from './views/Explore'
+import { Profile } from './views/Profile'
 import { Share } from './views/Share'
 import { NotFound } from './views/NotFound'
 
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/studio" element={<Studio />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/u/:handle" element={<Profile />} />
               <Route path="/edit/:id" element={<Editor />} />
               <Route path="/z/:id" element={<Preview />} />
               <Route path="/s" element={<Share />} />

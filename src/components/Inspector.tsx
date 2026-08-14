@@ -154,6 +154,41 @@ export function Inspector({
           </div>
         </>
       ) : null}
+      {block.type === 'quote' ? (
+        <>
+          <label>Voice</label>
+          <div className="vibe-picks">
+            {['the margin', 'a stranger on the L', 'issue zero', 'your future self'].map((cite) => (
+              <button key={cite} className="tray-item" onClick={() => onChange({ ...block, cite }, true)}>
+                {cite}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+      {block.type === 'poll' ? (
+        <>
+          <label>Options</label>
+          <div className="cta-row" style={{ marginTop: 8 }}>
+            <button
+              className="tray-item"
+              disabled={block.options.length >= 6}
+              onClick={() =>
+                onChange({ ...block, options: [...block.options, `option ${block.options.length + 1}`] }, true)
+              }
+            >
+              add
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.options.length <= 2}
+              onClick={() => onChange({ ...block, options: block.options.slice(0, -1) }, true)}
+            >
+              drop last
+            </button>
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
