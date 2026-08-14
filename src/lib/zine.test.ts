@@ -125,4 +125,8 @@ describe('filterStream', () => {
     expect(filterStream(issues, { vibe: 'ham' }).map((z) => z.id)).toEqual(['b'])
     expect(filterStream(issues, { sort: 'likes' }).map((z) => z.id)).toEqual(['b', 'a'])
   })
+
+  it('keeps only watched handles', () => {
+    expect(filterStream(issues, { following: ['yuzu'] }).map((z) => z.id)).toEqual(['a'])
+  })
 })

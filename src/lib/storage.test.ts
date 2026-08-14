@@ -52,6 +52,7 @@ describe('normalizeState', () => {
       ],
     })
     expect(state?.zines[0]?.dropsAt).toBe(50)
+    expect(state?.profile.following).toEqual([])
   })
 
   it('keeps drafts unscheduled', () => {

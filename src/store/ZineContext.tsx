@@ -6,13 +6,15 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from 'react'
 import { api, apiHealth, type Session } from '../lib/api'
 import { uid } from '../lib/id'
 import { computeBadges } from '../lib/seed'
+import { loadLocalNotices, markLocalNoticesRead, saveLocalNotices } from '../lib/social'
 import { loadState, saveState } from '../lib/storage'
-import type { AppState, Block, Profile, VibeId, Zine } from '../lib/types'
+import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
 import { isMine } from '../lib/zine'
 import { apply } from './reducer'
@@ -33,8 +35,11 @@ type Store = AppState & {
   renameProfile: (name: string) => void
   resetStudio: () => void
   zineById: (id: string) => Zine | undefined
+  notices: Notice[]
   signIn: (name: string, password: string, mode: 'login' | 'register') => Promise<void>
   signOut: () => Promise<void>
+  toggleFollow: (handle: string) => Promise<boolean>
+  markNoticesRead: () => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -48,10 +53,25 @@ export function ZineProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef(state)
   stateRef.current = state
   const timers = useRef<Record<string, number>>({})
+  const [notices, setNotices] = useState<Notice[]>(() => loadLocalNotices())
+
+  useEffect(() => {
+    saveLocalNotices(notices)
+  }, [notices])
 
   useEffect(() => {
     saveState({ profile: state.profile, zines: state.zines })
   }, [state.profile, state.zines])
+
+  const refreshNotices = useCallback(async () => {
+    if (!stateRef.current.session || !stateRef.current.online) return
+    try {
+      const res = await api.notices()
+      setNotices(res.notices)
+    } catch {
+      // keep local inbox
+    }
+  }, [])
 
   const queueUpsert = useCallback((id: string) => {
     const { session } = stateRef.current
@@ -79,9 +99,11 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             session: me.session,
             remixPoints: me.remixPoints,
             likedIds: me.likedIds,
+            following: me.following,
           })
           const [mine, stream] = await Promise.all([api.mine(), api.stream()])
           if (!cancelled) dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+          if (!cancelled) void refreshNotices()
         } else {
           const stream = await api.stream()
           if (cancelled) return
@@ -201,10 +223,12 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         session: me.session,
         remixPoints: me.remixPoints,
         likedIds: me.likedIds,
+        following: me.following,
       })
       dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+      void refreshNotices()
     },
-    [],
+    [refreshNotices],
   )
 
   const signOut = useCallback(async () => {
@@ -267,10 +291,32 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'reset' })
       },
       zineById: (id) => state.zines.find((z) => z.id === id),
+      notices,
       signIn,
       signOut,
+      toggleFollow: async (handle) => {
+        const name = handle.replace(/^@/, '').toLowerCase()
+        if (state.session) {
+          try {
+            const res = await api.follow(name)
+            dispatch({ type: res.following ? 'follow' : 'unfollow', handle: name })
+            void refreshNotices()
+            return res.following
+          } catch {
+            return state.profile.following.includes(name)
+          }
+        }
+        const on = state.profile.following.includes(name)
+        dispatch({ type: on ? 'unfollow' : 'follow', handle: name })
+        return !on
+      },
+      markNoticesRead: () => {
+        setNotices((prev) => prev.map((item) => ({ ...item, read: true })))
+        if (state.session && state.online) void api.readNotices().catch(() => undefined)
+        else markLocalNoticesRead()
+      },
     }
-  }, [state, createZine, remixZine, importZine, queueUpsert, signIn, signOut])
+  }, [state, notices, createZine, remixZine, importZine, queueUpsert, signIn, signOut, refreshNotices])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
