@@ -126,7 +126,7 @@ export function createApp(db: Db) {
     const q = (c.req.query('q') ?? '').trim().toLowerCase()
     const vibe = c.req.query('vibe') ?? ''
     const sort = c.req.query('sort') ?? 'new'
-    const where = ['z.published = 1']
+    const where = [`z.published = 1 AND COALESCE(z.visibility, 'public') = 'public'`]
     const params: unknown[] = []
     if (VIBES.has(vibe)) {
       where.push('z.vibe = ?')
@@ -178,20 +178,72 @@ export function createApp(db: Db) {
          ORDER BY z.updated_at DESC`,
       )
       .all(user.id) as import('./db.ts').ZineRow[]
-    return c.json({ zines: rows.map((row) => rowToZine(row)) })
+    return c.json({ zines: rows.map((row) => rowToZine(row, { includeSecret: true })) })
   })
+
+  function accessZine(
+    row: import('./db.ts').ZineRow,
+    userId: string | undefined,
+    key?: string | null,
+    unlocked = false,
+  ) {
+    const mine = row.owner_id === userId
+    if (mine) return { ok: true as const, sealed: false, locked: false }
+    const keyOk = Boolean(row.share_key && key && key === row.share_key)
+    const vis = row.visibility || 'public'
+    const needsPass = Boolean(row.pass_hash)
+    if (!row.published) {
+      if (!keyOk) return { ok: false as const, reason: 'sealed draft' }
+      if (needsPass && !unlocked) return { ok: true as const, sealed: false, locked: true }
+      return { ok: true as const, sealed: false, locked: false }
+    }
+    if (vis === 'unlisted' && !keyOk) return { ok: false as const, reason: 'missing issue' }
+    if (needsPass && !unlocked) return { ok: true as const, sealed: !dropIsLive(row), locked: true }
+    if (!dropIsLive(row)) return { ok: true as const, sealed: true, locked: false }
+    return { ok: true as const, sealed: false, locked: false }
+  }
 
   app.get('/api/zines/:id', (c) => {
     const user = currentUser(c)
     const row = getZineRow(db, c.req.param('id'))
     if (!row) return c.json({ error: 'missing issue' }, 404)
-    const mine = row.owner_id === user?.id
-    if (!row.published && !mine) return c.json({ error: 'sealed draft' }, 404)
-    const live = dropIsLive(row)
-    if (row.published && !live && !mine) {
-      return c.json({ zine: rowToZine(row, { hideBlocks: true }), sealed: true })
+    const gate = accessZine(row, user?.id, c.req.query('k'))
+    if (!gate.ok) return c.json({ error: gate.reason }, 404)
+    const hide = gate.sealed || gate.locked
+    return c.json({
+      zine: rowToZine(row, { hideBlocks: hide, includeSecret: row.owner_id === user?.id }),
+      sealed: gate.sealed,
+      locked: gate.locked,
+    })
+  })
+
+  app.post('/api/zines/:id/unlock', async (c) => {
+    const user = currentUser(c)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row) return c.json({ error: 'missing issue' }, 404)
+    const body = await c.req.json().catch(() => null)
+    const key = String(body?.k ?? c.req.query('k') ?? '')
+    const password = String(body?.password ?? '')
+    const gate = accessZine(row, user?.id, key, false)
+    if (!gate.ok) return c.json({ error: gate.reason }, 404)
+    if (!row.pass_hash || !row.pass_salt) {
+      return c.json({ zine: rowToZine(row, { includeSecret: row.owner_id === user?.id }), sealed: !dropIsLive(row), locked: false })
     }
-    return c.json({ zine: rowToZine(row), sealed: false })
+    if (!verifyPassword(password, row.pass_hash, row.pass_salt)) {
+      return c.json({ error: 'Wrong passphrase' }, 401)
+    }
+    const live = dropIsLive(row) || row.owner_id === user?.id || Boolean(row.share_key && key === row.share_key && !row.published)
+    const draftOk = !row.published && row.share_key === key
+    return c.json({
+      zine: rowToZine(row, {
+        hideBlocks: row.published && !dropIsLive(row) && row.owner_id !== user?.id,
+        includeSecret: row.owner_id === user?.id,
+      }),
+      sealed: row.published && !dropIsLive(row) && row.owner_id !== user?.id,
+      locked: false,
+      draft: draftOk,
+      live,
+    })
   })
 
   app.put('/api/zines/:id', async (c) => {
@@ -253,14 +305,30 @@ export function createApp(db: Db) {
     if (!row || row.owner_id !== user.id) return c.json({ error: 'Not your issue' }, 403)
     const body = await c.req.json().catch(() => ({}))
     const dropsAt = Number(body?.dropsAt ?? Date.now())
-    db.prepare('UPDATE zines SET published = 1, drops_at = ?, updated_at = ? WHERE id = ?').run(
-      dropsAt,
-      Date.now(),
-      row.id,
-    )
-    const followers = db
-      .prepare('SELECT follower_id FROM follows WHERE followee_id = ?')
-      .all(user.id) as { follower_id: string }[]
+    const visibility = body?.visibility === 'unlisted' ? 'unlisted' : 'public'
+    const shareKey =
+      visibility === 'unlisted' ? (row.share_key || randomUUID().replace(/-/g, '').slice(0, 16)) : row.share_key
+    let passHash = row.pass_hash
+    let passSalt = row.pass_salt
+    const password = typeof body?.password === 'string' ? body.password : undefined
+    if (password && password.length >= 4) {
+      const hashed = hashPassword(password)
+      passHash = hashed.hash
+      passSalt = hashed.salt
+    } else if (password === '') {
+      passHash = null
+      passSalt = null
+    }
+    db.prepare(
+      `UPDATE zines SET published = 1, drops_at = ?, visibility = ?, share_key = ?, pass_hash = ?, pass_salt = ?, updated_at = ?
+       WHERE id = ?`,
+    ).run(dropsAt, visibility, shareKey, passHash, passSalt, Date.now(), row.id)
+    const followers =
+      visibility === 'public'
+        ? (db.prepare('SELECT follower_id FROM follows WHERE followee_id = ?').all(user.id) as {
+            follower_id: string
+          }[])
+        : []
     for (const fan of followers) {
       notify(db, {
         recipientId: fan.follower_id,
@@ -270,7 +338,7 @@ export function createApp(db: Db) {
         body: row.title,
       })
     }
-    return c.json({ zine: rowToZine(getZineRow(db, row.id)!) })
+    return c.json({ zine: rowToZine(getZineRow(db, row.id)!, { includeSecret: true }) })
   })
 
   app.post('/api/zines/:id/like', (c) => {
@@ -367,7 +435,7 @@ export function createApp(db: Db) {
       .prepare(
         `SELECT z.*, u.name AS owner_name
          FROM zines z JOIN users u ON u.id = z.owner_id
-         WHERE z.owner_id = ? AND z.published = 1
+         WHERE z.owner_id = ? AND z.published = 1 AND COALESCE(z.visibility, 'public') = 'public'
          ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
       )
       .all(user.id) as import('./db.ts').ZineRow[]
@@ -458,10 +526,10 @@ export function createApp(db: Db) {
   app.get('/api/zines/:id/comments', (c) => {
     const user = currentUser(c)
     const row = getZineRow(db, c.req.param('id'))
-    if (!row || (!row.published && row.owner_id !== user?.id)) {
-      return c.json({ error: 'missing issue' }, 404)
-    }
-    if (row.published && !dropIsLive(row) && row.owner_id !== user?.id) {
+    if (!row) return c.json({ error: 'missing issue' }, 404)
+    const gate = accessZine(row, user?.id, c.req.query('k'))
+    if (!gate.ok) return c.json({ error: gate.reason }, 404)
+    if (gate.sealed || gate.locked) {
       return c.json({ comments: [] })
     }
     const rows = db

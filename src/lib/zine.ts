@@ -17,6 +17,26 @@ export function isDropLive(zine: Zine, now = Date.now()): boolean {
   return !zine.dropsAt || zine.dropsAt <= now
 }
 
+export function isPublicDrop(zine: Zine): boolean {
+  return zine.published && (zine.visibility ?? 'public') === 'public'
+}
+
+export function issuePath(zine: Pick<Zine, 'id' | 'shareKey' | 'visibility'>): string {
+  const key = zine.shareKey
+  if ((zine.visibility === 'unlisted' || key) && key) return `/z/${zine.id}?k=${encodeURIComponent(key)}`
+  return `/z/${zine.id}`
+}
+
+export function canOpenSecret(zine: Zine, key?: string | null): boolean {
+  if (!zine.shareKey) return false
+  return Boolean(key && key === zine.shareKey)
+}
+
+export async function fingerprint(value: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`zineverse:${value}`))
+  return [...new Uint8Array(buf)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
 export function formatCountdown(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
   const d = Math.floor(total / 86400)
@@ -53,7 +73,7 @@ export function filterStream(
   const sort = opts.sort ?? 'new'
   const watching = opts.following?.map((name) => name.replace(/^@/, '').toLowerCase()) ?? null
   const next = zines.filter((z) => {
-    if (!z.published) return false
+    if (!isPublicDrop(z)) return false
     if (vibe && z.vibe !== vibe) return false
     if (watching) {
       if (!watching.includes(ownerHandle(z.owner).toLowerCase())) return false

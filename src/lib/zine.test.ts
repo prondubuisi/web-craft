@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import type { Zine } from './types'
-import { coverSrc, filterStream, formatCountdown, isDropLive, isMine, ownerHandle, profilePath, slugify } from './zine'
+import {
+  canOpenSecret,
+  coverSrc,
+  filterStream,
+  formatCountdown,
+  isDropLive,
+  isMine,
+  isPublicDrop,
+  issuePath,
+  ownerHandle,
+  profilePath,
+  slugify,
+} from './zine'
 
 function zine(partial: Partial<Zine> = {}): Zine {
   return {
@@ -128,5 +140,21 @@ describe('filterStream', () => {
 
   it('keeps only watched handles', () => {
     expect(filterStream(issues, { following: ['yuzu'] }).map((z) => z.id)).toEqual(['a'])
+  })
+
+  it('hides unlisted issues from the stream', () => {
+    const secret = zine({
+      id: 'u',
+      title: 'back alley',
+      published: true,
+      visibility: 'unlisted',
+      shareKey: 'abc',
+      dropsAt: 30,
+    })
+    expect(isPublicDrop(secret)).toBe(false)
+    expect(filterStream([...issues, secret]).map((z) => z.id)).toEqual(['b', 'a'])
+    expect(canOpenSecret(secret, 'abc')).toBe(true)
+    expect(canOpenSecret(secret, 'nope')).toBe(false)
+    expect(issuePath(secret)).toBe('/z/u?k=abc')
   })
 })

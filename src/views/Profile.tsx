@@ -4,7 +4,7 @@ import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
 import type { BadgeId, Zine } from '../lib/types'
-import { coverSrc, isDropLive, ownerHandle } from '../lib/zine'
+import { coverSrc, isDropLive, isPublicDrop, ownerHandle } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -51,7 +51,11 @@ export function Profile() {
     }
   }, [name, online])
 
-  const localIssues = zines.filter((z) => z.published && ownerHandle(z.owner).toLowerCase() === name)
+  const localIssues = zines.filter(
+    (z) =>
+      ownerHandle(z.owner).toLowerCase() === name &&
+      (mine ? z.published : isPublicDrop(z)),
+  )
   const issues = remote?.zines ?? localIssues
   const remixPoints = remote?.remixPoints ?? (mine ? profile.remixPoints : 0)
   const badges = computeBadges(remote?.zines ?? zines, remixPoints, name === 'you' ? null : name)

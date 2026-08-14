@@ -41,6 +41,10 @@ export type ZineRow = {
   remixed_from: string | null
   created_at: number
   updated_at: number
+  visibility: string
+  share_key: string | null
+  pass_hash: string | null
+  pass_salt: string | null
 }
 
 const SCHEMA = `
@@ -74,6 +78,10 @@ CREATE TABLE IF NOT EXISTS zines (
   remixed_from TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
+  visibility TEXT NOT NULL DEFAULT 'public',
+  share_key TEXT,
+  pass_hash TEXT,
+  pass_salt TEXT,
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -142,6 +150,12 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!userCols.some((col) => col.name === 'bio')) {
     db.exec(`ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''`)
   }
+  const zineCols = db.prepare(`PRAGMA table_info(zines)`).all() as { name: string }[]
+  const zineNames = new Set(zineCols.map((col) => col.name))
+  if (!zineNames.has('visibility')) db.exec(`ALTER TABLE zines ADD COLUMN visibility TEXT NOT NULL DEFAULT 'public'`)
+  if (!zineNames.has('share_key')) db.exec(`ALTER TABLE zines ADD COLUMN share_key TEXT`)
+  if (!zineNames.has('pass_hash')) db.exec(`ALTER TABLE zines ADD COLUMN pass_hash TEXT`)
+  if (!zineNames.has('pass_salt')) db.exec(`ALTER TABLE zines ADD COLUMN pass_salt TEXT`)
   return db
 }
 
@@ -155,7 +169,7 @@ export function rowToComment(row: CommentRow): Comment {
   }
 }
 
-export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean }): Zine {
+export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSecret?: boolean }): Zine {
   return {
     id: row.id,
     title: row.title,
@@ -170,6 +184,9 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean }): Zine {
     published: Boolean(row.published),
     dropsAt: row.drops_at,
     remixedFrom: row.remixed_from ?? undefined,
+    visibility: row.visibility === 'unlisted' ? 'unlisted' : 'public',
+    hasPass: Boolean(row.pass_hash),
+    shareKey: opts?.includeSecret ? (row.share_key ?? undefined) : undefined,
   }
 }
 

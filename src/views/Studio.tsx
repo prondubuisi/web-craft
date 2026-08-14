@@ -120,9 +120,11 @@ export function Studio() {
                       <span>
                         {!z.published
                           ? 'draft'
-                          : isDropLive(z)
-                            ? 'dropped'
-                            : 'scheduled'}
+                          : z.visibility === 'unlisted'
+                            ? 'unlisted'
+                            : isDropLive(z)
+                              ? 'dropped'
+                              : 'scheduled'}
                       </span>
                       <span>{z.views} views</span>
                       <span>{z.likes} likes</span>

@@ -16,6 +16,8 @@ function Mini({ block }: { block: Block }) {
       return <img src={assetUrl(block.src)} alt="" />
     case 'poll':
       return <p>{block.question}</p>
+    case 'audio':
+      return <p>♪ {block.caption}</p>
     case 'grid':
       return <p>{block.panels.map((p) => p.text).join(' · ')}</p>
     case 'stack':

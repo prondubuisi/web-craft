@@ -127,17 +127,25 @@ export const api = {
       body: JSON.stringify({ option }),
     }),
   mine: () => req<{ zines: Zine[] }>('/api/zines'),
-  get: (id: string) => req<{ zine: Zine; sealed: boolean }>(`/api/zines/${id}`),
+  get: (id: string, key?: string | null) =>
+    req<{ zine: Zine; sealed: boolean; locked?: boolean }>(
+      `/api/zines/${id}${key ? `?k=${encodeURIComponent(key)}` : ''}`,
+    ),
+  unlock: (id: string, password: string, key?: string | null) =>
+    req<{ zine: Zine; sealed: boolean; locked: boolean }>(`/api/zines/${id}/unlock`, {
+      method: 'POST',
+      body: JSON.stringify({ password, k: key ?? undefined }),
+    }),
   upsert: (zine: Zine) =>
     req<{ zine: Zine }>(`/api/zines/${zine.id}`, {
       method: 'PUT',
       body: JSON.stringify(zine),
     }),
   remove: (id: string) => req<{ ok: boolean }>(`/api/zines/${id}`, { method: 'DELETE' }),
-  publish: (id: string, dropsAt: number) =>
+  publish: (id: string, dropsAt: number, opts?: { visibility?: 'public' | 'unlisted'; password?: string }) =>
     req<{ zine: Zine }>(`/api/zines/${id}/publish`, {
       method: 'POST',
-      body: JSON.stringify({ dropsAt }),
+      body: JSON.stringify({ dropsAt, ...opts }),
     }),
   like: (id: string) =>
     req<{ liked: boolean; likes: number }>(`/api/zines/${id}/like`, { method: 'POST' }),

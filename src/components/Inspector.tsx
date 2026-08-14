@@ -16,7 +16,7 @@ export function Inspector({
   const meta = widgetByType(block.type)
 
   async function onUpload(file: File | undefined) {
-    if (!file || block.type !== 'hero') return
+    if (!file || (block.type !== 'hero' && block.type !== 'audio')) return
     try {
       const src = await readFileAsDataUrl(file)
       onChange({ ...block, src }, true)
@@ -188,6 +188,20 @@ export function Inspector({
             </button>
           </div>
         </>
+      ) : null}
+      {block.type === 'audio' ? (
+        <label className="comic-btn small" style={{ marginTop: 10, cursor: 'pointer' }}>
+          Upload tape
+          <input
+            type="file"
+            accept="audio/*"
+            hidden
+            onChange={(e) => {
+              void onUpload(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+        </label>
       ) : null}
     </div>
   )
