@@ -31,11 +31,12 @@ npm run build     # typecheck + production bundle
 - **Cover** (`/`) — vibe switcher, widget zoo, start an issue
 - **Studio** (`/studio`) — your zines, comic badges, **in my bag**, community stream
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
-- **Stream** (`/explore`) — search, vibe filters, watching lane, community tags, **pull from the pile**
+- **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**
 - **Board** (`/board`) — trade, collab, and feedback pins. Mail-swap culture, not a marketplace.
-- **Issue** (`/z/:id`) — flip or scroll, like/remix/letters/blurbs/polls, fold-sheet print with QR, distro stock, **stuff in bag**, corpse invites, unlisted/password links
+- **Issue** (`/z/:id`) — flip or scroll, like/remix/letters/blurbs/polls/marginalia, fold-sheet print with QR, distro stock, **stuff in bag**, archive nominate, b-side fold, corpse invites, unlisted/password links
 - **Profile** (`/u/:handle`) — public wall grouped by series, bio, remix badges, **Watch wall**, write a letter
 - **Letters** (`/mail`) — private pen-pal threads between handles
+- **Jam** (`/jam/:id`) — a time-boxed prompt. Public drops that fit the format land in the pile automatically
 - **The wire** (MAIL in the topbar) — likes, letters, remixes, follows, blurbs, and new drops from people you watch
 - **Snapshot** (`/s#…`) — portable copy of an issue that works without the original studio
 

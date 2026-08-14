@@ -8,6 +8,7 @@ import { copyText, downloadJson, encodeShare } from '../lib/share'
 import type { Block, BlockType, FinishId, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
 import { formatTags, parseTagField } from '../lib/tags'
 import { WIDGETS, createBlock } from '../lib/widgets'
+import { demoJams, formatHint, jamForPublish, liveJam } from '../lib/jam'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -295,6 +296,18 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           aria-label="Issue number"
           style={{ minWidth: 72, width: 72 }}
         />
+        <input
+          value={zine.penName ?? ''}
+          placeholder="pen name"
+          onChange={(e) => patchZine(zine.id, { penName: e.target.value })}
+          aria-label="Pen name"
+        />
+        <input
+          value={zine.bSide ?? ''}
+          placeholder="b-side (hidden fold)"
+          onChange={(e) => patchZine(zine.id, { bSide: e.target.value })}
+          aria-label="B-side"
+        />
         <div className="vibe-picks">
           {(['clean', 'riso', 'grain'] as FinishId[]).map((id) => (
             <button
@@ -537,6 +550,8 @@ function DropModal({
   const [visibility, setVisibility] = useState<Visibility>(zine.visibility ?? 'public')
   const [password, setPassword] = useState('')
   const [chain, setChain] = useState(Boolean(zine.chainOpen))
+  const jam = liveJam(demoJams())
+  const inJam = jam && jamForPublish({ blocks: zine.blocks, visibility }, demoJams())
   const options = [
     { label: 'Drop now', at: Date.now() },
     { label: 'In a minute', at: Date.now() + 60_000 },
@@ -566,6 +581,13 @@ function DropModal({
           exquisite corpse
         </button>
       </div>
+      {jam ? (
+        <p className="hand" style={{ margin: '0.7rem 0 0' }}>
+          {inJam
+            ? `enters ${jam.title} · ${formatHint(jam.format)}`
+            : `${jam.title} is live — ${formatHint(jam.format)}. trim the issue to enter.`}
+        </p>
+      ) : null}
       <input
         type="password"
         value={password}

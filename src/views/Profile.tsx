@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
 import type { BadgeId, GuestNote, ShelfItem, Zine } from '../lib/types'
 import { addGuestNote, loadGuestNotes, loadShelf } from '../lib/social'
-import { coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
+import { byline, coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -189,6 +189,7 @@ export function Profile() {
                     <h3>{z.title}</h3>
                     <div className="meta-line">
                       {seriesLabel(z) ? <span>{seriesLabel(z)}</span> : null}
+                      <span>{byline(z) !== z.owner ? byline(z) : z.vibe}</span>
                       <span>{z.vibe}</span>
                       <span>{isDropLive(z) ? `${z.likes} likes` : 'sealed'}</span>
                       <span>{z.remixes} remixes</span>

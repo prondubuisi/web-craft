@@ -145,6 +145,15 @@ assert(cards.length >= 3, `explore cards ${cards.length}`)
 const streamText = await page.$eval('main', (el) => el.textContent ?? '')
 assert(streamText.includes('NEXT ISSUE'), 'explore missing NEXT ISSUE banner')
 assert(streamText.toLowerCase().includes('midnight run'), 'explore missing midnight run')
+assert(/toner week/i.test(streamText), `explore missing jam: ${streamText}`)
+await clickText('jam')
+await page.waitForFunction(() => /sunday market|nobody printed|toner week/i.test(document.querySelector('main')?.textContent ?? ''))
+const jamLane = await page.$eval('main', (el) => el.textContent ?? '')
+assert(/sunday market|toner week/i.test(jamLane), `jam lane empty: ${jamLane}`)
+await clickText('archive')
+await page.waitForFunction(() => /issue 13|archive/i.test(document.querySelector('main')?.textContent ?? ''))
+await clickText('all')
+await page.waitForSelector('.zine-card')
 await clickText('Pull from the pile')
 await page.waitForSelector('.preview-page, .zine-page, h1')
 await page.goto('http://127.0.0.1:5173/explore', { waitUntil: 'networkidle0' })
@@ -171,6 +180,15 @@ await page.waitForSelector('.comments')
 const socialText = await page.$eval('article.zine-page', (el) => el.textContent ?? '')
 assert(/letters to the editor/i.test(socialText), `comments missing: ${socialText}`)
 assert(/blurbs/i.test(socialText), `reviews missing: ${socialText}`)
+const issuePage = await page.$eval('article.zine-page', (el) => el.textContent ?? '')
+assert(/the gutter|@inkstain|@yuzu/i.test(issuePage), `issue byline missing: ${issuePage}`)
+const bside = await page.evaluate(() =>
+  [...document.querySelectorAll('button')].some((el) => /b-side/i.test(el.textContent ?? '')),
+)
+if (bside) {
+  await clickText('Unfold the b-side')
+  await page.waitForSelector('.bside-reveal')
+}
 await clickText('Stuff in bag')
 await page.waitForFunction(() =>
   [...document.querySelectorAll('button')].some((el) => /in the bag/i.test(el.textContent ?? '')),

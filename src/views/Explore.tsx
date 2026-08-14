@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { useCountdown } from '../lib/useCountdown'
-import type { StreamSort, VibeId, Zine } from '../lib/types'
+import { demoJams, formatHint, liveJam } from '../lib/jam'
+import type { Jam, StreamSort, VibeId, Zine } from '../lib/types'
 import { VIBES } from '../lib/vibes'
-import { coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
+import { byline, coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Explore() {
@@ -14,9 +15,21 @@ export function Explore() {
   const [q, setQ] = useState('')
   const [vibe, setVibe] = useState<VibeId | 'all'>('all')
   const [sort, setSort] = useState<StreamSort>('new')
-  const [lane, setLane] = useState<'all' | 'following'>('all')
+  const [lane, setLane] = useState<'all' | 'following' | 'jam' | 'archive'>('all')
   const [tag, setTag] = useState('')
   const [remote, setRemote] = useState<Zine[] | null>(null)
+  const [jam, setJam] = useState<Jam | null>(() => liveJam(demoJams()) ?? null)
+
+  useEffect(() => {
+    if (!online) {
+      setJam(liveJam(demoJams()) ?? null)
+      return
+    }
+    void api
+      .jams()
+      .then((res) => setJam(res.live))
+      .catch(() => setJam(liveJam(demoJams()) ?? null))
+  }, [online])
 
   useEffect(() => {
     if (!online || (lane === 'following' && !session)) {
@@ -31,6 +44,8 @@ export function Explore() {
           sort,
           following: lane === 'following',
           tag: tag || undefined,
+          jam: lane === 'jam',
+          archive: lane === 'archive',
         })
         .then((res) => setRemote(res.zines))
         .catch(() => setRemote(null))
@@ -38,17 +53,20 @@ export function Explore() {
     return () => window.clearTimeout(handle)
   }, [online, q, vibe, sort, lane, session, tag])
 
-  const published = useMemo(
-    () =>
-      filterStream(remote ?? zines, {
-        q,
-        vibe,
-        sort,
-        tag: tag || undefined,
-        following: lane === 'following' ? profile.following : null,
-      }),
-    [remote, zines, q, vibe, sort, lane, profile.following, tag],
-  )
+  const published = useMemo(() => {
+    const opts = {
+      q,
+      vibe,
+      sort,
+      tag: tag || undefined,
+      following: lane === 'following' ? profile.following : null,
+      jamId: lane === 'jam' ? jam?.id : undefined,
+      archived: lane === 'archive',
+    }
+    const fromRemote = filterStream(remote ?? zines, opts)
+    if (fromRemote.length || !remote) return fromRemote
+    return filterStream(zines, opts)
+  }, [remote, zines, q, vibe, sort, lane, profile.following, tag, jam?.id])
   const tags = useMemo(() => {
     const set = new Set<string>()
     for (const z of remote ?? zines) for (const t of z.tags ?? []) set.add(t)
@@ -67,6 +85,14 @@ export function Explore() {
               A website is a gathering place, not a billboard. Fork anything you like.{' '}
               <Link to="/board">Need a trade or a second pair of eyes? The board is up.</Link>
             </p>
+            {jam ? (
+              <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
+                <Link to={`/jam/${jam.id}`}>
+                  <strong className="hand">{jam.title}</strong>
+                </Link>{' '}
+                is live — {jam.prompt} <span className="meta-line">{formatHint(jam.format)}</span>
+              </p>
+            ) : null}
             <div className="cta-row" style={{ marginTop: 12 }}>
               <ComicButton
                 className="cyan"
@@ -114,6 +140,18 @@ export function Explore() {
             onClick={() => setLane('following')}
           >
             watching
+          </button>
+          <button
+            className={`tray-item ${lane === 'jam' ? 'on' : ''}`}
+            onClick={() => setLane('jam')}
+          >
+            jam
+          </button>
+          <button
+            className={`tray-item ${lane === 'archive' ? 'on' : ''}`}
+            onClick={() => setLane('archive')}
+          >
+            archive
           </button>
           {VIBES.map((v) => (
             <button
@@ -174,8 +212,10 @@ function ExploreCard({ zine, onRemix }: { zine: Zine; onRemix: () => void }) {
         <h3>{zine.title}</h3>
         <div className="meta-line">
           <Link className="owner-link" to={profilePath(zine.owner)}>
-            {zine.owner}
+            {byline(zine)}
           </Link>
+          {zine.jamId ? <span>jam</span> : null}
+          {zine.archived ? <span>archive</span> : null}
           {seriesLabel(zine) ? <span>{seriesLabel(zine)}</span> : null}
           <span>{zine.vibe}</span>
           {live ? (

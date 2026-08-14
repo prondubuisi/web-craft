@@ -377,4 +377,61 @@ describe('social', () => {
     )
     expect((thread.letters as { body: string }[]).some((row) => row.body.includes('issue two'))).toBe(true)
   })
+
+  it('enters a live jam, takes a margin, and archives by nomination', async () => {
+    const client = app()
+    const author = await register(client, 'author9', 'strawberry1')
+    await client.request('/api/zines/short-one', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({
+        title: 'cheap copy',
+        vibe: 'noir',
+        penName: 'redacted',
+        bSide: 'look under the staple',
+        blocks: [
+          { id: '1', type: 'heading', text: 'cheap copy', size: 'xl' },
+          { id: '2', type: 'sticker', text: 'no bleed', rotation: 0 },
+        ],
+      }),
+    })
+    const pub = await json(
+      await client.request('/api/zines/short-one/publish', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: author.cookie },
+        body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+      }),
+    )
+    expect((pub.zine as { jamId?: string }).jamId).toBe('toner-week')
+    expect((pub.zine as { penName?: string }).penName).toBe('redacted')
+    const jams = await json(await client.request('/api/jams'))
+    expect((jams.live as { id: string }).id).toBe('toner-week')
+    const jamLane = await json(await client.request('/api/stream?jam=1'))
+    expect((jamLane.zines as { title: string }[]).some((z) => z.title === 'cheap copy')).toBe(true)
+
+    const reader = await register(client, 'reader9', 'cartoon99')
+    const margin = await client.request('/api/zines/short-one/margins', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ blockId: '2', body: 'this sticker peels' }),
+    })
+    expect(margin.status).toBe(200)
+    const nom1 = await json(
+      await client.request('/api/zines/short-one/nominate', {
+        method: 'POST',
+        headers: { authorization: reader.cookie },
+      }),
+    )
+    expect(nom1.noms).toBe(1)
+    const fan = await register(client, 'fan9xx', 'cartoon99')
+    const nom2 = await json(
+      await client.request('/api/zines/short-one/nominate', {
+        method: 'POST',
+        headers: { authorization: fan.cookie },
+      }),
+    )
+    expect(nom2.archived).toBe(true)
+    const archive = await json(await client.request('/api/archive'))
+    expect((archive.zines as { title: string }[]).some((z) => z.title === 'cheap copy')).toBe(true)
+  })
 })
