@@ -4,6 +4,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
 import { normalizeTags } from '../src/lib/tags.ts'
+import { demoJams, fitsJam, isJamLive, liveJam, ARCHIVE_THRESHOLD } from '../src/lib/jam.ts'
+import type { Jam, JamFormat } from '../src/lib/types.ts'
 import { normalizeIssueNo, normalizeSeries } from '../src/lib/zine.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
@@ -21,6 +23,37 @@ import {
 
 const COOKIE = 'zv_session'
 const VIBES = new Set(['miles', 'gwen', 'peni', 'ham', 'noir'])
+
+function nomCount(db: Db, zineId: string): number {
+  return (db.prepare('SELECT COUNT(*) AS n FROM nominations WHERE zine_id = ?').get(zineId) as { n: number }).n
+}
+
+function decorate(db: Db, zine: Zine): Zine {
+  const noms = nomCount(db, zine.id)
+  return { ...zine, noms, archived: noms >= ARCHIVE_THRESHOLD }
+}
+
+function jamForLive(db: Db, visibility: string, blockCount: number): Jam | undefined {
+  if (visibility === 'unlisted') return undefined
+  const jam = liveJam(listJams(db))
+  if (!jam || !fitsJam(blockCount, jam.format)) return undefined
+  return jam
+}
+
+function listJams(db: Db): Jam[] {
+  const rows = db
+    .prepare('SELECT id, title, prompt, format, starts_at, ends_at FROM jams ORDER BY starts_at DESC')
+    .all() as { id: string; title: string; prompt: string; format: string; starts_at: number; ends_at: number }[]
+  if (!rows.length) return demoJams()
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    prompt: row.prompt,
+    format: (['any', 'one', 'card'].includes(row.format) ? row.format : 'any') as JamFormat,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+  }))
+}
 
 export function createApp(db: Db) {
   seedCommunity(db)
@@ -146,12 +179,23 @@ export function createApp(db: Db) {
       where.push(`z.tags_json LIKE ?`)
       params.push(`%"${tag}"%`)
     }
+    if (c.req.query('jam') === '1') {
+      const jam = liveJam(listJams(db))
+      if (!jam) return c.json({ zines: [] })
+      where.push('z.jam_id = ?')
+      params.push(jam.id)
+    }
+    if (c.req.query('archive') === '1') {
+      where.push(
+        `(SELECT COUNT(*) FROM nominations n WHERE n.zine_id = z.id) >= ${ARCHIVE_THRESHOLD}`,
+      )
+    }
     if (q) {
       where.push(
-        '(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ? OR LOWER(COALESCE(z.series, \'\')) LIKE ?)',
+        '(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ? OR LOWER(COALESCE(z.series, \'\')) LIKE ? OR LOWER(COALESCE(z.pen_name, \'\')) LIKE ?)',
       )
       const like = `%${q.replace(/[%_]/g, '')}%`
-      params.push(like, like, like, like)
+      params.push(like, like, like, like, like)
     }
     const order =
       sort === 'likes'
@@ -169,9 +213,12 @@ export function createApp(db: Db) {
       .all(...params) as import('./db.ts').ZineRow[]
     return c.json({
       zines: rows.map((row) =>
-        rowToZine(row, {
-          hideBlocks: !dropIsLive(row) && row.owner_id !== user?.id,
-        }),
+        decorate(
+          db,
+          rowToZine(row, {
+            hideBlocks: !dropIsLive(row) && row.owner_id !== user?.id,
+          }),
+        ),
       ),
     })
   })
@@ -220,7 +267,7 @@ export function createApp(db: Db) {
     if (!gate.ok) return c.json({ error: gate.reason }, 404)
     const hide = gate.sealed || gate.locked
     return c.json({
-      zine: rowToZine(row, { hideBlocks: hide, includeSecret: row.owner_id === user?.id }),
+      zine: decorate(db, rowToZine(row, { hideBlocks: hide, includeSecret: row.owner_id === user?.id })),
       sealed: gate.sealed,
       locked: gate.locked,
     })
@@ -296,13 +343,11 @@ export function createApp(db: Db) {
       : (existing?.finish ?? 'clean')
     const series = normalizeSeries(typeof body.series === 'string' ? body.series : existing?.series) ?? ''
     const issueNo = normalizeIssueNo(body.issueNo ?? existing?.issue_no) ?? null
-    db.prepare('UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ? WHERE id = ?').run(
-      JSON.stringify(tags),
-      finish,
-      series,
-      issueNo,
-      id,
-    )
+    const penName = String(body.penName ?? existing?.pen_name ?? '').trim().slice(0, 48)
+    const bSide = String(body.bSide ?? existing?.b_side ?? '').trim().slice(0, 280)
+    db.prepare(
+      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ? WHERE id = ?',
+    ).run(JSON.stringify(tags), finish, series, issueNo, penName, bSide, id)
     const row = getZineRow(db, id)
     return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
   })
@@ -320,6 +365,8 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM shelves WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM bags WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM reviews WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM nominations WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM margins WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -346,17 +393,21 @@ export function createApp(db: Db) {
       passSalt = null
     }
     const chain = Boolean(body?.chain)
+    const vis = chain ? 'unlisted' : visibility
+    const blocks = JSON.parse(row.blocks_json) as Block[]
+    const jam = jamForLive(db, vis, blocks.length)
     db.prepare(
-      `UPDATE zines SET published = 1, drops_at = ?, visibility = ?, share_key = ?, pass_hash = ?, pass_salt = ?, chain_open = ?, chain_key = ?, updated_at = ?
+      `UPDATE zines SET published = 1, drops_at = ?, visibility = ?, share_key = ?, pass_hash = ?, pass_salt = ?, chain_open = ?, chain_key = ?, jam_id = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       dropsAt,
-      chain ? 'unlisted' : visibility,
+      vis,
       shareKey,
       passHash,
       passSalt,
       chain ? 1 : row.chain_open,
       chain ? shareKey : row.chain_key,
+      jam?.id ?? row.jam_id,
       Date.now(),
       row.id,
     )
@@ -1137,6 +1188,113 @@ export function createApp(db: Db) {
         read: false,
         createdAt: now,
       },
+    })
+  })
+
+  app.get('/api/jams', (c) => {
+    return c.json({ jams: listJams(db), live: liveJam(listJams(db)) ?? null })
+  })
+
+  app.get('/api/jams/:id', (c) => {
+    const jam = listJams(db).find((item) => item.id === c.req.param('id'))
+    if (!jam) return c.json({ error: 'no jam' }, 404)
+    const rows = db
+      .prepare(
+        `SELECT z.*, u.name AS owner_name
+         FROM zines z JOIN users u ON u.id = z.owner_id
+         WHERE z.jam_id = ? AND z.published = 1 AND COALESCE(z.visibility, 'public') = 'public'
+         ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
+      )
+      .all(jam.id) as import('./db.ts').ZineRow[]
+    return c.json({
+      jam,
+      live: isJamLive(jam),
+      zines: rows.map((row) => decorate(db, rowToZine(row, { hideBlocks: !dropIsLive(row) }))),
+    })
+  })
+
+  app.get('/api/archive', (c) => {
+    const rows = db
+      .prepare(
+        `SELECT z.*, u.name AS owner_name
+         FROM zines z JOIN users u ON u.id = z.owner_id
+         WHERE z.published = 1 AND COALESCE(z.visibility, 'public') = 'public'
+           AND (SELECT COUNT(*) FROM nominations n WHERE n.zine_id = z.id) >= ?
+         ORDER BY (SELECT COUNT(*) FROM nominations n WHERE n.zine_id = z.id) DESC`,
+      )
+      .all(ARCHIVE_THRESHOLD) as import('./db.ts').ZineRow[]
+    return c.json({ zines: rows.map((row) => decorate(db, rowToZine(row, { hideBlocks: !dropIsLive(row) }))) })
+  })
+
+  app.post('/api/zines/:id/nominate', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.published || row.visibility === 'unlisted') {
+      return c.json({ error: 'Cannot nominate that' }, 404)
+    }
+    const existing = db
+      .prepare('SELECT 1 FROM nominations WHERE user_id = ? AND zine_id = ?')
+      .get(user.id, row.id)
+    if (existing) {
+      db.prepare('DELETE FROM nominations WHERE user_id = ? AND zine_id = ?').run(user.id, row.id)
+    } else {
+      db.prepare('INSERT INTO nominations (user_id, zine_id, created_at) VALUES (?, ?, ?)').run(
+        user.id,
+        row.id,
+        Date.now(),
+      )
+      if (row.owner_id !== user.id) {
+        notify(db, {
+          recipientId: row.owner_id,
+          actorId: user.id,
+          kind: 'archive',
+          zineId: row.id,
+          body: row.title,
+        })
+      }
+    }
+    const noms = nomCount(db, row.id)
+    return c.json({ noms, archived: noms >= ARCHIVE_THRESHOLD, mine: !existing })
+  })
+
+  app.get('/api/zines/:id/margins', (c) => {
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row) return c.json({ error: 'missing issue' }, 404)
+    const rows = db
+      .prepare(
+        `SELECT m.*, u.name AS author_name FROM margins m JOIN users u ON u.id = m.user_id
+         WHERE m.zine_id = ? ORDER BY m.created_at ASC`,
+      )
+      .all(row.id) as { id: string; zine_id: string; block_id: string; body: string; created_at: number; author_name: string }[]
+    return c.json({
+      notes: rows.map((item) => ({
+        id: item.id,
+        zineId: item.zine_id,
+        blockId: item.block_id,
+        author: `@${item.author_name}`,
+        body: item.body,
+        createdAt: item.created_at,
+      })),
+    })
+  })
+
+  app.post('/api/zines/:id/margins', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.published) return c.json({ error: 'Cannot mark that' }, 404)
+    const body = await c.req.json().catch(() => null)
+    const text = String(body?.body ?? '').trim().slice(0, 160)
+    const blockId = String(body?.blockId ?? '')
+    if (!text || !blockId) return c.json({ error: 'Need a block and a note' }, 400)
+    const id = randomUUID()
+    const now = Date.now()
+    db.prepare(
+      'INSERT INTO margins (id, zine_id, block_id, user_id, body, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run(id, row.id, blockId, user.id, text, now)
+    return c.json({
+      note: { id, zineId: row.id, blockId, author: `@${user.name}`, body: text, createdAt: now },
     })
   })
 

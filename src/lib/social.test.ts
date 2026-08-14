@@ -18,6 +18,10 @@ import {
   tuckBag,
   upsertReview,
   voteLocalPoll,
+  addMargin,
+  loadMargins,
+  nominateLocal,
+  nomState,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -102,6 +106,25 @@ describe('reviews', () => {
     const next = upsertReview('z1', 'rio', 'exactly enough rain')
     expect(next.body).toBe('exactly enough rain')
     expect(loadReviews('z1')).toHaveLength(1)
+  })
+})
+
+describe('margins', () => {
+  it('pins a note to one block', () => {
+    addMargin('z1', 'b1', 'rio', 'this panel leaks')
+    expect(loadMargins('z1')).toHaveLength(1)
+    expect(loadMargins('z1')[0]?.blockId).toBe('b1')
+  })
+})
+
+describe('archive nominations', () => {
+  it('archives after the second vote', () => {
+    const first = nominateLocal('you', 'z1')
+    expect(first.noms).toBe(1)
+    expect(first.archived).toBe(false)
+    const second = nominateLocal('yuzu', 'z1')
+    expect(second.archived).toBe(true)
+    expect(nomState('you', 'z1').mine).toBe(true)
   })
 })
 

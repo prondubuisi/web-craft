@@ -5,6 +5,7 @@ import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { FoldSheet } from '../components/FoldSheet'
 import { FlipReader } from '../components/FlipReader'
 import { Comments } from '../components/Comments'
+import { Margins } from '../components/Margins'
 import { Reviews } from '../components/Reviews'
 import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
@@ -13,7 +14,10 @@ import {
   dumpBag,
   inBag,
   loadLocalPolls,
+  loadMargins,
   loadPageStats,
+  nomState,
+  nominateLocal,
   stockShelf,
   tuckBag,
   voteLocalPoll,
@@ -21,8 +25,17 @@ import {
 import { createBlock } from '../lib/widgets'
 import { useCountdown } from '../lib/useCountdown'
 import { api } from '../lib/api'
-import type { Block, PageStat, PollTally } from '../lib/types'
-import { canOpenSecret, coverSrc, fingerprint, isMine, issuePath, profilePath, seriesLabel } from '../lib/zine'
+import type { Block, MarginNote, PageStat, PollTally } from '../lib/types'
+import {
+  byline,
+  canOpenSecret,
+  coverSrc,
+  fingerprint,
+  isMine,
+  issuePath,
+  profilePath,
+  seriesLabel,
+} from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Preview() {
@@ -47,6 +60,9 @@ export function Preview() {
   const [chainText, setChainText] = useState('the next fold.')
   const [chainMsg, setChainMsg] = useState('')
   const [bagged, setBagged] = useState(false)
+  const [margins, setMargins] = useState<MarginNote[]>([])
+  const [archive, setArchive] = useState({ noms: 0, archived: false, mine: false })
+  const [bOpen, setBOpen] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
@@ -96,6 +112,24 @@ export function Preview() {
     }
     setBagged(inBag(bagOwner, zine.id))
   }, [zine?.id, online, session, bagOwner])
+
+  useEffect(() => {
+    if (!id || locked || needsPass) return
+    if (remoteSocial) {
+      void api
+        .margins(id)
+        .then((res) => setMargins(res.notes))
+        .catch(() => setMargins(loadMargins(id)))
+    } else {
+      setMargins(loadMargins(id))
+    }
+    const local = nomState(bagOwner, id)
+    setArchive({
+      noms: zine?.noms ?? local.noms,
+      archived: zine?.archived ?? local.archived,
+      mine: local.mine,
+    })
+  }, [id, remoteSocial, locked, needsPass, bagOwner, zine?.noms, zine?.archived])
 
   useEffect(() => {
     if (!id || locked || needsPass) return
@@ -216,8 +250,10 @@ export function Preview() {
               <div className="meta-line" style={{ marginBottom: '0.8rem' }}>
                 <span className="issue-chip">{zine.vibe}</span>
                 {seriesLabel(zine) ? <span className="issue-chip">{seriesLabel(zine)}</span> : null}
+                {zine.jamId ? <span className="issue-chip">JAM</span> : null}
+                {archive.archived ? <span className="issue-chip">ARCHIVE</span> : null}
                 <Link className="owner-link" to={profilePath(zine.owner)}>
-                  {zine.owner}
+                  {byline(zine)}
                 </Link>
                 <span>{zine.views} views</span>
               </div>
@@ -307,6 +343,13 @@ export function Preview() {
                             }
                           : undefined
                       }
+                    />
+                    <Margins
+                      zineId={zine.id}
+                      blockId={block.id}
+                      notes={margins}
+                      remote={remoteSocial}
+                      onAdd={(note) => setMargins((prev) => [...prev, note])}
                     />
                   </div>
                 ))
@@ -406,6 +449,28 @@ export function Preview() {
                 {bagged ? 'In the bag' : 'Stuff in bag'}
               </ComicButton>
             ) : null}
+            {!locked && !needsPass && !mine ? (
+              <ComicButton
+                className={`small no-print ${archive.mine ? 'pink' : 'ghost'}`}
+                onClick={() => {
+                  if (session && online) {
+                    void api
+                      .nominate(zine.id)
+                      .then((res) => setArchive(res))
+                      .catch(() => setArchive(nominateLocal(bagOwner, zine.id)))
+                    return
+                  }
+                  setArchive(nominateLocal(bagOwner, zine.id))
+                }}
+              >
+                {archive.mine ? 'Nominated' : 'Nominate'} · {archive.noms}
+              </ComicButton>
+            ) : null}
+            {!locked && !needsPass && zine.bSide ? (
+              <ComicButton className="small no-print" onClick={() => setBOpen((v) => !v)}>
+                {bOpen ? 'Fold the b-side' : 'Unfold the b-side'}
+              </ComicButton>
+            ) : null}
             {mine && zine.chainOpen && zine.chainKey ? (
               <ComicButton
                 className="small no-print"
@@ -424,6 +489,12 @@ export function Preview() {
               </Link>
             ) : null}
           </div>
+          {bOpen && zine.bSide ? (
+            <aside className="bside-reveal">
+              <div className="issue-chip">B-SIDE</div>
+              <p className="serif">{zine.bSide}</p>
+            </aside>
+          ) : null}
           <Reviews zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
           <Comments zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
         </article>

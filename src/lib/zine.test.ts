@@ -13,6 +13,7 @@ import {
   normalizeSeries,
   ownerHandle,
   profilePath,
+  byline,
   seriesLabel,
   slugify,
 } from './zine'
@@ -132,6 +133,11 @@ describe('series', () => {
     expect(normalizeIssueNo(0)).toBeUndefined()
     expect(seriesLabel({ series: 'confession', issueNo: 13 })).toBe('confession #13')
     expect(seriesLabel({ series: 'confession' })).toBe('confession')
+  })
+
+  it('prefers a pen name as the byline', () => {
+    expect(byline({ owner: '@inkstain', penName: 'the gutter' })).toBe('the gutter')
+    expect(byline({ owner: '@inkstain' })).toBe('@inkstain')
   })
 })
 

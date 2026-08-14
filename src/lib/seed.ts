@@ -22,6 +22,7 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   dropped: { label: 'DROPPED', blurb: 'Published a zine' },
   remixer: { label: 'REMIXER', blurb: 'Forked someone else’s issue' },
   multiverse: { label: 'MULTIVERSE', blurb: 'Built in all five vibes' },
+  jammer: { label: 'JAMMER', blurb: 'Dropped into a live jam' },
 }
 
 export function computeBadges(zines: Zine[], remixPoints: number, handle?: string | null): BadgeId[] {
@@ -33,6 +34,7 @@ export function computeBadges(zines: Zine[], remixPoints: number, handle?: strin
   if (owned.some((z) => z.published)) badges.push('dropped')
   if (remixPoints > 0 || owned.some((z) => z.remixedFrom)) badges.push('remixer')
   if (new Set(owned.map((z) => z.vibe)).size >= 5) badges.push('multiverse')
+  if (owned.some((z) => z.jamId)) badges.push('jammer')
   return badges
 }
 
@@ -131,6 +133,8 @@ export function createSeed(): AppState {
       tags: ['diary', 'market'],
       series: 'booth notes',
       issueNo: 1,
+      jamId: 'toner-week',
+      bSide: 'booth 12 keeps the extra bows under the table.',
       blocks: [
         { id: uid(), type: 'heading', text: 'sunday market', size: 'xl' },
         { id: uid(), type: 'sfx', word: 'PING!' },
@@ -181,6 +185,9 @@ export function createSeed(): AppState {
       tags: ['protest'],
       series: 'confession',
       issueNo: 13,
+      penName: 'the gutter',
+      noms: 3,
+      archived: true,
       blocks: [
         { id: uid(), type: 'heading', text: 'issue 13', size: 'xl' },
         {
