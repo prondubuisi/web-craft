@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { addLocalComment, loadLocalComments, loadLocalPolls, voteLocalPoll } from './social'
+import {
+  addLocalComment,
+  loadLocalComments,
+  loadLocalNotices,
+  loadLocalPolls,
+  markLocalNoticesRead,
+  noticeCopy,
+  voteLocalPoll,
+} from './social'
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>()
@@ -46,5 +54,15 @@ describe('local polls', () => {
     expect(next.counts).toEqual([0, 1])
     expect(next.mine).toBe(1)
     expect(loadLocalPolls('z1').p1?.counts).toEqual([0, 1])
+  })
+})
+
+describe('local notices', () => {
+  it('seeds an inbox and marks it read', () => {
+    const inbox = loadLocalNotices()
+    expect(inbox.length).toBeGreaterThan(0)
+    expect(noticeCopy(inbox[0]!)).toContain(inbox[0]!.actor)
+    const read = markLocalNoticesRead()
+    expect(read.every((item) => item.read)).toBe(true)
   })
 })

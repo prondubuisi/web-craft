@@ -8,7 +8,11 @@ export function normalizeState(parsed: unknown): AppState | null {
   const state = parsed as Partial<AppState>
   if (!Array.isArray(state.zines) || !state.profile) return null
   return {
-    profile: state.profile,
+    profile: {
+      ...state.profile,
+      likedIds: state.profile.likedIds ?? [],
+      following: state.profile.following ?? [],
+    },
     zines: state.zines.map((z) => ({
       ...z,
       dropsAt: z.dropsAt ?? (z.published ? z.updatedAt : null),

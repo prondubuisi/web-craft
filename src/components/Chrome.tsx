@@ -2,8 +2,10 @@ import { NavLink, Link } from 'react-router-dom'
 import { useZines } from '../store/ZineContext'
 import type { BadgeId, VibeId } from '../lib/types'
 import { BADGE_META } from '../lib/seed'
+import { noticeCopy } from '../lib/social'
 import { VIBES } from '../lib/vibes'
-import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
+import { profilePath } from '../lib/zine'
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react'
 import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
@@ -21,8 +23,63 @@ export function Topbar() {
         <NavLink to="/studio">Studio</NavLink>
         <NavLink to="/explore">Stream</NavLink>
         {session ? <NavLink to={`/u/${session.name}`}>@{session.name}</NavLink> : null}
+        <Inbox />
       </nav>
     </header>
+  )
+}
+
+function Inbox() {
+  const { notices, markNoticesRead } = useZines()
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const unread = notices.filter((item) => !item.read).length
+
+  useEffect(() => {
+    function onDoc(ev: MouseEvent) {
+      if (!root.current?.contains(ev.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [])
+
+  return (
+    <div className="inbox" ref={root}>
+      <button
+        type="button"
+        className={`inbox-btn ${unread ? 'hot' : ''}`}
+        aria-expanded={open}
+        aria-label={unread ? `${unread} new notices` : 'Notices'}
+        onClick={() => {
+          setOpen((v) => !v)
+          if (!open && unread) markNoticesRead()
+        }}
+      >
+        MAIL
+        {unread ? <span className="inbox-count">{unread}</span> : null}
+      </button>
+      {open ? (
+        <div className="inbox-panel" role="dialog" aria-label="Notices">
+          <strong className="hand">the wire</strong>
+          {notices.length ? (
+            <ul>
+              {notices.map((item) => (
+                <li key={item.id} className={item.read ? '' : 'fresh'}>
+                  <Link
+                    to={item.zineId ? `/z/${item.zineId}` : profilePath(item.actor)}
+                    onClick={() => setOpen(false)}
+                  >
+                    {noticeCopy(item)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="serif">quiet on this frequency.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
   )
 }
 

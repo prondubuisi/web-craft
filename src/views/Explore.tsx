@@ -9,30 +9,42 @@ import { coverSrc, filterStream, isDropLive, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Explore() {
-  const { zines, remixZine, online } = useZines()
+  const { zines, remixZine, online, profile, session } = useZines()
   const navigate = useNavigate()
   const [q, setQ] = useState('')
   const [vibe, setVibe] = useState<VibeId | 'all'>('all')
   const [sort, setSort] = useState<StreamSort>('new')
+  const [lane, setLane] = useState<'all' | 'following'>('all')
   const [remote, setRemote] = useState<Zine[] | null>(null)
 
   useEffect(() => {
-    if (!online) {
+    if (!online || (lane === 'following' && !session)) {
       setRemote(null)
       return
     }
     const handle = window.setTimeout(() => {
       void api
-        .stream({ q, vibe: vibe === 'all' ? undefined : vibe, sort })
+        .stream({
+          q,
+          vibe: vibe === 'all' ? undefined : vibe,
+          sort,
+          following: lane === 'following',
+        })
         .then((res) => setRemote(res.zines))
         .catch(() => setRemote(null))
     }, 180)
     return () => window.clearTimeout(handle)
-  }, [online, q, vibe, sort])
+  }, [online, q, vibe, sort, lane, session])
 
   const published = useMemo(
-    () => filterStream(remote ?? zines, { q, vibe, sort }),
-    [remote, zines, q, vibe, sort],
+    () =>
+      filterStream(remote ?? zines, {
+        q,
+        vibe,
+        sort,
+        following: lane === 'following' ? profile.following : null,
+      }),
+    [remote, zines, q, vibe, sort, lane, profile.following],
   )
 
   return (
@@ -56,8 +68,20 @@ export function Explore() {
             onChange={(e) => setQ(e.target.value)}
             aria-label="Search the stream"
           />
-          <button className={`tray-item ${vibe === 'all' ? 'on' : ''}`} onClick={() => setVibe('all')}>
+          <button
+            className={`tray-item ${lane === 'all' && vibe === 'all' ? 'on' : ''}`}
+            onClick={() => {
+              setLane('all')
+              setVibe('all')
+            }}
+          >
             all
+          </button>
+          <button
+            className={`tray-item ${lane === 'following' ? 'on' : ''}`}
+            onClick={() => setLane('following')}
+          >
+            watching
           </button>
           {VIBES.map((v) => (
             <button

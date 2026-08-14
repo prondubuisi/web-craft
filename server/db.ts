@@ -1,7 +1,8 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import Database from 'better-sqlite3'
-import type { Block, Comment, VibeId, Zine } from '../src/lib/types.ts'
+import { randomUUID } from 'node:crypto'
+import type { Block, Comment, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
 
 export type Db = Database.Database
 
@@ -100,6 +101,26 @@ CREATE TABLE IF NOT EXISTS poll_votes (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
 );
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id TEXT NOT NULL,
+  followee_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (follower_id, followee_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id),
+  FOREIGN KEY (followee_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS notices (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  zine_id TEXT,
+  body TEXT,
+  read INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (actor_id) REFERENCES users(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -156,4 +177,62 @@ export function getZineRow(db: Db, id: string): ZineRow | undefined {
 export function dropIsLive(row: Pick<ZineRow, 'published' | 'drops_at'>, now = Date.now()): boolean {
   if (!row.published) return false
   return row.drops_at == null || row.drops_at <= now
+}
+
+export function notify(
+  db: Db,
+  opts: {
+    recipientId: string
+    actorId: string
+    kind: NoticeKind
+    zineId?: string | null
+    body?: string | null
+  },
+): void {
+  if (!opts.recipientId || opts.recipientId === opts.actorId) return
+  db.prepare(
+    `INSERT INTO notices (id, user_id, kind, actor_id, zine_id, body, read, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+  ).run(
+    randomUUID(),
+    opts.recipientId,
+    opts.kind,
+    opts.actorId,
+    opts.zineId ?? null,
+    opts.body ?? null,
+    Date.now(),
+  )
+}
+
+export function listFollowing(db: Db, userId: string): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT u.name FROM follows f JOIN users u ON u.id = f.followee_id
+         WHERE f.follower_id = ? ORDER BY u.name`,
+      )
+      .all(userId) as { name: string }[]
+  ).map((row) => row.name)
+}
+
+export function rowToNotice(row: {
+  id: string
+  kind: string
+  actor_name: string
+  zine_id: string | null
+  zine_title: string | null
+  body: string | null
+  read: number
+  created_at: number
+}): Notice {
+  return {
+    id: row.id,
+    kind: row.kind as NoticeKind,
+    actor: row.actor_name.startsWith('@') ? row.actor_name : `@${row.actor_name}`,
+    zineId: row.zine_id ?? undefined,
+    zineTitle: row.zine_title ?? undefined,
+    body: row.body ?? undefined,
+    read: Boolean(row.read),
+    createdAt: row.created_at,
+  }
 }

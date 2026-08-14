@@ -17,6 +17,7 @@ export function seedCommunity(db: Db): void {
     seedBios(db)
     enrichWidgets(db)
     refreshDemoDrop(db)
+    seedFollows(db)
     return
   }
 
@@ -67,8 +68,30 @@ export function seedCommunity(db: Db): void {
     seedBios(db)
     enrichWidgets(db)
     refreshDemoDrop(db)
+    seedFollows(db)
   })
   tx()
+}
+
+function seedFollows(db: Db): void {
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM follows').get() as { n: number }).n
+  if (count > 0) return
+  const pairs = [
+    ['rio.bytes', 'yuzu'],
+    ['rio.bytes', 'inkstain'],
+    ['wobble', 'yuzu'],
+    ['yuzu', 'inkstain'],
+    ['inkstain', 'rio.bytes'],
+  ]
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)`,
+  )
+  for (const [from, to] of pairs) {
+    const a = db.prepare('SELECT id FROM users WHERE name = ?').get(from) as { id: string } | undefined
+    const b = db.prepare('SELECT id FROM users WHERE name = ?').get(to) as { id: string } | undefined
+    if (!a || !b) continue
+    insert.run(a.id, b.id, Date.now() - 3600_000)
+  }
 }
 
 function refreshDemoDrop(db: Db): void {

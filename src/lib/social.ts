@@ -1,8 +1,9 @@
-import type { Comment, PollTally } from './types'
+import type { Comment, Notice, PollTally } from './types'
 import { uid } from './id'
 
 const COMMENTS_KEY = 'zineverse.comments.v1'
 const POLLS_KEY = 'zineverse.polls.v1'
+const NOTICES_KEY = 'zineverse.notices.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -71,4 +72,77 @@ export function voteLocalPoll(
   store[zineId] = issue
   writeJson(POLLS_KEY, store)
   return { counts: votes, mine: option }
+}
+
+function demoNotices(): Notice[] {
+  const now = Date.now()
+  return [
+    {
+      id: 'demo-like',
+      kind: 'like',
+      actor: '@wobble',
+      zineId: undefined,
+      zineTitle: 'after hours / bushwick',
+      read: false,
+      createdAt: now - 40 * 60_000,
+    },
+    {
+      id: 'demo-drop',
+      kind: 'drop',
+      actor: '@inkstain',
+      zineTitle: 'midnight run',
+      read: false,
+      createdAt: now - 12 * 60_000,
+    },
+    {
+      id: 'demo-follow',
+      kind: 'follow',
+      actor: '@yuzu',
+      read: true,
+      createdAt: now - 3 * 3600_000,
+    },
+  ]
+}
+
+export function loadLocalNotices(): Notice[] {
+  const stored = readJson<Notice[] | null>(NOTICES_KEY, null)
+  if (stored) return stored
+  const seeded = demoNotices()
+  writeJson(NOTICES_KEY, seeded)
+  return seeded
+}
+
+export function saveLocalNotices(notices: Notice[]): void {
+  writeJson(NOTICES_KEY, notices)
+}
+
+export function addLocalNotice(notice: Omit<Notice, 'id' | 'createdAt' | 'read'> & Partial<Pick<Notice, 'id' | 'read'>>): Notice {
+  const next: Notice = {
+    id: notice.id ?? uid(),
+    kind: notice.kind,
+    actor: notice.actor.startsWith('@') ? notice.actor : `@${notice.actor}`,
+    zineId: notice.zineId,
+    zineTitle: notice.zineTitle,
+    body: notice.body,
+    read: notice.read ?? false,
+    createdAt: Date.now(),
+  }
+  const all = [next, ...loadLocalNotices()].slice(0, 50)
+  writeJson(NOTICES_KEY, all)
+  return next
+}
+
+export function markLocalNoticesRead(): Notice[] {
+  const next = loadLocalNotices().map((item) => ({ ...item, read: true }))
+  writeJson(NOTICES_KEY, next)
+  return next
+}
+
+export function noticeCopy(notice: Notice): string {
+  const who = notice.actor
+  if (notice.kind === 'like') return `${who} stamped ${notice.zineTitle ?? 'your issue'}`
+  if (notice.kind === 'comment') return `${who} inked a letter on ${notice.zineTitle ?? 'your issue'}`
+  if (notice.kind === 'remix') return `${who} remixed ${notice.zineTitle ?? 'your issue'}`
+  if (notice.kind === 'follow') return `${who} is watching your wall`
+  return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
 }

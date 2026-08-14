@@ -12,7 +12,7 @@ const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
 export function Profile() {
   const { handle = '' } = useParams()
   const name = decodeURIComponent(handle).replace(/^@/, '').toLowerCase()
-  const { zines, session, online, profile } = useZines()
+  const { zines, session, online, profile, toggleFollow } = useZines()
   const mine = session?.name.toLowerCase() === name || (!session && name === 'you')
   const [bio, setBio] = useState('')
   const [remote, setRemote] = useState<{
@@ -20,10 +20,14 @@ export function Profile() {
     bio: string
     remixPoints: number
     createdAt: number
+    followers?: number
+    following?: number
+    followedByMe?: boolean
     zines: Zine[]
   } | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [busyFollow, setBusyFollow] = useState(false)
 
   useEffect(() => {
     if (!online || name === 'you') {
@@ -52,6 +56,9 @@ export function Profile() {
   const remixPoints = remote?.remixPoints ?? (mine ? profile.remixPoints : 0)
   const badges = computeBadges(remote?.zines ?? zines, remixPoints, name === 'you' ? null : name)
   const display = name === 'you' ? 'you' : `@${name}`
+  const watching = remote?.followedByMe ?? profile.following.includes(name)
+  const followerN = remote?.followers
+  const followingN = remote?.following ?? (mine ? profile.following.length : undefined)
 
   async function saveBio() {
     if (!session || !mine) return
@@ -79,7 +86,35 @@ export function Profile() {
               ))}
               <span className="comic-badge">{remixPoints} REMIX PTS</span>
               <span className="comic-badge">{issues.length} ISSUES</span>
+              {followerN != null ? <span className="comic-badge">{followerN} FANS</span> : null}
+              {followingN != null ? <span className="comic-badge">{followingN} WATCHING</span> : null}
             </div>
+            {!mine && name !== 'you' ? (
+              <div className="cta-row" style={{ marginTop: 12 }}>
+                <ComicButton
+                  className={watching ? 'ghost' : 'pink'}
+                  disabled={busyFollow}
+                  onClick={() => {
+                    setBusyFollow(true)
+                    void toggleFollow(name)
+                      .then((on) => {
+                        setRemote((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                followedByMe: on,
+                                followers: Math.max(0, (prev.followers ?? 0) + (on ? 1 : -1)),
+                              }
+                            : prev,
+                        )
+                      })
+                      .finally(() => setBusyFollow(false))
+                  }}
+                >
+                  {watching ? 'Watching' : 'Watch wall'}
+                </ComicButton>
+              </div>
+            ) : null}
             {mine && session ? (
               <div className="profile-bio">
                 <textarea

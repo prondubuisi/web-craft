@@ -24,7 +24,7 @@ function state(partial: Partial<FullState> = {}): FullState {
   return {
     online: false,
     session: null,
-    profile: { name: 'you', remixPoints: 0, likedIds: [] },
+    profile: { name: 'you', remixPoints: 0, likedIds: [], following: [] },
     zines: [issue()],
     ...partial,
   }
@@ -64,10 +64,20 @@ describe('apply', () => {
   })
 
   it('sets a session without dropping remix points unless told', () => {
-    const base = state({ profile: { name: 'you', remixPoints: 4, likedIds: ['a'] } })
+    const base = state({ profile: { name: 'you', remixPoints: 4, likedIds: ['a'], following: ['yuzu'] } })
     const next = apply(base, { type: 'setSession', session: { name: 'rio' } })
     expect(next.session?.name).toBe('rio')
     expect(next.profile.remixPoints).toBe(4)
     expect(next.profile.likedIds).toEqual(['a'])
+    expect(next.profile.following).toEqual(['yuzu'])
+  })
+
+  it('follows and unfollows a handle once', () => {
+    const watched = apply(state(), { type: 'follow', handle: '@Yuzu' })
+    expect(watched.profile.following).toEqual(['yuzu'])
+    const again = apply(watched, { type: 'follow', handle: 'yuzu' })
+    expect(again.profile.following).toEqual(['yuzu'])
+    const off = apply(again, { type: 'unfollow', handle: 'yuzu' })
+    expect(off.profile.following).toEqual([])
   })
 })
