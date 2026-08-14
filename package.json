@@ -9,7 +9,8 @@
     "dev:api": "tsx watch server/index.ts",
     "start": "tsx server/index.ts",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint && npm run lint:css",
+    "lint:css": "stylelint \"src/styles/**/*.css\"",
     "test": "vitest run",
     "preview": "vite preview",
     "verify": "node scripts/verify.mjs"
@@ -34,6 +35,8 @@
     "happy-dom": "^20.11.2",
     "oxlint": "^1.75.0",
     "puppeteer-core": "^25.7.0",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0",
     "tsx": "^4.23.12",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",

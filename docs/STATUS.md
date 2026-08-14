@@ -34,13 +34,16 @@ Routes (from `src/App.tsx`):
 - `src/components/` — Blocks, Chrome, Inspector, Comments, Reviews, Margins, FlipReader, FoldSheet
 - `src/lib/` — types, widgets, storage, share, social, api, jam, fest, fold, cutout, tags
 - `src/store/` — `ZineContext.tsx` + `reducer.ts`
-- `server/` — Hono app, SQLite (`server/db.ts`), auth (`scrypt`), community seed
+- `server/` — Hono app (`app.ts` mounts `routes/`), SQLite (`db.ts` + `migrations/`), services, auth (`scrypt`), community seed
+- `src/lib/contract.ts` — shared request/response types
+- `src/lib/useRemote.ts` — online-only fetch hook
+- `src/styles/` — tokens/base/editor/reader/board/mail/jam/fest/cork/print
 
 **Runtime deps:** `react`, `react-dom`, `react-router-dom`, `hono`, `@hono/node-server`, `better-sqlite3`, `qrcode`.
 
 **Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + test + build.
 
-**Testing:** Vitest + happy-dom (14 `*.test.ts` files, including `server/api.test.ts`). Puppeteer smoke script `scripts/verify.mjs` (~319 lines); 22 shots in `scripts/shots/`.
+**Testing:** Vitest + happy-dom (19 `*.test.ts` files, including `server/api.test.ts` plus migration and service tests). Puppeteer smoke script `scripts/verify.mjs` (~319 lines); 22 shots in `scripts/shots/`.
 
 **Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0). No `CHANGELOG.md`.
 
@@ -59,7 +62,7 @@ Zineverse is a **working client-first zine tool with an optional multi-user API*
 
 Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0.
 
-The main engineering debt is listed in `docs/ARCHITECTURE_PLAN.md`: ad hoc `ALTER TABLE` migrations, a large `server/app.ts`, no route-level code splitting, and one fat `global.css`.
+`docs/ARCHITECTURE_PLAN.md` items 1–7 are implemented on `develop`: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches, and incremental `src/lib/contract.ts` types.
 
 ## Suggested Next Steps
 
@@ -67,6 +70,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md`.
 
 Still open (engineering, not product):
 
-1. Migrations framework + split `server/app.ts` — `docs/ARCHITECTURE_PLAN.md`
+1. Auth/session hardening (rate limit, token rotation) — tracked above, out of the architecture plan
 2. `FLY_API_TOKEN` if the hosted API should actually deploy
 3. A `CHANGELOG.md` if release notes should live in-repo

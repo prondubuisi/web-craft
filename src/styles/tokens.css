@@ -1,0 +1,83 @@
+:root {
+  --ink: #0b0b0f;
+  --paper: #f3efe4;
+  --paper-2: #e7e0d0;
+  --accent: #ff2bd6;
+  --accent-2: #2de2ff;
+  --accent-3: #ffe600;
+  --panel: #14141c;
+  --muted: #6b6574;
+  --line: 3px;
+  --aber: 2px;
+  --halftone: 0.28;
+  --radius: 18px;
+  --shadow: 5px 6px 0 var(--ink);
+  --font-display: 'Bangers', 'Impact', sans-serif;
+  --font-ui: 'Sora', system-ui, sans-serif;
+  --font-hand: 'Permanent Marker', cursive;
+  --font-script: 'Caveat', cursive;
+  --font-badge: 'Bungee', sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: dark;
+}
+
+[data-vibe='miles'] {
+  --ink: #0b0b0f;
+  --paper: #f3efe4;
+  --paper-2: #e8ddc8;
+  --accent: #ff2bd6;
+  --accent-2: #2de2ff;
+  --accent-3: #ffe600;
+  --panel: #12121a;
+  --halftone: 0.32;
+  --aber: 2.4px;
+}
+
+[data-vibe='gwen'] {
+  --ink: #1a1220;
+  --paper: #f6f1f8;
+  --paper-2: #eadff0;
+  --accent: #ff4fd8;
+  --accent-2: #3cf0ff;
+  --accent-3: #d7dbe7;
+  --panel: #16101c;
+  --halftone: 0.22;
+  --aber: 2px;
+}
+
+[data-vibe='peni'] {
+  --ink: #2a1420;
+  --paper: #fff7f0;
+  --paper-2: #ffe4ef;
+  --accent: #ff9ec8;
+  --accent-2: #fff7f0;
+  --accent-3: #ff3355;
+  --panel: #2a1420;
+  --halftone: 0.16;
+  --aber: 1.4px;
+}
+
+[data-vibe='ham'] {
+  --ink: #111;
+  --paper: #fff6d8;
+  --paper-2: #ffe08a;
+  --accent: #ff3b30;
+  --accent-2: #ffe600;
+  --accent-3: #2f6bff;
+  --panel: #1a1208;
+  --halftone: 0.14;
+  --aber: 3px;
+}
+
+[data-vibe='noir'] {
+  --ink: #080808;
+  --paper: #f3efe4;
+  --paper-2: #d9d3c4;
+  --accent: #c41212;
+  --accent-2: #f3efe4;
+  --accent-3: #111;
+  --panel: #0c0c0c;
+  --halftone: 0.45;
+  --aber: 1.2px;
+}

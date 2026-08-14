@@ -1,35 +1,54 @@
 import type {
+  ArchiveResponse,
+  AuthOk,
+  BagResponse,
+  BoardListResponse,
+  BoardPostBody,
+  BoardPostResponse,
+  CommentsResponse,
+  CorkResponse,
+  FestListResponse,
+  FestTableBody,
+  FestTableResponse,
+  GuestbookResponse,
+  JamListResponse,
+  JamOneResponse,
+  LikeResponse,
+  LoansResponse,
+  MailSendResponse,
+  MailThreadResponse,
+  MailThreadsResponse,
+  MarginsResponse,
+  MeResponse,
+  NoticesResponse,
+  OkBody,
+  PagesResponse,
+  PollsResponse,
+  ProfileResponse,
+  PublishBody,
+  ReviewsResponse,
+  ShelfResponse,
+  SitResponse,
+  StampsResponse,
+  StreamQuery,
+  SwapResponse,
+  ZineListResponse,
+  ZineOneResponse,
+} from './contract'
+import type {
   BagItem,
   Comment,
-  FestTable,
+  CorkPin,
   GuestNote,
-  Jam,
-  Letter,
-  Listing,
   ListingKind,
-  MailThread,
+  Loan,
   MarginNote,
-  Notice,
-  PageStat,
   PollTally,
   Review,
-  ShelfItem,
-  Stamp,
-  CorkPin,
-  Loan,
-  StreamSort,
-  VibeId,
   Zine,
 } from './types'
 
-export type Session = { name: string }
-
-export type Me = {
-  session: Session | null
-  remixPoints?: number
-  likedIds?: string[]
-  following?: string[]
-}
+export type { MeResponse as Me, Session } from './contract'
 
 const TOKEN_KEY = 'zineverse.token'
 
@@ -81,33 +100,23 @@ export async function apiHealth(): Promise<boolean> {
 }
 
 export const api = {
-  me: () => req<Me>('/api/auth/me'),
+  me: () => req<MeResponse>('/api/auth/me'),
   register: (name: string, password: string) =>
-    req<{ name: string; remixPoints: number; token: string }>('/api/auth/register', {
+    req<AuthOk>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
     }),
   login: (name: string, password: string) =>
-    req<{ name: string; remixPoints: number; token: string }>('/api/auth/login', {
+    req<AuthOk>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
     }),
   logout: async () => {
-    const result = await req<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }).catch(
-      () => ({ ok: true }),
-    )
+    const result = await req<OkBody>('/api/auth/logout', { method: 'POST' }).catch(() => ({ ok: true as const }))
     setToken(null)
     return result
   },
-  stream: (opts?: {
-    q?: string
-    vibe?: VibeId
-    sort?: StreamSort
-    following?: boolean
-    tag?: string
-    jam?: boolean
-    archive?: boolean
-  }) => {
+  stream: (opts?: StreamQuery) => {
     const params = new URLSearchParams()
     if (opts?.q) params.set('q', opts.q)
     if (opts?.vibe) params.set('vibe', opts.vibe)
@@ -117,39 +126,24 @@ export const api = {
     if (opts?.jam) params.set('jam', '1')
     if (opts?.archive) params.set('archive', '1')
     const qs = params.toString()
-    return req<{ zines: Zine[] }>(`/api/stream${qs ? `?${qs}` : ''}`)
+    return req<ZineListResponse>(`/api/stream${qs ? `?${qs}` : ''}`)
   },
   pile: () => req<{ zine: Zine }>('/api/pile'),
-  user: (name: string) =>
-    req<{
-      name: string
-      bio: string
-      scene?: string
-      remixPoints: number
-      createdAt: number
-      followers?: number
-      following?: number
-      followedByMe?: boolean
-      zines: Zine[]
-      guestbook?: GuestNote[]
-      shelf?: ShelfItem[]
-      stamps?: Stamp[]
-      table?: FestTable | null
-    }>(`/api/users/${encodeURIComponent(name)}`),
+  user: (name: string) => req<ProfileResponse>(`/api/users/${encodeURIComponent(name)}`),
   guestbook: (name: string) =>
-    req<{ notes: GuestNote[] }>(`/api/users/${encodeURIComponent(name)}/guestbook`),
+    req<GuestbookResponse>(`/api/users/${encodeURIComponent(name)}/guestbook`),
   signGuestbook: (name: string, body: string) =>
     req<{ note: GuestNote }>(`/api/users/${encodeURIComponent(name)}/guestbook`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
   stock: (zineId: string, note?: string) =>
-    req<{ shelf: ShelfItem[] }>('/api/shelf', {
+    req<ShelfResponse>('/api/shelf', {
       method: 'POST',
       body: JSON.stringify({ zineId, note }),
     }),
   unstock: (zineId: string) => req<{ ok: boolean }>(`/api/shelf/${zineId}`, { method: 'DELETE' }),
-  pageStats: (id: string) => req<{ pages: PageStat[] }>(`/api/zines/${id}/pages`),
+  pageStats: (id: string) => req<PagesResponse>(`/api/zines/${id}/pages`),
   pageHit: (id: string, page: number, dwellMs: number) =>
     req<{ ok: boolean }>(`/api/zines/${id}/pages`, {
       method: 'POST',
@@ -166,12 +160,11 @@ export const api = {
     }),
   follow: (name: string) =>
     req<{ following: boolean }>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
-  notices: () => req<{ notices: Notice[] }>('/api/notices'),
-  readNotices: () => req<{ ok: boolean }>('/api/notices/read', { method: 'POST' }),
-  board: (kind?: ListingKind) =>
-    req<{ listings: Listing[] }>(`/api/board${kind ? `?kind=${kind}` : ''}`),
-  postListing: (body: { kind: ListingKind; body: string; zineId?: string }) =>
-    req<{ listing: Listing }>('/api/board', {
+  notices: () => req<NoticesResponse>('/api/notices'),
+  readNotices: () => req<OkBody>('/api/notices/read', { method: 'POST' }),
+  board: (kind?: ListingKind) => req<BoardListResponse>(`/api/board${kind ? `?kind=${kind}` : ''}`),
+  postListing: (body: BoardPostBody) =>
+    req<BoardPostResponse>('/api/board', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -181,25 +174,25 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ bio, scene }),
     }),
-  comments: (id: string) => req<{ comments: Comment[] }>(`/api/zines/${id}/comments`),
+  comments: (id: string) => req<CommentsResponse>(`/api/zines/${id}/comments`),
   comment: (id: string, body: string) =>
     req<{ comment: Comment }>(`/api/zines/${id}/comments`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
-  polls: (id: string) => req<{ polls: Record<string, PollTally> }>(`/api/zines/${id}/polls`),
+  polls: (id: string) => req<PollsResponse>(`/api/zines/${id}/polls`),
   votePoll: (id: string, blockId: string, option: number) =>
     req<PollTally>(`/api/zines/${id}/polls/${blockId}`, {
       method: 'POST',
       body: JSON.stringify({ option }),
     }),
-  mine: () => req<{ zines: Zine[] }>('/api/zines'),
+  mine: () => req<ZineListResponse>('/api/zines'),
   get: (id: string, key?: string | null) =>
-    req<{ zine: Zine; sealed: boolean; locked?: boolean }>(
+    req<ZineOneResponse>(
       `/api/zines/${id}${key ? `?k=${encodeURIComponent(key)}` : ''}`,
     ),
   unlock: (id: string, password: string, key?: string | null) =>
-    req<{ zine: Zine; sealed: boolean; locked: boolean }>(`/api/zines/${id}/unlock`, {
+    req<ZineOneResponse>(`/api/zines/${id}/unlock`, {
       method: 'POST',
       body: JSON.stringify({ password, k: key ?? undefined }),
     }),
@@ -209,75 +202,68 @@ export const api = {
       body: JSON.stringify(zine),
     }),
   remove: (id: string) => req<{ ok: boolean }>(`/api/zines/${id}`, { method: 'DELETE' }),
-  publish: (
-    id: string,
-    dropsAt: number,
-    opts?: { visibility?: 'public' | 'unlisted'; password?: string; chain?: boolean },
-  ) =>
+  publish: (id: string, dropsAt: number, opts?: Omit<PublishBody, 'dropsAt'>) =>
     req<{ zine: Zine }>(`/api/zines/${id}/publish`, {
       method: 'POST',
-      body: JSON.stringify({ dropsAt, ...opts }),
+      body: JSON.stringify({ dropsAt, ...opts } satisfies PublishBody),
     }),
-  like: (id: string) =>
-    req<{ liked: boolean; likes: number }>(`/api/zines/${id}/like`, { method: 'POST' }),
+  like: (id: string) => req<LikeResponse>(`/api/zines/${id}/like`, { method: 'POST' }),
   view: (id: string) => req<{ views: number }>(`/api/zines/${id}/view`, { method: 'POST' }),
   remix: (id: string) => req<{ zine: Zine }>(`/api/zines/${id}/remix`, { method: 'POST' }),
-  bag: () => req<{ bag: BagItem[] }>('/api/bag'),
+  bag: () => req<BagResponse>('/api/bag'),
   tuck: (zineId: string) =>
     req<{ item: BagItem }>('/api/bag', {
       method: 'POST',
       body: JSON.stringify({ zineId }),
     }),
   dump: (zineId: string) => req<{ ok: boolean }>(`/api/bag/${zineId}`, { method: 'DELETE' }),
-  reviews: (id: string) => req<{ reviews: Review[] }>(`/api/zines/${id}/reviews`),
+  reviews: (id: string) => req<ReviewsResponse>(`/api/zines/${id}/reviews`),
   review: (id: string, body: string) =>
     req<{ review: Review }>(`/api/zines/${id}/reviews`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
-  mail: () => req<{ threads: MailThread[] }>('/api/mail'),
-  thread: (name: string) =>
-    req<{ handle: string; letters: Letter[] }>(`/api/mail/${encodeURIComponent(name)}`),
+  mail: () => req<MailThreadsResponse>('/api/mail'),
+  thread: (name: string) => req<MailThreadResponse>(`/api/mail/${encodeURIComponent(name)}`),
   sendMail: (to: string, body: string, extra?: { postcard?: boolean; vibe?: string }) =>
-    req<{ letter: Letter }>('/api/mail', {
+    req<MailSendResponse>('/api/mail', {
       method: 'POST',
       body: JSON.stringify({ to, body, ...extra }),
     }),
-  jams: () => req<{ jams: Jam[]; live: Jam | null }>('/api/jams'),
-  jam: (id: string) =>
-    req<{ jam: Jam; live: boolean; zines: Zine[] }>(`/api/jams/${encodeURIComponent(id)}`),
-  archive: () => req<{ zines: Zine[] }>('/api/archive'),
+  jams: () => req<JamListResponse>('/api/jams'),
+  jam: (id: string) => req<JamOneResponse>(`/api/jams/${encodeURIComponent(id)}`),
+  archive: () => req<ArchiveResponse>('/api/archive'),
   nominate: (id: string) =>
     req<{ noms: number; archived: boolean; mine: boolean }>(`/api/zines/${id}/nominate`, {
       method: 'POST',
     }),
-  margins: (id: string) => req<{ notes: MarginNote[] }>(`/api/zines/${id}/margins`),
+  margins: (id: string) => req<MarginsResponse>(`/api/zines/${id}/margins`),
   margin: (id: string, blockId: string, body: string) =>
     req<{ note: MarginNote }>(`/api/zines/${id}/margins`, {
       method: 'POST',
       body: JSON.stringify({ blockId, body }),
     }),
-  fest: () => req<{ tables: FestTable[] }>('/api/fest'),
-  setTable: (body: { name: string; scene?: string; blurb?: string; zineIds?: string[] }) =>
-    req<{ table: FestTable }>('/api/fest', {
+  fest: () => req<FestListResponse>('/api/fest'),
+  setTable: (body: FestTableBody) =>
+    req<FestTableResponse>('/api/fest', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  stamps: () => req<{ stamps: Stamp[] }>('/api/stamps'),
+  stamps: () => req<StampsResponse>('/api/stamps'),
   stamp: (zineId: string) =>
-    req<{ stamps: Stamp[] }>('/api/stamps', {
+    req<StampsResponse>('/api/stamps', {
       method: 'POST',
       body: JSON.stringify({ zineId }),
     }),
   claim: (id: string) =>
     req<{ claimed: number; mine: boolean; out: boolean }>(`/api/zines/${id}/claim`, { method: 'POST' }),
-  cork: () => req<{ pins: CorkPin[] }>('/api/cork'),
+  cork: () => req<CorkResponse>('/api/cork'),
   saveCork: (pins: CorkPin[]) =>
     req<{ ok: boolean }>('/api/cork', {
       method: 'PUT',
       body: JSON.stringify({ pins }),
     }),
-  loans: () => req<{ loans: Loan[] }>('/api/loans'),
+  loans: () => req<LoansResponse>('/api/loans'),
   checkout: (id: string) =>
     req<{ loan: Loan }>(`/api/zines/${id}/checkout`, { method: 'POST' }),
   watchSeries: (series: string) =>
@@ -285,7 +271,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ series }),
     }),
-  sit: (id: string) => req<{ sitters: string[] }>(`/api/fest/${encodeURIComponent(id)}/sit`, { method: 'POST' }),
-  swapListing: (id: string) =>
-    req<{ swapped: boolean }>(`/api/board/${id}/swap`, { method: 'POST' }),
+  sit: (id: string) => req<SitResponse>(`/api/fest/${encodeURIComponent(id)}/sit`, { method: 'POST' }),
+  swapListing: (id: string) => req<SwapResponse>(`/api/board/${id}/swap`, { method: 'POST' }),
 }
