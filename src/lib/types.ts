@@ -17,6 +17,7 @@ export type BlockType =
   | 'blackout'
   | 'contents'
   | 'insert'
+  | 'reply'
 
 export type HeadingBlock = {
   id: string
@@ -148,6 +149,12 @@ export type InsertBlock = {
   text: string
 }
 
+export type ReplyBlock = {
+  id: string
+  type: 'reply'
+  prompt: string
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -165,6 +172,7 @@ export type Block =
   | BlackoutBlock
   | ContentsBlock
   | InsertBlock
+  | ReplyBlock
 
 export type Visibility = 'public' | 'unlisted'
 export type FinishId = 'clean' | 'riso' | 'grain'
@@ -222,6 +230,7 @@ export type Listing = {
   zineId?: string
   zineTitle?: string
   createdAt: number
+  swapped?: boolean
 }
 
 export type Comment = {
@@ -279,6 +288,7 @@ export type BadgeId =
   | 'fest-goer'
   | 'collector'
   | 'compiler'
+  | 'subscriber'
 
 export type Zine = {
   id: string
@@ -314,6 +324,7 @@ export type Zine = {
   claimedByMe?: boolean
   errata?: string
   includes?: CompItem[]
+  dedication?: string
 }
 
 export type CompItem = {
@@ -328,7 +339,17 @@ export type Loan = {
   dueAt: number
 }
 
-export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail' | 'archive'
+export type NoticeKind =
+  | 'like'
+  | 'comment'
+  | 'remix'
+  | 'follow'
+  | 'drop'
+  | 'review'
+  | 'mail'
+  | 'archive'
+  | 'dedicate'
+  | 'series'
 
 export type Notice = {
   id: string
@@ -349,6 +370,7 @@ export type FestTable = {
   blurb: string
   zineIds: string[]
   createdAt: number
+  sitters?: string[]
 }
 
 export type CorkPin = {

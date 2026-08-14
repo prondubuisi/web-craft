@@ -1,6 +1,33 @@
+import { useState } from 'react'
 import type { Block, PollTally } from '../lib/types'
 import { assetUrl } from '../lib/paths'
 import { Halftone } from './Chrome'
+
+function ReplyForm({ onMail }: { onMail: (body: string) => void }) {
+  const [text, setText] = useState('')
+  return (
+    <form
+      className="comment-form"
+      onSubmit={(e) => {
+        e.preventDefault()
+        const next = text.trim()
+        if (!next) return
+        onMail(next)
+        setText('')
+      }}
+    >
+      <textarea
+        value={text}
+        maxLength={140}
+        placeholder="one side. tear it off."
+        onChange={(e) => setText(e.target.value)}
+      />
+      <button type="submit" className="comic-btn small pink">
+        Mail it
+      </button>
+    </form>
+  )
+}
 
 function Field({
   value,
@@ -40,11 +67,13 @@ export function BlockView({
   onChange,
   poll,
   onVote,
+  onMail,
 }: {
   block: Block
   onChange?: (next: Block) => void
   poll?: PollTally
   onVote?: (option: number) => void
+  onMail?: (body: string) => void
 }) {
   switch (block.type) {
     case 'heading':
@@ -397,6 +426,22 @@ export function BlockView({
             ))}
           </ol>
         </nav>
+      )
+    case 'reply':
+      return (
+        <aside className="reply-block">
+          <div className="issue-chip">TEAR OUT</div>
+          <Field
+            className="hand"
+            value={block.prompt}
+            onChange={onChange ? (prompt) => onChange({ ...block, prompt }) : undefined}
+          />
+          {!onChange && onMail ? (
+            <ReplyForm onMail={onMail} />
+          ) : !onChange ? (
+            <p className="serif">claim a handle to mail this back.</p>
+          ) : null}
+        </aside>
       )
     case 'insert':
       return (

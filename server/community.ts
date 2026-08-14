@@ -148,6 +148,9 @@ function seedJams(db: Db): void {
   db.prepare(
     `UPDATE zines SET errata = ? WHERE title = 'issue 13' AND (errata IS NULL OR errata = '')`,
   ).run('page 2: it rained harder than we printed.')
+  db.prepare(
+    `UPDATE zines SET dedication = ? WHERE title = 'sunday market' AND (dedication IS NULL OR dedication = '')`,
+  ).run('for whoever sat at booth 12')
 }
 
 function seedArchive(db: Db): void {
@@ -310,6 +313,11 @@ function enrichWidgets(db: Db): void {
         type: 'poll',
         question: 'what are you buying first?',
         options: ['strawberry milk', 'apology robot', 'free bow', 'a sticker that beeps'],
+      },
+      {
+        id: 'seed-reply-sunday',
+        type: 'reply',
+        prompt: 'write booth 12. tear this out.',
       },
       {
         id: 'seed-strip-sunday',

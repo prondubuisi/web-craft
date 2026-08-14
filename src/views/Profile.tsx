@@ -4,7 +4,15 @@ import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
 import type { BadgeId, FestTable, GuestNote, Loan, ShelfItem, Stamp, Zine } from '../lib/types'
-import { addGuestNote, loadGuestNotes, loadLoans, loadShelf, loadStamps, loadTables } from '../lib/social'
+import {
+  addGuestNote,
+  loadGuestNotes,
+  loadLoans,
+  loadSeriesWatch,
+  loadShelf,
+  loadStamps,
+  loadTables,
+} from '../lib/social'
 import { byline, coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -116,6 +124,8 @@ export function Profile() {
     remixPoints,
     name === 'you' ? null : name,
     stamps.length,
+    0,
+    loadSeriesWatch(name).length,
   )
   const display = name === 'you' ? 'you' : `@${name}`
   const watching = remote?.followedByMe ?? profile.following.includes(name)

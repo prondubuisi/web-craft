@@ -27,6 +27,7 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'blackout', slash: 'blackout', label: 'Blackout', hint: 'Redact a found poem', glyph: '█' },
   { type: 'contents', slash: 'toc', label: 'Contents', hint: 'Hand-lettered table of contents', glyph: '≡' },
   { type: 'insert', slash: 'insert', label: 'Flyer insert', hint: 'A loose page that falls out', glyph: '✉' },
+  { type: 'reply', slash: 'reply', label: 'Tear-out', hint: 'Mail the maker from the page', glyph: '↩' },
 ]
 
 export function createBlock(type: BlockType, vibe: VibeId): Block {
@@ -140,6 +141,12 @@ export function createBlock(type: BlockType, vibe: VibeId): Block {
         type,
         title: 'this fell out',
         text: 'a show tonight. bring a stapler.',
+      }
+    case 'reply':
+      return {
+        id: uid(),
+        type,
+        prompt: 'write the maker. tear this out.',
       }
   }
 }

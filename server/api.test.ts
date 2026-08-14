@@ -554,4 +554,60 @@ describe('social', () => {
     })
     expect(loan.status).toBe(200)
   })
+
+  it('watches a run, sits a table, and marks a trade swapped', async () => {
+    const client = app()
+    const author = await register(client, 'runner1', 'strawberry1')
+    await client.request('/api/zines/run-a', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, title: 'run a', series: 'night bus', dedication: 'for @fanrun1' }),
+    })
+    await client.request('/api/fest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ name: 'night table', scene: 'platform', blurb: 'sit' }),
+    })
+    const fan = await register(client, 'fanrun1', 'cartoon99')
+    const watch = await json(
+      await client.request('/api/series/watch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: fan.cookie },
+        body: JSON.stringify({ series: 'night bus' }),
+      }),
+    )
+    expect(watch.watching).toBe(true)
+    const floor = await json(await client.request('/api/fest'))
+    const tableId = (floor.tables as { id: string; owner: string }[]).find((row) => row.owner === '@runner1')?.id
+    const sit = await json(
+      await client.request(`/api/fest/${tableId}/sit`, {
+        method: 'POST',
+        headers: { authorization: fan.cookie },
+      }),
+    )
+    expect((sit.sitters as string[]).some((name) => name.includes('fanrun1'))).toBe(true)
+    await client.request('/api/zines/run-a/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const mail = await json(await client.request('/api/notices', { headers: { authorization: fan.cookie } }))
+    expect((mail.notices as { kind: string }[]).some((n) => n.kind === 'series' || n.kind === 'dedicate')).toBe(
+      true,
+    )
+    const pin = await json(
+      await client.request('/api/board', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: author.cookie },
+        body: JSON.stringify({ kind: 'trade', body: 'night bus for rain' }),
+      }),
+    )
+    const swapped = await json(
+      await client.request(`/api/board/${(pin.listing as { id: string }).id}/swap`, {
+        method: 'POST',
+        headers: { authorization: author.cookie },
+      }),
+    )
+    expect(swapped.swapped).toBe(true)
+  })
 })

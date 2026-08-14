@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { addLocalListing, loadLocalListings, removeLocalListing } from '../lib/social'
+import { addLocalListing, loadLocalListings, removeLocalListing, swapLocalListing } from '../lib/social'
 import type { Listing, ListingKind } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
@@ -83,6 +83,17 @@ export function Board() {
     setItems(removeLocalListing(id))
   }
 
+  async function swap(id: string) {
+    if (online && session) {
+      await api.swapListing(id).catch(() => undefined)
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, swapped: !item.swapped } : item)),
+      )
+      return
+    }
+    setItems(swapLocalListing(id))
+  }
+
   const handle = session?.name ?? (profile.name === 'you' ? 'you' : profile.name)
 
   return (
@@ -155,7 +166,7 @@ export function Board() {
 
         <div className="board-list">
           {visible.map((item) => (
-            <article key={item.id} className={`board-card ${item.kind}`}>
+            <article key={item.id} className={`board-card ${item.kind} ${item.swapped ? 'swapped' : ''}`}>
               <div className="meta-line">
                 <span className="issue-chip">{item.kind}</span>
                 <Link className="owner-link" to={profilePath(item.author)}>
@@ -169,9 +180,14 @@ export function Board() {
               </div>
               <p className="serif">{item.body}</p>
               {item.author.replace(/^@/, '') === handle || item.author === 'you' ? (
-                <button type="button" className="tray-item" onClick={() => void remove(item.id)}>
-                  pull pin
-                </button>
+                <div className="cta-row" style={{ marginTop: 8 }}>
+                  <button type="button" className="tray-item" onClick={() => void swap(item.id)}>
+                    {item.swapped ? 'unswap' : 'swapped'}
+                  </button>
+                  <button type="button" className="tray-item" onClick={() => void remove(item.id)}>
+                    pull pin
+                  </button>
+                </div>
               ) : null}
             </article>
           ))}

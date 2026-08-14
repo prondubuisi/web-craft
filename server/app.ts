@@ -395,8 +395,9 @@ export function createApp(db: Db) {
     const editionSize = Math.max(0, Math.min(999, Number(body.editionSize ?? existing?.edition_size ?? 0) || 0))
     const errata = String(body.errata ?? existing?.errata ?? '').trim().slice(0, 200)
     const includes = Array.isArray(body.includes) ? body.includes.slice(0, 12) : []
+    const dedication = String(body.dedication ?? existing?.dedication ?? '').trim().slice(0, 120)
     db.prepare(
-      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ? WHERE id = ?',
+      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ?, dedication = ? WHERE id = ?',
     ).run(
       JSON.stringify(tags),
       finish,
@@ -407,6 +408,7 @@ export function createApp(db: Db) {
       editionSize,
       errata,
       JSON.stringify(includes),
+      dedication,
       id,
     )
     const row = getZineRow(db, id)
@@ -490,7 +492,38 @@ export function createApp(db: Db) {
         body: row.title,
       })
     }
-    return c.json({ zine: rowToZine(getZineRow(db, row.id)!, { includeSecret: true }) })
+    const fresh = getZineRow(db, row.id)!
+    if (visibility === 'public' && fresh.series) {
+      const series = fresh.series.trim().toLowerCase()
+      const watchers = db
+        .prepare('SELECT user_id FROM series_watches WHERE series = ? AND user_id != ?')
+        .all(series, user.id) as { user_id: string }[]
+      for (const watcher of watchers) {
+        notify(db, {
+          recipientId: watcher.user_id,
+          actorId: user.id,
+          kind: 'series',
+          zineId: fresh.id,
+          body: fresh.series,
+        })
+      }
+    }
+    const mention = (fresh.dedication || '').match(/@([a-z0-9._-]+)/i)
+    if (mention) {
+      const dest = db.prepare('SELECT id FROM users WHERE name = ?').get(mention[1]!.toLowerCase()) as
+        | { id: string }
+        | undefined
+      if (dest) {
+        notify(db, {
+          recipientId: dest.id,
+          actorId: user.id,
+          kind: 'dedicate',
+          zineId: fresh.id,
+          body: fresh.title,
+        })
+      }
+    }
+    return c.json({ zine: rowToZine(fresh, { includeSecret: true }) })
   })
 
   app.post('/api/zines/:id/like', (c) => {
@@ -904,6 +937,19 @@ export function createApp(db: Db) {
     if (row.user_id !== user.id) return c.json({ error: 'Not your pin' }, 403)
     db.prepare('DELETE FROM listings WHERE id = ?').run(c.req.param('id'))
     return c.json({ ok: true })
+  })
+
+  app.post('/api/board/:id/swap', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = db.prepare('SELECT user_id, swapped FROM listings WHERE id = ?').get(c.req.param('id')) as
+      | { user_id: string; swapped: number }
+      | undefined
+    if (!row) return c.json({ error: 'missing pin' }, 404)
+    if (row.user_id !== user.id) return c.json({ error: 'Not your pin' }, 403)
+    const next = row.swapped ? 0 : 1
+    db.prepare('UPDATE listings SET swapped = ? WHERE id = ?').run(next, c.req.param('id'))
+    return c.json({ swapped: Boolean(next) })
   })
 
   app.get('/api/pile', (c) => {
@@ -1400,6 +1446,13 @@ export function createApp(db: Db) {
         blurb: row.blurb,
         zineIds: JSON.parse(row.zine_ids_json || '[]') as string[],
         createdAt: row.created_at,
+        sitters: (
+          db
+            .prepare(
+              `SELECT u.name FROM table_sits s JOIN users u ON u.id = s.user_id WHERE s.table_id = ? ORDER BY s.created_at`,
+            )
+            .all(row.user_id) as { name: string }[]
+        ).map((item) => `@${item.name}`),
       })),
     })
   })
@@ -1538,6 +1591,60 @@ export function createApp(db: Db) {
        ON CONFLICT(user_id, zine_id) DO UPDATE SET due_at = excluded.due_at`,
     ).run(user.id, row.id, dueAt)
     return c.json({ loan: { zineId: row.id, title: row.title, dueAt } })
+  })
+
+  app.post('/api/series/watch', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const series = String(body?.series ?? '')
+      .trim()
+      .toLowerCase()
+      .slice(0, 48)
+    if (!series) return c.json({ error: 'Need a run name' }, 400)
+    const existing = db
+      .prepare('SELECT 1 FROM series_watches WHERE user_id = ? AND series = ?')
+      .get(user.id, series)
+    if (existing) {
+      db.prepare('DELETE FROM series_watches WHERE user_id = ? AND series = ?').run(user.id, series)
+      return c.json({ watching: false })
+    }
+    db.prepare('INSERT INTO series_watches (user_id, series, created_at) VALUES (?, ?, ?)').run(
+      user.id,
+      series,
+      Date.now(),
+    )
+    return c.json({ watching: true })
+  })
+
+  app.post('/api/fest/:id/sit', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const tableId = c.req.param('id')
+    const table = db.prepare('SELECT user_id FROM fest_tables WHERE user_id = ?').get(tableId) as
+      | { user_id: string }
+      | undefined
+    if (!table) return c.json({ error: 'no table' }, 404)
+    const existing = db
+      .prepare('SELECT 1 FROM table_sits WHERE user_id = ? AND table_id = ?')
+      .get(user.id, tableId)
+    if (existing) {
+      db.prepare('DELETE FROM table_sits WHERE user_id = ? AND table_id = ?').run(user.id, tableId)
+    } else {
+      db.prepare('INSERT INTO table_sits (user_id, table_id, created_at) VALUES (?, ?, ?)').run(
+        user.id,
+        tableId,
+        Date.now(),
+      )
+    }
+    const sitters = (
+      db
+        .prepare(
+          `SELECT u.name FROM table_sits s JOIN users u ON u.id = s.user_id WHERE s.table_id = ? ORDER BY s.created_at`,
+        )
+        .all(tableId) as { name: string }[]
+    ).map((row) => `@${row.name}`)
+    return c.json({ sitters })
   })
 
   return app

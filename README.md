@@ -32,8 +32,8 @@ npm run build     # typecheck + production bundle
 - **Studio** (`/studio`) — your zines, comic badges, **in my bag**, community stream, corkboard
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
 - **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**
-- **Board** (`/board`) — trade, collab, and feedback pins. Mail-swap culture, not a marketplace.
-- **Fest** (`/fest`) — tables on the floor, filtered by scene. Not a marketplace.
+- **Board** (`/board`) — trade, collab, and feedback pins. Mark a swap done. Mail-swap culture, not a marketplace.
+- **Fest** (`/fest`) — tables on the floor, filtered by scene. Sit if you want. Not a marketplace.
 - **Issue** (`/z/:id`) — flip or scroll, like/remix/letters/blurbs/polls/marginalia, fold-sheet print with QR, distro stock, **stuff in bag**, archive nominate, library checkout, b-side fold, errata, compilations, corpse invites, unlisted/password links
 - **Profile** (`/u/:handle`) — public wall grouped by series, bio, scene, remix badges, passport stamps, **Watch wall**, write a letter
 - **Letters** (`/mail`) — private pen-pal threads and **postcards**

@@ -262,6 +262,9 @@ export function Inspector({
           </button>
         </div>
       ) : null}
+      {block.type === 'reply' ? (
+        <p className="serif">Readers tear this out and mail you a postcard.</p>
+      ) : null}
       {block.type === 'insert' ? (
         <p className="serif">This is a loose flyer. It should feel like it was never bound.</p>
       ) : null}

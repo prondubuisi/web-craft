@@ -39,6 +39,8 @@ const STAMP_KEY = 'zineverse.stamps.v1'
 const CLAIM_KEY = 'zineverse.claims.v1'
 const CORK_KEY = 'zineverse.cork.v1'
 const LOAN_KEY = 'zineverse.loans.v1'
+const SERIES_KEY = 'zineverse.serieswatch.v1'
+const SIT_KEY = 'zineverse.sits.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -186,6 +188,8 @@ export function noticeCopy(notice: Notice): string {
       : `${who} sent you a letter`
   }
   if (notice.kind === 'archive') return `${who} nominated ${notice.zineTitle ?? 'your issue'} for the archive`
+  if (notice.kind === 'dedicate') return `${who} dedicated ${notice.zineTitle ?? 'an issue'} to you`
+  if (notice.kind === 'series') return `${who} dropped the next ${notice.body ?? 'issue'} in a run you watch`
   return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
 }
 
@@ -256,6 +260,14 @@ export function addLocalListing(
 
 export function removeLocalListing(id: string): Listing[] {
   const next = loadLocalListings().filter((item) => item.id !== id)
+  writeJson(BOARD_KEY, next)
+  return next
+}
+
+export function swapLocalListing(id: string): Listing[] {
+  const next = loadLocalListings().map((item) =>
+    item.id === id ? { ...item, swapped: !item.swapped } : item,
+  )
   writeJson(BOARD_KEY, next)
   return next
 }
@@ -583,6 +595,38 @@ export function loadLoans(owner: string): Loan[] {
   const all = readJson<Record<string, Loan[]>>(LOAN_KEY, {})
   const now = Date.now()
   return (all[owner.replace(/^@/, '')] ?? []).filter((row) => row.dueAt > now)
+}
+
+export function loadSeriesWatch(owner: string): string[] {
+  const all = readJson<Record<string, string[]>>(SERIES_KEY, {})
+  return all[owner.replace(/^@/, '')] ?? []
+}
+
+export function toggleSeriesWatch(owner: string, series: string): string[] {
+  const key = owner.replace(/^@/, '')
+  const name = series.trim().toLowerCase()
+  if (!name) return loadSeriesWatch(owner)
+  const all = readJson<Record<string, string[]>>(SERIES_KEY, {})
+  const prev = all[key] ?? []
+  const next = prev.includes(name) ? prev.filter((row) => row !== name) : [...prev, name]
+  all[key] = next
+  writeJson(SERIES_KEY, all)
+  return next
+}
+
+export function loadSits(tableId: string): string[] {
+  const all = readJson<Record<string, string[]>>(SIT_KEY, {})
+  return all[tableId] ?? []
+}
+
+export function toggleSit(tableId: string, who: string): string[] {
+  const handle = who.startsWith('@') || who === 'you' ? who : `@${who}`
+  const all = readJson<Record<string, string[]>>(SIT_KEY, {})
+  const prev = all[tableId] ?? []
+  const next = prev.includes(handle) ? prev.filter((row) => row !== handle) : [...prev, handle]
+  all[tableId] = next
+  writeJson(SIT_KEY, all)
+  return next
 }
 
 export function checkoutLocal(owner: string, zineId: string, title: string): Loan[] {
