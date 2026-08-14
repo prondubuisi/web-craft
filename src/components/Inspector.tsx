@@ -1,3 +1,4 @@
+import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { readFileAsDataUrl } from '../lib/share'
 import type { Block } from '../lib/types'
@@ -92,7 +93,7 @@ export function Inspector({
                 }}
               >
                 <img
-                  src={src}
+                  src={assetUrl(src)}
                   alt={src.split('/').pop() ?? 'art'}
                   style={{ height: 48, width: '100%', objectFit: 'cover' }}
                 />

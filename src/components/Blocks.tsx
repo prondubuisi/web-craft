@@ -1,4 +1,5 @@
 import type { Block } from '../lib/types'
+import { assetUrl } from '../lib/paths'
 import { Halftone } from './Chrome'
 
 function Field({
@@ -82,7 +83,7 @@ export function BlockView({
         <div className={`grid-block ${block.layout}`}>
           {block.panels.map((panel, i) => (
             <div key={i} className="cell" style={{ background: panel.fill }}>
-              {panel.src ? <img src={panel.src} alt="" /> : null}
+              {panel.src ? <img src={assetUrl(panel.src)} alt="" /> : null}
               <span>
                 <Field
                   value={panel.text}

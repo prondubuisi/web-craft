@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Topbar, ComicButton, Halftone } from '../components/Chrome'
+import { assetUrl } from '../lib/paths'
 import { BlockView } from '../components/Blocks'
 import { VIBES } from '../lib/vibes'
 import { WIDGETS, createBlock } from '../lib/widgets'
@@ -30,7 +31,7 @@ export function Landing() {
       <Topbar />
       <section className="hero-spread">
         <div className="bg halftone-media">
-          <img src="/art/collage-hero.jpg" alt="" />
+          <img src={assetUrl('/art/collage-hero.jpg')} alt="" />
         </div>
         <div className="hero-copy">
           <span className="issue-chip">NEW CATEGORY · EXPRESSIVE BUILDER</span>
@@ -154,6 +155,12 @@ export function Landing() {
         <ComicButton className="pink" onClick={() => start(vibe)}>
           Start issue one
         </ComicButton>
+        <p className="meta-line" style={{ justifyContent: 'center', marginTop: 14 }}>
+          <a href="https://github.com/prondubuisi/web-craft" target="_blank" rel="noreferrer">
+            source
+          </a>
+          <span>print any issue from the reader</span>
+        </p>
       </footer>
     </div>
   )
