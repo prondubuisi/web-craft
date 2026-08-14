@@ -29,8 +29,9 @@ export function Explore() {
               key={z.id}
               zine={z}
               onRemix={() => {
-                const id = remixZine(z.id)
-                if (id) navigate(`/edit/${id}`)
+                void remixZine(z.id).then((id) => {
+                  if (id) navigate(`/edit/${id}`)
+                })
               }}
             />
           ))}

@@ -50,22 +50,23 @@ Zineverse is a **complete, working, single-user client-side prototype**. The sco
 
 The remaining product risk is **no multi-device identity**. Sharing is a snapshot blob or a JSON file. That is an intentional ceiling, not an accident.
 
-## Decision: stay client-only
+## Decision: optional SQLite API
 
-Zineverse will not grow a backend until someone needs the same studio on two devices or real collaboration. Sharing stays:
+The public Pages demo stays client-only. Locally (or any host that runs `npm run dev:api`), Zineverse has a Hono + SQLite backend:
 
-- snapshot URLs (`/s#…`) for portable issues
-- JSON import/export for files with uploaded photos
-- a PWA install so the site can live on a phone home screen
+- handle + password accounts (`scrypt`, httpOnly session cookie)
+- server-side publish / drop seal (strangers get empty blocks until `dropsAt`)
+- likes, views, remixes as rows, not just local counters
+- login uploads existing `you`-owned drafts
 
-The drop "seal" remains a UX clock, not access control.
+Snapshot URLs and JSON export remain for when the API is down.
 
 ## Suggested Next Steps
 
-Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo.
+Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optional backend.
 
-Still open, if the product grows:
+Still open:
 
-1. **Backend + auth** — only after the client-only ceiling actually hurts.
+1. **Host the API** (Fly/Railway/a VPS) and set `VITE_API_URL` if the Pages demo should sign in.
 2. **Vitest for more of `src/store`** if reducer bugs start showing up.
 3. **CONTRIBUTING.md** if more than one person is committing.

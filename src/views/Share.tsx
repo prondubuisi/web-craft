@@ -69,7 +69,7 @@ export function Share() {
               className="pink"
               onClick={() => {
                 const id = importZine(zine)
-                navigate(`/edit/${id}`)
+                if (id) navigate(`/edit/${id}`)
               }}
             >
               Remix into studio

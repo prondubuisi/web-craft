@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 scripts/shots
+server/data/*.sqlite
+server/data/*.sqlite-*
 
 # Editor directories and files
 .vscode/*
