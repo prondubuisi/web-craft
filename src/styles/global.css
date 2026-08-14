@@ -1638,6 +1638,25 @@ button.blackout-word.hid {
   color: #fff7d6;
 }
 
+.dedication {
+  font-style: italic;
+  margin: 0 0 0.8rem;
+}
+
+.reply-block {
+  background: var(--paper);
+  color: var(--ink);
+  border: 4px dashed var(--ink);
+  box-shadow: 5px 6px 0 var(--ink);
+  padding: 0.85rem 1rem;
+  transform: rotate(-0.8deg);
+}
+
+.board-card.swapped {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
 .insert-block {
   background: var(--accent-3);
   color: #111;

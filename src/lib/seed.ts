@@ -26,6 +26,7 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   'fest-goer': { label: 'FEST GOER', blurb: 'Collected three passport stamps' },
   collector: { label: 'COLLECTOR', blurb: 'Claimed three numbered copies' },
   compiler: { label: 'COMPILER', blurb: 'Dropped a compilation' },
+  subscriber: { label: 'SUBSCRIBER', blurb: 'Watching a numbered run' },
 }
 
 export function computeBadges(
@@ -34,6 +35,7 @@ export function computeBadges(
   handle?: string | null,
   stamps = 0,
   claims = 0,
+  watches = 0,
 ): BadgeId[] {
   const owned = zines.filter((z) => isMine(z, handle))
   const badges: BadgeId[] = []
@@ -47,6 +49,7 @@ export function computeBadges(
   if (owned.some((z) => (z.includes ?? []).length > 0)) badges.push('compiler')
   if (stamps >= 3) badges.push('fest-goer')
   if (claims >= 3) badges.push('collector')
+  if (watches >= 1) badges.push('subscriber')
   return badges
 }
 
@@ -149,6 +152,7 @@ export function createSeed(): AppState {
       bSide: 'booth 12 keeps the extra bows under the table.',
       editionSize: 40,
       claimed: 12,
+      dedication: 'for whoever sat at booth 12',
       blocks: [
         { id: uid(), type: 'heading', text: 'sunday market', size: 'xl' },
         { id: uid(), type: 'sfx', word: 'PING!' },
@@ -174,6 +178,11 @@ export function createSeed(): AppState {
           type: 'poll',
           question: 'what are you buying first?',
           options: ['strawberry milk', 'apology robot', 'free bow', 'a sticker that beeps'],
+        },
+        {
+          id: uid(),
+          type: 'reply',
+          prompt: 'write booth 12. tear this out.',
         },
         {
           id: uid(),

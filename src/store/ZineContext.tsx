@@ -12,7 +12,13 @@ import {
 import { api, apiHealth, type Session } from '../lib/api'
 import { uid } from '../lib/id'
 import { computeBadges } from '../lib/seed'
-import { loadLocalNotices, loadStamps, markLocalNoticesRead, saveLocalNotices } from '../lib/social'
+import {
+  loadLocalNotices,
+  loadSeriesWatch,
+  loadStamps,
+  markLocalNoticesRead,
+  saveLocalNotices,
+} from '../lib/social'
 import { loadState, saveState } from '../lib/storage'
 import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
@@ -249,6 +255,8 @@ export function ZineProvider({ children }: { children: ReactNode }) {
       state.profile.remixPoints,
       state.session?.name,
       loadStamps(state.session?.name ?? state.profile.name).length,
+      0,
+      loadSeriesWatch(state.session?.name ?? state.profile.name).length,
     )
     return {
       ...state,

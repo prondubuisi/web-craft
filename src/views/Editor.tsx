@@ -309,6 +309,12 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           aria-label="B-side"
         />
         <input
+          value={zine.dedication ?? ''}
+          placeholder="dedication (for @handle)"
+          onChange={(e) => patchZine(zine.id, { dedication: e.target.value })}
+          aria-label="Dedication"
+        />
+        <input
           value={zine.errata ?? ''}
           placeholder="errata slip"
           onChange={(e) => patchZine(zine.id, { errata: e.target.value })}

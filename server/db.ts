@@ -58,6 +58,7 @@ export type ZineRow = {
   edition_size: number
   errata: string
   includes_json: string
+  dedication: string
 }
 
 const SCHEMA = `
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS zines (
   edition_size INTEGER NOT NULL DEFAULT 0,
   errata TEXT NOT NULL DEFAULT '',
   includes_json TEXT NOT NULL DEFAULT '[]',
+  dedication TEXT NOT NULL DEFAULT '',
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -162,6 +164,7 @@ CREATE TABLE IF NOT EXISTS listings (
   kind TEXT NOT NULL,
   body TEXT NOT NULL,
   created_at INTEGER NOT NULL,
+  swapped INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS guestbook (
@@ -227,6 +230,20 @@ CREATE TABLE IF NOT EXISTS claims (
   PRIMARY KEY (user_id, zine_id),
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
+CREATE TABLE IF NOT EXISTS series_watches (
+  user_id TEXT NOT NULL,
+  series TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, series),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS table_sits (
+  user_id TEXT NOT NULL,
+  table_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, table_id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS loans (
   user_id TEXT NOT NULL,
@@ -323,10 +340,15 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('edition_size')) db.exec(`ALTER TABLE zines ADD COLUMN edition_size INTEGER NOT NULL DEFAULT 0`)
   if (!zineNames.has('errata')) db.exec(`ALTER TABLE zines ADD COLUMN errata TEXT NOT NULL DEFAULT ''`)
   if (!zineNames.has('includes_json')) db.exec(`ALTER TABLE zines ADD COLUMN includes_json TEXT NOT NULL DEFAULT '[]'`)
+  if (!zineNames.has('dedication')) db.exec(`ALTER TABLE zines ADD COLUMN dedication TEXT NOT NULL DEFAULT ''`)
   const letterCols = db.prepare(`PRAGMA table_info(letters)`).all() as { name: string }[]
   const letterNames = new Set(letterCols.map((col) => col.name))
   if (!letterNames.has('postcard')) db.exec(`ALTER TABLE letters ADD COLUMN postcard INTEGER NOT NULL DEFAULT 0`)
   if (!letterNames.has('vibe')) db.exec(`ALTER TABLE letters ADD COLUMN vibe TEXT`)
+  const listCols = db.prepare(`PRAGMA table_info(listings)`).all() as { name: string }[]
+  if (!listCols.some((col) => col.name === 'swapped')) {
+    db.exec(`ALTER TABLE listings ADD COLUMN swapped INTEGER NOT NULL DEFAULT 0`)
+  }
   return db
 }
 
@@ -375,6 +397,7 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     bSide: row.b_side || undefined,
     editionSize: row.edition_size || undefined,
     errata: row.errata || undefined,
+    dedication: row.dedication || undefined,
     includes: (() => {
       try {
         return JSON.parse(row.includes_json || '[]') as { zineId: string; title: string; owner: string }[]
@@ -403,6 +426,7 @@ export function rowToListing(row: {
   author_name: string
   zine_id: string | null
   zine_title: string | null
+  swapped?: number
 }): Listing {
   return {
     id: row.id,
@@ -412,6 +436,7 @@ export function rowToListing(row: {
     zineId: row.zine_id ?? undefined,
     zineTitle: row.zine_title ?? undefined,
     createdAt: row.created_at,
+    swapped: Boolean(row.swapped),
   }
 }
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { loadTables, upsertTable } from '../lib/social'
+import { loadSits, loadTables, toggleSit, upsertTable } from '../lib/social'
 import type { FestTable } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
@@ -15,16 +15,28 @@ export function Fest() {
   const [blurb, setBlurb] = useState('')
   const mine = zines.filter((z) => z.published && isMine(z, session?.name)).slice(0, 8)
   const [picked, setPicked] = useState<string[]>([])
+  const [sits, setSits] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
     if (!online) {
-      setTables(loadTables())
+      const local = loadTables()
+      setTables(local)
+      setSits(Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])))
       return
     }
     void api
       .fest()
-      .then((res) => setTables(res.tables))
-      .catch(() => setTables(loadTables()))
+      .then((res) => {
+        setTables(res.tables)
+        const next: Record<string, string[]> = {}
+        for (const table of res.tables) next[table.id] = table.sitters ?? []
+        setSits(next)
+      })
+      .catch(() => {
+        const local = loadTables()
+        setTables(local)
+        setSits(Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])))
+      })
   }, [online])
 
   const visible = useMemo(() => {
@@ -128,6 +140,29 @@ export function Fest() {
                   })}
                 </div>
               ) : null}
+              <div className="cta-row" style={{ marginTop: 8 }}>
+                <ComicButton
+                  className="small"
+                  onClick={() => {
+                    const who = session?.name ?? profile.name
+                    if (online && session) {
+                      void api
+                        .sit(table.id)
+                        .then((res) => setSits((prev) => ({ ...prev, [table.id]: res.sitters })))
+                        .catch(() =>
+                          setSits((prev) => ({ ...prev, [table.id]: toggleSit(table.id, who) })),
+                        )
+                      return
+                    }
+                    setSits((prev) => ({ ...prev, [table.id]: toggleSit(table.id, who) }))
+                  }}
+                >
+                  Sit
+                </ComicButton>
+                {(sits[table.id] ?? table.sitters ?? []).length ? (
+                  <span className="meta-line">{(sits[table.id] ?? table.sitters ?? []).join(' · ')}</span>
+                ) : null}
+              </div>
             </article>
           ))}
         </div>

@@ -31,6 +31,10 @@ import {
   saveCork,
   checkoutLocal,
   loadLoans,
+  toggleSeriesWatch,
+  loadSeriesWatch,
+  toggleSit,
+  swapLocalListing,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -171,6 +175,22 @@ describe('corkboard', () => {
   it('saves pins', () => {
     saveCork('you', [{ id: 'p1', text: 'clip', x: 20, y: 30, rotation: -4 }])
     expect(loadCork('you')[0]?.text).toBe('clip')
+  })
+})
+
+describe('series watch and sits', () => {
+  it('watches a run and sits a table', () => {
+    expect(toggleSeriesWatch('you', 'confession')).toContain('confession')
+    expect(loadSeriesWatch('you')).toContain('confession')
+    expect(toggleSit('table-yuzu', 'you')).toContain('you')
+  })
+})
+
+describe('swapped trades', () => {
+  it('marks a pin swapped', () => {
+    const pin = addLocalListing('rio', 'trade', 'toner for rain')
+    expect(swapLocalListing(pin.id)[0]?.swapped).toBe(true)
+    expect(loadLocalListings()[0]?.swapped).toBe(true)
   })
 })
 

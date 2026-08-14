@@ -68,10 +68,15 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Cork to page** — 1.2.0 (paste a pin into a draft)
 - **Compilation** — 1.2.0 (stock other issues inside one)
 - **Library checkout** — 1.2.0 (borrow an archived issue for a week)
+- **Dedication** — 1.3.0 (for @handle on the issue)
+- **Tear-out reply** — 1.3.0 (`/reply` mails the maker)
+- **Series watch** — 1.3.0 (watch this run)
+- **Sit at a table** — 1.3.0 (fest hangout)
+- **Swapped pin** — 1.3.0 (mark a board trade done)
 
 ## Suggested starting point
 
-Round 5 shipped in 1.2.0.
+Round 6 shipped in 1.3.0.
 
 ## More ideas, tied to the project's actual identity
 
