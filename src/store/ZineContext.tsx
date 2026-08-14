@@ -16,6 +16,7 @@ import { loadLocalNotices, markLocalNoticesRead, saveLocalNotices } from '../lib
 import { loadState, saveState } from '../lib/storage'
 import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
+import { demoJams, jamForPublish } from '../lib/jam'
 import { fingerprint, isMine } from '../lib/zine'
 import { apply } from './reducer'
 
@@ -315,6 +316,14 @@ export function ZineProvider({ children }: { children: ReactNode }) {
               patch: { chainOpen: true, chainKey: shareKey, visibility: 'unlisted' },
             })
           }
+          const entered = jamForPublish(
+            { blocks: current?.blocks ?? [], visibility },
+            demoJams(),
+            when,
+          )
+          if (entered && !opts?.chain) {
+            dispatch({ type: 'patch', id, patch: { jamId: entered.id } })
+          }
           if (state.session) {
             void api
               .publish(id, when, { visibility, password: opts?.password, chain: opts?.chain })
@@ -327,6 +336,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
                     visibility: res.zine.visibility ?? visibility,
                     chainKey: res.zine.chainKey,
                     chainOpen: res.zine.chainOpen,
+                    jamId: res.zine.jamId,
                   },
                 })
               })

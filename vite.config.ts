@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: process.env.GITHUB_PAGES === 'true' ? '/web-craft/' : '/',
   server: {
+    host: '127.0.0.1',
     proxy: {
       '/api': 'http://127.0.0.1:8787',
     },

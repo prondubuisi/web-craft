@@ -51,6 +51,9 @@ export type ZineRow = {
   chain_open: number
   series: string
   issue_no: number | null
+  pen_name: string
+  jam_id: string | null
+  b_side: string
 }
 
 const SCHEMA = `
@@ -94,6 +97,9 @@ CREATE TABLE IF NOT EXISTS zines (
   chain_open INTEGER NOT NULL DEFAULT 0,
   series TEXT NOT NULL DEFAULT '',
   issue_no INTEGER,
+  pen_name TEXT NOT NULL DEFAULT '',
+  jam_id TEXT,
+  b_side TEXT NOT NULL DEFAULT '',
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -204,6 +210,32 @@ CREATE TABLE IF NOT EXISTS letters (
   FOREIGN KEY (from_id) REFERENCES users(id),
   FOREIGN KEY (to_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS jams (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  format TEXT NOT NULL DEFAULT 'any',
+  starts_at INTEGER NOT NULL,
+  ends_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS nominations (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
+CREATE TABLE IF NOT EXISTS margins (
+  id TEXT PRIMARY KEY,
+  zine_id TEXT NOT NULL,
+  block_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (zine_id) REFERENCES zines(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -228,6 +260,9 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('chain_open')) db.exec(`ALTER TABLE zines ADD COLUMN chain_open INTEGER NOT NULL DEFAULT 0`)
   if (!zineNames.has('series')) db.exec(`ALTER TABLE zines ADD COLUMN series TEXT NOT NULL DEFAULT ''`)
   if (!zineNames.has('issue_no')) db.exec(`ALTER TABLE zines ADD COLUMN issue_no INTEGER`)
+  if (!zineNames.has('pen_name')) db.exec(`ALTER TABLE zines ADD COLUMN pen_name TEXT NOT NULL DEFAULT ''`)
+  if (!zineNames.has('jam_id')) db.exec(`ALTER TABLE zines ADD COLUMN jam_id TEXT`)
+  if (!zineNames.has('b_side')) db.exec(`ALTER TABLE zines ADD COLUMN b_side TEXT NOT NULL DEFAULT ''`)
   return db
 }
 
@@ -271,6 +306,9 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     chainKey: opts?.includeSecret ? (row.chain_key ?? undefined) : undefined,
     series: row.series || undefined,
     issueNo: row.issue_no ?? undefined,
+    penName: row.pen_name || undefined,
+    jamId: row.jam_id ?? undefined,
+    bSide: row.b_side || undefined,
   }
 }
 

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Block } from '../src/lib/types.ts'
+import { demoJams } from '../src/lib/jam.ts'
 import { createSeed } from '../src/lib/seed.ts'
 import type { Db } from './db.ts'
 
@@ -21,6 +22,8 @@ export function seedCommunity(db: Db): void {
     seedBoard(db)
     seedTags(db)
     seedSeries(db)
+    seedJams(db)
+    seedArchive(db)
     return
   }
 
@@ -75,8 +78,50 @@ export function seedCommunity(db: Db): void {
     seedBoard(db)
     seedTags(db)
     seedSeries(db)
+    seedJams(db)
+    seedArchive(db)
   })
   tx()
+}
+
+function seedJams(db: Db): void {
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO jams (id, title, prompt, format, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)`,
+  )
+  for (const jam of demoJams()) {
+    insert.run(jam.id, jam.title, jam.prompt, jam.format, jam.startsAt, jam.endsAt)
+    db.prepare('UPDATE jams SET title = ?, prompt = ?, format = ?, starts_at = ?, ends_at = ? WHERE id = ?').run(
+      jam.title,
+      jam.prompt,
+      jam.format,
+      jam.startsAt,
+      jam.endsAt,
+      jam.id,
+    )
+  }
+  const live = demoJams()[0]
+  if (!live) return
+  db.prepare(
+    `UPDATE zines SET jam_id = ? WHERE title = 'sunday market' AND (jam_id IS NULL OR jam_id = '')`,
+  ).run(live.id)
+  db.prepare(
+    `UPDATE zines SET pen_name = 'the gutter' WHERE title = 'issue 13' AND (pen_name IS NULL OR pen_name = '')`,
+  ).run()
+  db.prepare(
+    `UPDATE zines SET b_side = ? WHERE title = 'sunday market' AND (b_side IS NULL OR b_side = '')`,
+  ).run('booth 12 keeps the extra bows under the table.')
+}
+
+function seedArchive(db: Db): void {
+  const issue = db.prepare(`SELECT id FROM zines WHERE title = 'issue 13'`).get() as { id: string } | undefined
+  if (!issue) return
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM nominations WHERE zine_id = ?').get(issue.id) as { n: number }).n
+  if (count > 0) return
+  const insert = db.prepare('INSERT OR IGNORE INTO nominations (user_id, zine_id, created_at) VALUES (?, ?, ?)')
+  for (const name of ['yuzu', 'wobble', 'rio.bytes']) {
+    const user = db.prepare('SELECT id FROM users WHERE name = ?').get(name) as { id: string } | undefined
+    if (user) insert.run(user.id, issue.id, Date.now() - 3600_000)
+  }
 }
 
 function seedSeries(db: Db): void {

@@ -6,12 +6,14 @@ import type {
   Listing,
   ListingKind,
   MailThread,
+  MarginNote,
   Notice,
   PageStat,
   PollTally,
   Review,
   ShelfItem,
 } from './types'
+import { ARCHIVE_THRESHOLD } from './jam'
 import { uid } from './id'
 
 const COMMENTS_KEY = 'zineverse.comments.v1'
@@ -24,6 +26,8 @@ const PAGES_KEY = 'zineverse.pages.v1'
 const BAG_KEY = 'zineverse.bag.v1'
 const REVIEW_KEY = 'zineverse.reviews.v1'
 const MAIL_KEY = 'zineverse.mail.v1'
+const MARGIN_KEY = 'zineverse.margins.v1'
+const NOM_KEY = 'zineverse.noms.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -166,6 +170,7 @@ export function noticeCopy(notice: Notice): string {
   if (notice.kind === 'follow') return `${who} is watching your wall`
   if (notice.kind === 'review') return `${who} blurb'd ${notice.zineTitle ?? 'your issue'}`
   if (notice.kind === 'mail') return `${who} sent you a letter`
+  if (notice.kind === 'archive') return `${who} nominated ${notice.zineTitle ?? 'your issue'} for the archive`
   return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
 }
 
@@ -436,4 +441,45 @@ export function markThreadRead(me: string, other: string): Letter[] {
   )
   writeJson(MAIL_KEY, next)
   return next
+}
+
+export function loadMargins(zineId: string): MarginNote[] {
+  const all = readJson<Record<string, MarginNote[]>>(MARGIN_KEY, {})
+  return all[zineId] ?? []
+}
+
+export function addMargin(zineId: string, blockId: string, author: string, body: string): MarginNote {
+  const note: MarginNote = {
+    id: uid(),
+    zineId,
+    blockId,
+    author: handleOf(author),
+    body: body.trim().slice(0, 160),
+    createdAt: Date.now(),
+  }
+  const all = readJson<Record<string, MarginNote[]>>(MARGIN_KEY, {})
+  all[zineId] = [...(all[zineId] ?? []), note].slice(-80)
+  writeJson(MARGIN_KEY, all)
+  return note
+}
+
+export function loadNoms(): Record<string, string[]> {
+  return readJson<Record<string, string[]>>(NOM_KEY, {})
+}
+
+export function nominateLocal(owner: string, zineId: string): { noms: number; archived: boolean; mine: boolean } {
+  const who = handleOf(owner)
+  const all = loadNoms()
+  const voters = all[zineId] ?? []
+  const mine = voters.includes(who)
+  const next = mine ? voters.filter((name) => name !== who) : [...voters, who]
+  all[zineId] = next
+  writeJson(NOM_KEY, all)
+  return { noms: next.length, archived: next.length >= ARCHIVE_THRESHOLD, mine: !mine }
+}
+
+export function nomState(owner: string, zineId: string): { noms: number; archived: boolean; mine: boolean } {
+  const voters = loadNoms()[zineId] ?? []
+  const who = handleOf(owner)
+  return { noms: voters.length, archived: voters.length >= ARCHIVE_THRESHOLD, mine: voters.includes(who) }
 }

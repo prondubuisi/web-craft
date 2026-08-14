@@ -83,6 +83,11 @@ export function seriesLabel(zine: Pick<Zine, 'series' | 'issueNo'>): string | nu
   return zine.issueNo ? `${series} #${zine.issueNo}` : series
 }
 
+export function byline(zine: Pick<Zine, 'owner' | 'penName'>): string {
+  const pen = zine.penName?.trim()
+  return pen || zine.owner
+}
+
 export function filterStream(
   zines: Zine[],
   opts: {
@@ -91,6 +96,8 @@ export function filterStream(
     sort?: StreamSort
     following?: string[] | null
     tag?: string
+    jamId?: string
+    archived?: boolean
   } = {},
 ): Zine[] {
   const q = (opts.q ?? '').trim().toLowerCase()
@@ -102,11 +109,14 @@ export function filterStream(
     if (!isPublicDrop(z)) return false
     if (vibe && z.vibe !== vibe) return false
     if (tag && !(z.tags ?? []).includes(tag)) return false
+    if (opts.jamId && z.jamId !== opts.jamId) return false
+    if (opts.archived && !z.archived) return false
     if (watching) {
       if (!watching.includes(ownerHandle(z.owner).toLowerCase())) return false
     }
     if (!q) return true
-    const hay = `${z.title} ${z.owner} ${z.vibe} ${z.series ?? ''} ${(z.tags ?? []).join(' ')}`.toLowerCase()
+    const hay =
+      `${z.title} ${z.owner} ${z.penName ?? ''} ${z.vibe} ${z.series ?? ''} ${(z.tags ?? []).join(' ')}`.toLowerCase()
     return hay.includes(q)
   })
   next.sort((a, b) => {

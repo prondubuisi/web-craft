@@ -162,6 +162,26 @@ export type PageStat = {
 
 export type StreamSort = 'new' | 'likes' | 'remixes'
 
+export type JamFormat = 'any' | 'one' | 'card'
+
+export type Jam = {
+  id: string
+  title: string
+  prompt: string
+  format: JamFormat
+  startsAt: number
+  endsAt: number
+}
+
+export type MarginNote = {
+  id: string
+  zineId: string
+  blockId: string
+  author: string
+  body: string
+  createdAt: number
+}
+
 export type ListingKind = 'trade' | 'collab' | 'feedback'
 
 export type Listing = {
@@ -223,6 +243,7 @@ export type BadgeId =
   | 'dropped'
   | 'remixer'
   | 'multiverse'
+  | 'jammer'
 
 export type Zine = {
   id: string
@@ -248,9 +269,14 @@ export type Zine = {
   chainOpen?: boolean
   series?: string
   issueNo?: number
+  penName?: string
+  jamId?: string
+  bSide?: string
+  noms?: number
+  archived?: boolean
 }
 
-export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail'
+export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail' | 'archive'
 
 export type Notice = {
   id: string

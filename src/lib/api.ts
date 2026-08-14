@@ -2,10 +2,12 @@ import type {
   BagItem,
   Comment,
   GuestNote,
+  Jam,
   Letter,
   Listing,
   ListingKind,
   MailThread,
+  MarginNote,
   Notice,
   PageStat,
   PollTally,
@@ -93,13 +95,23 @@ export const api = {
     setToken(null)
     return result
   },
-  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort; following?: boolean; tag?: string }) => {
+  stream: (opts?: {
+    q?: string
+    vibe?: VibeId
+    sort?: StreamSort
+    following?: boolean
+    tag?: string
+    jam?: boolean
+    archive?: boolean
+  }) => {
     const params = new URLSearchParams()
     if (opts?.q) params.set('q', opts.q)
     if (opts?.vibe) params.set('vibe', opts.vibe)
     if (opts?.sort && opts.sort !== 'new') params.set('sort', opts.sort)
     if (opts?.following) params.set('following', '1')
     if (opts?.tag) params.set('tag', opts.tag)
+    if (opts?.jam) params.set('jam', '1')
+    if (opts?.archive) params.set('archive', '1')
     const qs = params.toString()
     return req<{ zines: Zine[] }>(`/api/stream${qs ? `?${qs}` : ''}`)
   },
@@ -223,5 +235,19 @@ export const api = {
     req<{ letter: Letter }>('/api/mail', {
       method: 'POST',
       body: JSON.stringify({ to, body }),
+    }),
+  jams: () => req<{ jams: Jam[]; live: Jam | null }>('/api/jams'),
+  jam: (id: string) =>
+    req<{ jam: Jam; live: boolean; zines: Zine[] }>(`/api/jams/${encodeURIComponent(id)}`),
+  archive: () => req<{ zines: Zine[] }>('/api/archive'),
+  nominate: (id: string) =>
+    req<{ noms: number; archived: boolean; mine: boolean }>(`/api/zines/${id}/nominate`, {
+      method: 'POST',
+    }),
+  margins: (id: string) => req<{ notes: MarginNote[] }>(`/api/zines/${id}/margins`),
+  margin: (id: string, blockId: string, body: string) =>
+    req<{ note: MarginNote }>(`/api/zines/${id}/margins`, {
+      method: 'POST',
+      body: JSON.stringify({ blockId, body }),
     }),
 }

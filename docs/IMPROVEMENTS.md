@@ -47,10 +47,16 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Pen pal mail** — 0.8.0 (`/mail`, write a letter from a profile)
 - **Mini-comic strip** — 0.8.0 (`/strip`)
 - **Colophon** — 0.8.0 (`/colophon`)
+- **Zine jam** — 0.9.0 (`toner week` live jam, `/jam/:id`, stream lane)
+- **Micro-format challenges** — 0.9.0 (one-pager / card caps + JAMMER badge)
+- **The Archive** — 0.9.0 (nominate an issue; 2 votes files it)
+- **Marginalia** — 0.9.0 (¶ on a block)
+- **Pseudonym per issue** — 0.9.0 (pen name in the editor)
+- **B-side / secret page** — 0.9.0 (hidden fold on the reader)
 
 ## Suggested starting point
 
-The 0.7.0 list shipped. 0.8.0 added the bag, series, blurbs, pen-pal mail, and two print-culture widgets.
+Round 3 shipped in 0.9.0.
 
 ## More ideas, tied to the project's actual identity
 
@@ -71,6 +77,22 @@ Zineverse's own positioning (README: "mail-swap culture, not a marketplace," DIY
 - **QR code on print/fold sheet** — stamp the printed fold-sheet output (`src/lib/fold.ts`) with a QR code back to the live `/z/:id` URL, mirroring how zine trades in the wild often include a link or address back to the maker.
 - **Riso/print-texture finishing pass** — extend the existing vibe engine (halftone density, chromatic split) with optional misregistration and paper-grain overlays as a selectable finishing pass, reinforcing the print-zine look without a new content model.
 
+## Round 3 (post-0.8.0) — community events, archive, and authorship
+
+The first two rounds covered the individual-creator and one-to-one social mechanics (board, watch, mail, distro shelf, guestbook). What's left in real zine culture and untouched so far is the **collective, time-boxed, and preservation** layer — zine jams and zine libraries — plus a couple of reading/authorship mechanics that got skipped.
+
+**Community events**
+- **Zine jam** — a recurring, themed, time-boxed window (real-world model: D20 Zine Jam, Free Zine Week) where a prompt drops and anything published inside the window gets automatically tagged into that jam's collection, visible as its own lane on `/explore` or `/board`. Distinct from the always-on stream — it's a shared deadline and shared prompt, which is what makes zine jams feel like an event rather than a feed.
+- **Micro-format challenges** — a constrained creation mode (one-page zine, business-card zine) offered as a jam prompt type, forcing brevity instead of the usual multi-page issue. Cheap on the existing block/page model — just a page-count cap plus a badge for completing one.
+
+**Archive / preservation**
+- **The Archive** — a community-nominated, not algorithmic, "living collection" lane distinct from the personal Distro shelf: readers can nominate an issue into the Archive, and issues with enough nominations get a permanent, no-longer-time-sensitive home there. Mirrors how real zine libraries (ZAPP, Denver Zine Library, QZAP) frame their mission as preservation and protection, not popularity — worth keeping deliberately separate from sort-by-likes so it doesn't just become "top issues" again.
+
+**Reading & authorship**
+- **Marginalia** — let a reader pin a short note to one specific block/panel instead of leaving an issue-level letter or comment, closer to how real zine readers annotate margins and mail art gets responded to in-place.
+- **Pseudonym per issue** — publish under a chosen pen name distinct from your account handle, matching the long punk-zine tradition of anonymous or pseudonymous authorship (bylines are often optional or fictional in print zine culture).
+- **B-side / secret page** — a hidden bonus block revealed only by a specific in-reader interaction (long-press, tap sequence), echoing the handmade-zine tradition of hidden folds and secret messages.
+
 ## Sources
 
 - [ZINECORE App](https://apps.apple.com/us/app/zinecore/id6763522374)
@@ -82,3 +104,7 @@ Zineverse's own positioning (README: "mail-swap culture, not a marketplace," DIY
 - [Round-robin story — Wikipedia](https://en.wikipedia.org/wiki/Round-robin_story)
 - [What is a Zine? — Sprout Distro](https://www.sproutdistro.com/about/what-is-a-zine/)
 - [International Zine Month — zine trades](https://echopublishing.wordpress.com/2021/07/18/international-zine-month-2021-zine-trades/)
+- [D20 Zine Jam 2026 — itch.io](https://itch.io/jam/d20-zine-jam-2026)
+- [Free Zine Week 2026 — itch.io](https://itch.io/jam/free-zine-week-2026)
+- [Zine Archive and Publishing Project — Wikipedia](https://en.wikipedia.org/wiki/Zine_Archive_and_Publishing_Project)
+- [Zine Collection — The Seattle Public Library](https://www.spl.org/books-and-media/unique-collections/zine-collection)
