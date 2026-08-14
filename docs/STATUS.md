@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (social layer: profiles, comments, stream filters, quote/poll)_
+_Last reviewed: 2026-08-14 (0.3.0 social layer)_
 
 ## Overview
 
