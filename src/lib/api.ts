@@ -16,6 +16,7 @@ import type {
   ShelfItem,
   Stamp,
   CorkPin,
+  Loan,
   StreamSort,
   VibeId,
   Zine,
@@ -276,4 +277,7 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify({ pins }),
     }),
+  loans: () => req<{ loans: Loan[] }>('/api/loans'),
+  checkout: (id: string) =>
+    req<{ loan: Loan }>(`/api/zines/${id}/checkout`, { method: 'POST' }),
 }

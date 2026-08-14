@@ -393,9 +393,22 @@ export function createApp(db: Db) {
     const penName = String(body.penName ?? existing?.pen_name ?? '').trim().slice(0, 48)
     const bSide = String(body.bSide ?? existing?.b_side ?? '').trim().slice(0, 280)
     const editionSize = Math.max(0, Math.min(999, Number(body.editionSize ?? existing?.edition_size ?? 0) || 0))
+    const errata = String(body.errata ?? existing?.errata ?? '').trim().slice(0, 200)
+    const includes = Array.isArray(body.includes) ? body.includes.slice(0, 12) : []
     db.prepare(
-      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ? WHERE id = ?',
-    ).run(JSON.stringify(tags), finish, series, issueNo, penName, bSide, editionSize, id)
+      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ? WHERE id = ?',
+    ).run(
+      JSON.stringify(tags),
+      finish,
+      series,
+      issueNo,
+      penName,
+      bSide,
+      editionSize,
+      errata,
+      JSON.stringify(includes),
+      id,
+    )
     const row = getZineRow(db, id)
     return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
   })
@@ -417,6 +430,7 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM margins WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM stamps WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM claims WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM loans WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -1494,6 +1508,36 @@ export function createApp(db: Db) {
       )
     }
     return c.json({ ok: true })
+  })
+
+  app.get('/api/loans', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const now = Date.now()
+    const rows = db
+      .prepare(
+        `SELECT l.zine_id, l.due_at, z.title FROM loans l JOIN zines z ON z.id = l.zine_id
+         WHERE l.user_id = ? AND l.due_at > ? ORDER BY l.due_at`,
+      )
+      .all(user.id, now) as { zine_id: string; due_at: number; title: string }[]
+    return c.json({
+      loans: rows.map((row) => ({ zineId: row.zine_id, title: row.title, dueAt: row.due_at })),
+    })
+  })
+
+  app.post('/api/zines/:id/checkout', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.published) return c.json({ error: 'Cannot check that out' }, 404)
+    const noms = nomCount(db, row.id)
+    if (noms < ARCHIVE_THRESHOLD) return c.json({ error: 'Not in the archive' }, 400)
+    const dueAt = Date.now() + 7 * 86400_000
+    db.prepare(
+      `INSERT INTO loans (user_id, zine_id, due_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id, zine_id) DO UPDATE SET due_at = excluded.due_at`,
+    ).run(user.id, row.id, dueAt)
+    return c.json({ loan: { zineId: row.id, title: row.title, dueAt } })
   })
 
   return app

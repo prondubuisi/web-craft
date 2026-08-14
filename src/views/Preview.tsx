@@ -11,9 +11,11 @@ import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
 import {
   bumpPageStat,
+  checkoutLocal,
   claimLocal,
   claimState,
   dumpBag,
+  loadLoans,
   inBag,
   loadLocalPolls,
   loadMargins,
@@ -70,6 +72,7 @@ export function Preview() {
   const [archive, setArchive] = useState({ noms: 0, archived: false, mine: false })
   const [bOpen, setBOpen] = useState(false)
   const [run, setRun] = useState({ claimed: 0, mine: false, out: false })
+  const [loaned, setLoaned] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
@@ -146,6 +149,7 @@ export function Preview() {
       archived: zine?.archived ?? local.archived,
       mine: local.mine,
     })
+    setLoaned(loadLoans(bagOwner).some((row) => row.zineId === id))
     if (zine?.editionSize) {
       const claim = claimState(bagOwner, id, zine.editionSize)
       setRun({
@@ -274,12 +278,31 @@ export function Preview() {
             </div>
           ) : (
             <>
+              {zine.errata ? (
+                <aside className="errata-slip">
+                  <div className="issue-chip">ERRATA</div>
+                  <p className="serif">{zine.errata}</p>
+                </aside>
+              ) : null}
+              {(zine.includes ?? []).length ? (
+                <aside className="comp-list">
+                  <div className="issue-chip">THIS COMP STOCKS</div>
+                  <div className="cta-row" style={{ marginTop: 8 }}>
+                    {zine.includes!.map((item) => (
+                      <Link key={item.zineId} to={`/z/${item.zineId}`} className="comic-btn small">
+                        {item.title}
+                      </Link>
+                    ))}
+                  </div>
+                </aside>
+              ) : null}
               <div className="meta-line" style={{ marginBottom: '0.8rem' }}>
                 <span className="issue-chip">{zine.vibe}</span>
                 {seriesLabel(zine) ? <span className="issue-chip">{seriesLabel(zine)}</span> : null}
                 {zine.jamId ? <span className="issue-chip">JAM</span> : null}
                 {archive.archived ? <span className="issue-chip">ARCHIVE</span> : null}
                 {runLabel(zine) ? <span className="issue-chip">{runLabel(zine)}</span> : null}
+                {(zine.includes ?? []).length ? <span className="issue-chip">COMP</span> : null}
                 <Link className="owner-link" to={profilePath(zine.owner)}>
                   {byline(zine)}
                 </Link>
@@ -492,6 +515,18 @@ export function Preview() {
                 }}
               >
                 {archive.mine ? 'Nominated' : 'Nominate'} · {archive.noms}
+              </ComicButton>
+            ) : null}
+            {!locked && !needsPass && archive.archived && !mine ? (
+              <ComicButton
+                className={`small no-print ${loaned ? 'pink' : 'ghost'}`}
+                onClick={() => {
+                  checkoutLocal(bagOwner, zine.id, zine.title)
+                  setLoaned(true)
+                  if (session && online) void api.checkout(zine.id).catch(() => undefined)
+                }}
+              >
+                {loaned ? 'On loan' : 'Check out'}
               </ComicButton>
             ) : null}
             {!locked && !needsPass && zine.editionSize && !mine ? (

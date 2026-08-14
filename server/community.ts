@@ -145,6 +145,9 @@ function seedJams(db: Db): void {
   db.prepare(
     `UPDATE zines SET edition_size = 13 WHERE title = 'issue 13' AND (edition_size IS NULL OR edition_size = 0)`,
   ).run()
+  db.prepare(
+    `UPDATE zines SET errata = ? WHERE title = 'issue 13' AND (errata IS NULL OR errata = '')`,
+  ).run('page 2: it rained harder than we printed.')
 }
 
 function seedArchive(db: Db): void {
@@ -293,6 +296,12 @@ function enrichWidgets(db: Db): void {
         type: 'blackout',
         text: 'it rained like a confession and the gutter took notes',
         hidden: [2, 5, 8],
+      },
+      {
+        id: 'seed-insert-13',
+        type: 'insert',
+        title: 'wet flyer',
+        text: 'umbrella left under the tracks. take it if it still drips.',
       },
     ],
     'sunday market': [

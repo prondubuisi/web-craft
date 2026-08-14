@@ -45,6 +45,12 @@ describe('widgets', () => {
     }
   })
 
+  it('creates a flyer insert', () => {
+    const block = createBlock('insert', 'ham')
+    expect(block.type).toBe('insert')
+    if (block.type === 'insert') expect(block.title.length).toBeGreaterThan(2)
+  })
+
   it('creates a contents list', () => {
     const block = createBlock('contents', 'miles')
     expect(block.type).toBe('contents')

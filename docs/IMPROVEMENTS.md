@@ -63,10 +63,15 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Time capsule drop** — 1.1.0 (in a year / in a decade)
 - **Postcard** — 1.1.0 (tiny card in `/mail`)
 - **Corkboard** — 1.1.0 (`/cork` cutting table)
+- **Errata slip** — 1.2.0 (taped correction after the drop)
+- **Flyer insert** — 1.2.0 (`/insert` loose page)
+- **Cork to page** — 1.2.0 (paste a pin into a draft)
+- **Compilation** — 1.2.0 (stock other issues inside one)
+- **Library checkout** — 1.2.0 (borrow an archived issue for a week)
 
 ## Suggested starting point
 
-Round 4 shipped in 1.1.0.
+Round 5 shipped in 1.2.0.
 
 ## More ideas, tied to the project's actual identity
 
