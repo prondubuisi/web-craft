@@ -3,19 +3,24 @@ import { createSeed } from './seed'
 
 export const STORAGE_KEY = 'zineverse.v1'
 
+export function normalizeState(parsed: unknown): AppState | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const state = parsed as Partial<AppState>
+  if (!Array.isArray(state.zines) || !state.profile) return null
+  return {
+    profile: state.profile,
+    zines: state.zines.map((z) => ({
+      ...z,
+      dropsAt: z.dropsAt ?? (z.published ? z.updatedAt : null),
+    })),
+  }
+}
+
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return createSeed()
-    const parsed = JSON.parse(raw) as AppState
-    if (!parsed?.zines || !parsed?.profile) return createSeed()
-    return {
-      profile: parsed.profile,
-      zines: parsed.zines.map((z) => ({
-        ...z,
-        dropsAt: z.dropsAt ?? (z.published ? z.updatedAt : null),
-      })),
-    }
+    return normalizeState(JSON.parse(raw)) ?? createSeed()
   } catch {
     return createSeed()
   }

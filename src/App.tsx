@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { appBasename } from './lib/paths'
 import { ZineProvider } from './store/ZineContext'
 import { Landing } from './views/Landing'
 import { Studio } from './views/Studio'
@@ -10,7 +11,7 @@ import { Share } from './views/Share'
 export default function App() {
   return (
     <ZineProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={appBasename()}>
         <div className="app-shell">
           <Routes>
             <Route path="/" element={<Landing />} />
