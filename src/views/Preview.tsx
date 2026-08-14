@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
 import { useCountdown } from '../lib/useCountdown'
 import { coverSrc } from '../lib/zine'
@@ -37,7 +38,7 @@ export function Preview() {
   const liked = profile.likedIds.includes(zine.id)
 
   async function share() {
-    const url = `${window.location.origin}/s#${encodeShare(zine as NonNullable<typeof zine>)}`
+    const url = `${appHref('/s')}#${encodeShare(zine as NonNullable<typeof zine>)}`
     const ok = await copyText(url)
     setCopied(ok)
     window.setTimeout(() => setCopied(false), 2000)
