@@ -6,7 +6,7 @@ A playful, Spider-Verse-inspired zine builder. Pages are digital collage — blo
 
 Live demo: https://prondubuisi.github.io/web-craft/
 
-Installable as a standalone app on a phone (Add to Home Screen). Reader view has **Print issue**. Snapshot links stay the sharing model — there is no account or server. Everything you make lives in this browser unless you export JSON or copy a snapshot.
+Installable as a standalone app on a phone (Add to Home Screen). Reader view has **Print issue**. The public Pages demo works without an account. Locally, `npm run dev` also starts the SQLite API — claim a handle to sync drafts. Snapshot links still work with no server. Without the API, everything you make lives in this browser unless you export JSON or copy a snapshot.
 
 ```bash
 npm install
