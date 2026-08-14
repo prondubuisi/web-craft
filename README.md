@@ -6,6 +6,8 @@ A playful, Spider-Verse-inspired zine builder. Pages are digital collage — blo
 
 Live demo: https://prondubuisi.github.io/web-craft/
 
+Installable as a standalone app on a phone (Add to Home Screen). Reader view has **Print issue**. Snapshot links stay the sharing model — there is no account or server. Everything you make lives in this browser unless you export JSON or copy a snapshot.
+
 ```bash
 npm install
 npm run dev
@@ -37,3 +39,7 @@ Everything else lives in `localStorage` (`zineverse.v1`). **Reset demo** restore
 ## Vibes
 
 Miles · Gwen · Peni · Ham · Noir — palettes, not templates. Halftone density, line weight, and chromatic split ride along with the vibe.
+
+## How state flows
+
+`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. Publish is a timestamp on the zine (`dropsAt`). A snapshot link is `encodeShare()` in the URL hash (`/s#…`), not a permissioned server object. Import/export JSON is the portable file format.

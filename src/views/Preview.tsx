@@ -104,6 +104,11 @@ export function Preview() {
             <ComicButton className="small" onClick={() => void share()}>
               {copied ? 'Copied' : 'Copy snapshot'}
             </ComicButton>
+            {!locked ? (
+              <ComicButton className="small ghost no-print" onClick={() => window.print()}>
+                Print issue
+              </ComicButton>
+            ) : null}
             {zine.owner === 'you' ? (
               <Link to={`/edit/${zine.id}`} className="comic-btn ghost">
                 Edit

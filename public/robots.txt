@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://prondubuisi.github.io/web-craft/sitemap.xml
