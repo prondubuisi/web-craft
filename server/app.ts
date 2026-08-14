@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import { seedCommunity } from './community.ts'
+import { refreshDemoDrop, seedCommunity } from './community.ts'
 import type { Db } from './db.ts'
 import { registerArchive } from './routes/archive.ts'
 import { registerAuth } from './routes/auth.ts'
@@ -28,7 +28,10 @@ export function createApp(db: Db) {
     }),
   )
 
-  app.get('/api/health', (c) => c.json({ ok: true }))
+  app.get('/api/health', (c) => {
+    refreshDemoDrop(db)
+    return c.json({ ok: true })
+  })
 
   registerAuth(app, db)
   registerZines(app, db)

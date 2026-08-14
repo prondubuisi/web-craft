@@ -15,8 +15,8 @@ function markApplied(db: Db, id: string): void {
   db.prepare('INSERT OR IGNORE INTO schema_migrations (id, applied_at) VALUES (?, ?)').run(id, Date.now())
 }
 
-function hasUsersTable(db: Db): boolean {
-  const row = db.prepare(`SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = 'users'`).get() as
+function hasTable(db: Db, name: string): boolean {
+  const row = db.prepare(`SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ?`).get(name) as
     | { ok: number }
     | undefined
   return Boolean(row)
@@ -29,7 +29,7 @@ export function migrate(db: Db): void {
     applied_at INTEGER NOT NULL
   )`)
 
-  if (hasUsersTable(db)) markApplied(db, '0001_init')
+  if (hasTable(db, 'users')) markApplied(db, '0001_init')
 
   const applied = appliedIds(db)
   const files = readdirSync(DIR)
@@ -44,6 +44,7 @@ export function migrate(db: Db): void {
   for (const file of files) {
     const id = file.replace(/\.sql$/, '')
     if (applied.has(id)) continue
+    if (id !== '0001_init' && !hasTable(db, 'zines')) continue
     apply(id, readFileSync(join(DIR, file), 'utf8'))
   }
 }

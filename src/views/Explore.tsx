@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { useRemote } from '../lib/useRemote'
 import { useCountdown } from '../lib/useCountdown'
@@ -75,14 +75,15 @@ export function Explore() {
     <div data-vibe="miles">
       <Topbar />
       <main className="studio">
+        <LocalNote />
         <div className="studio-head">
           <div>
             <div className="issue-chip">ONE-CLICK REMIX</div>
             <h1 className="display chroma">the stream</h1>
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
-              A website is a gathering place, not a billboard. Fork anything you like.{' '}
-              <Link to="/board">Need a trade or a second pair of eyes? The board is up.</Link>
+              A website is a gathering place, not a billboard. Fork anything you like.
             </p>
+            <SceneLinks />
             {jam ? (
               <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
                 <Link to={`/jam/${jam.id}`}>
@@ -185,7 +186,7 @@ export function Explore() {
               key={z.id}
               zine={z}
               onRemix={() => {
-                void remixZine(z.id).then((id) => {
+                void remixZine(z.id, z).then((id) => {
                   if (id) navigate(`/edit/${id}`)
                 })
               }}

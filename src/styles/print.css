@@ -11,7 +11,9 @@
   .footer-issue,
   .comment-form,
   .filter-bar,
-  .inbox {
+  .inbox,
+  .local-note,
+  .primer {
     display: none !important;
   }
 

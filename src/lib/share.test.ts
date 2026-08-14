@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { decodeShare, encodeShare, payloadToZine, toSharePayload } from './share'
+import {
+  decodeShare,
+  encodeShare,
+  payloadToZine,
+  SNAPSHOT_MAX_CHARS,
+  tryEncodeShare,
+  toSharePayload,
+} from './share'
 import type { Zine } from './types'
 
 function zine(partial: Partial<Zine> = {}): Zine {
@@ -45,10 +52,29 @@ describe('share codec', () => {
     expect(decodeShare(`#${token}`)?.title).toBe('ghost notes')
   })
 
-  it('replaces uploaded data URLs with vibe art so links stay small', () => {
+  it('keeps small data URLs in the snapshot', () => {
     const payload = toSharePayload(zine())
     const hero = payload.blocks.find((b) => b.type === 'hero')
-    expect(hero && hero.type === 'hero' ? hero.src : '').toBe('/art/gwen.jpg')
+    expect(hero && hero.type === 'hero' ? hero.src : '').toBe('data:image/png;base64,abc')
+    expect(tryEncodeShare(zine()).ok).toBe(true)
+  })
+
+  it('refuses a snapshot when photos will not fit a link', () => {
+    const heavy = zine({
+      blocks: [
+        {
+          id: 'b',
+          type: 'hero',
+          src: `data:image/jpeg;base64,${'A'.repeat(SNAPSHOT_MAX_CHARS)}`,
+          caption: 'too much',
+          density: 0.2,
+          split: 4,
+        },
+      ],
+    })
+    const result = tryEncodeShare(heavy)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toMatch(/too heavy/i)
   })
 
   it('rejects garbage', () => {

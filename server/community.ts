@@ -257,7 +257,7 @@ function seedFollows(db: Db): void {
   }
 }
 
-function refreshDemoDrop(db: Db): void {
+export function refreshDemoDrop(db: Db): void {
   const row = db.prepare(`SELECT id, drops_at FROM zines WHERE title = 'midnight run'`).get() as
     | { id: string; drops_at: number | null }
     | undefined

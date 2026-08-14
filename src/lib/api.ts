@@ -1,52 +1,58 @@
 import type {
   ArchiveResponse,
   AuthOk,
+  BagItemResponse,
   BagResponse,
   BoardListResponse,
   BoardPostBody,
   BoardPostResponse,
+  ChainAddResponse,
+  ChainPeekResponse,
+  ClaimResponse,
+  CommentOneResponse,
   CommentsResponse,
   CorkResponse,
   FestListResponse,
   FestTableBody,
   FestTableResponse,
+  FollowResponse,
+  GuestNoteResponse,
   GuestbookResponse,
   JamListResponse,
   JamOneResponse,
   LikeResponse,
+  LoanOneResponse,
   LoansResponse,
   MailSendResponse,
   MailThreadResponse,
   MailThreadsResponse,
+  MarginOneResponse,
   MarginsResponse,
   MeResponse,
+  NominateResponse,
   NoticesResponse,
   OkBody,
+  PageHitBody,
   PagesResponse,
+  PileResponse,
   PollsResponse,
+  ProfilePatchResponse,
   ProfileResponse,
   PublishBody,
+  ReviewOneResponse,
   ReviewsResponse,
   ShelfResponse,
   SitResponse,
   StampsResponse,
   StreamQuery,
   SwapResponse,
+  ViewsResponse,
+  WatchSeriesResponse,
   ZineListResponse,
   ZineOneResponse,
+  ZineWriteResponse,
 } from './contract'
-import type {
-  BagItem,
-  Comment,
-  CorkPin,
-  GuestNote,
-  ListingKind,
-  Loan,
-  MarginNote,
-  PollTally,
-  Review,
-  Zine,
-} from './types'
+import type { CorkPin, ListingKind, PollTally, Zine } from './types'
 
 export type { MeResponse as Me, Session } from './contract'
 
@@ -128,12 +134,12 @@ export const api = {
     const qs = params.toString()
     return req<ZineListResponse>(`/api/stream${qs ? `?${qs}` : ''}`)
   },
-  pile: () => req<{ zine: Zine }>('/api/pile'),
+  pile: () => req<PileResponse>('/api/pile'),
   user: (name: string) => req<ProfileResponse>(`/api/users/${encodeURIComponent(name)}`),
   guestbook: (name: string) =>
     req<GuestbookResponse>(`/api/users/${encodeURIComponent(name)}/guestbook`),
   signGuestbook: (name: string, body: string) =>
-    req<{ note: GuestNote }>(`/api/users/${encodeURIComponent(name)}/guestbook`, {
+    req<GuestNoteResponse>(`/api/users/${encodeURIComponent(name)}/guestbook`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
@@ -142,24 +148,24 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ zineId, note }),
     }),
-  unstock: (zineId: string) => req<{ ok: boolean }>(`/api/shelf/${zineId}`, { method: 'DELETE' }),
+  unstock: (zineId: string) => req<OkBody>(`/api/shelf/${zineId}`, { method: 'DELETE' }),
   pageStats: (id: string) => req<PagesResponse>(`/api/zines/${id}/pages`),
   pageHit: (id: string, page: number, dwellMs: number) =>
-    req<{ ok: boolean }>(`/api/zines/${id}/pages`, {
+    req<OkBody>(`/api/zines/${id}/pages`, {
       method: 'POST',
-      body: JSON.stringify({ page, dwellMs }),
+      body: JSON.stringify({ page, dwellMs } satisfies PageHitBody),
     }),
   chainPeek: (id: string, invite: string) =>
-    req<{ previous: Zine['blocks']; turn: number }>(
+    req<ChainPeekResponse>(
       `/api/zines/${id}/chain?invite=${encodeURIComponent(invite)}`,
     ),
   chainAdd: (id: string, invite: string, blocks: Zine['blocks']) =>
-    req<{ invite: string; turn: number }>(`/api/zines/${id}/chain`, {
+    req<ChainAddResponse>(`/api/zines/${id}/chain`, {
       method: 'POST',
       body: JSON.stringify({ invite, blocks }),
     }),
   follow: (name: string) =>
-    req<{ following: boolean }>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
+    req<FollowResponse>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
   notices: () => req<NoticesResponse>('/api/notices'),
   readNotices: () => req<OkBody>('/api/notices/read', { method: 'POST' }),
   board: (kind?: ListingKind) => req<BoardListResponse>(`/api/board${kind ? `?kind=${kind}` : ''}`),
@@ -168,15 +174,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  removeListing: (id: string) => req<{ ok: boolean }>(`/api/board/${id}`, { method: 'DELETE' }),
+  removeListing: (id: string) => req<OkBody>(`/api/board/${id}`, { method: 'DELETE' }),
   updateMe: (bio: string, scene?: string) =>
-    req<{ name: string; bio: string; scene?: string }>('/api/users/me', {
+    req<ProfilePatchResponse>('/api/users/me', {
       method: 'PATCH',
       body: JSON.stringify({ bio, scene }),
     }),
   comments: (id: string) => req<CommentsResponse>(`/api/zines/${id}/comments`),
   comment: (id: string, body: string) =>
-    req<{ comment: Comment }>(`/api/zines/${id}/comments`, {
+    req<CommentOneResponse>(`/api/zines/${id}/comments`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
@@ -197,29 +203,29 @@ export const api = {
       body: JSON.stringify({ password, k: key ?? undefined }),
     }),
   upsert: (zine: Zine) =>
-    req<{ zine: Zine }>(`/api/zines/${zine.id}`, {
+    req<ZineWriteResponse>(`/api/zines/${zine.id}`, {
       method: 'PUT',
       body: JSON.stringify(zine),
     }),
-  remove: (id: string) => req<{ ok: boolean }>(`/api/zines/${id}`, { method: 'DELETE' }),
+  remove: (id: string) => req<OkBody>(`/api/zines/${id}`, { method: 'DELETE' }),
   publish: (id: string, dropsAt: number, opts?: Omit<PublishBody, 'dropsAt'>) =>
-    req<{ zine: Zine }>(`/api/zines/${id}/publish`, {
+    req<ZineWriteResponse>(`/api/zines/${id}/publish`, {
       method: 'POST',
       body: JSON.stringify({ dropsAt, ...opts } satisfies PublishBody),
     }),
   like: (id: string) => req<LikeResponse>(`/api/zines/${id}/like`, { method: 'POST' }),
-  view: (id: string) => req<{ views: number }>(`/api/zines/${id}/view`, { method: 'POST' }),
-  remix: (id: string) => req<{ zine: Zine }>(`/api/zines/${id}/remix`, { method: 'POST' }),
+  view: (id: string) => req<ViewsResponse>(`/api/zines/${id}/view`, { method: 'POST' }),
+  remix: (id: string) => req<ZineWriteResponse>(`/api/zines/${id}/remix`, { method: 'POST' }),
   bag: () => req<BagResponse>('/api/bag'),
   tuck: (zineId: string) =>
-    req<{ item: BagItem }>('/api/bag', {
+    req<BagItemResponse>('/api/bag', {
       method: 'POST',
       body: JSON.stringify({ zineId }),
     }),
-  dump: (zineId: string) => req<{ ok: boolean }>(`/api/bag/${zineId}`, { method: 'DELETE' }),
+  dump: (zineId: string) => req<OkBody>(`/api/bag/${zineId}`, { method: 'DELETE' }),
   reviews: (id: string) => req<ReviewsResponse>(`/api/zines/${id}/reviews`),
   review: (id: string, body: string) =>
-    req<{ review: Review }>(`/api/zines/${id}/reviews`, {
+    req<ReviewOneResponse>(`/api/zines/${id}/reviews`, {
       method: 'POST',
       body: JSON.stringify({ body }),
     }),
@@ -233,13 +239,10 @@ export const api = {
   jams: () => req<JamListResponse>('/api/jams'),
   jam: (id: string) => req<JamOneResponse>(`/api/jams/${encodeURIComponent(id)}`),
   archive: () => req<ArchiveResponse>('/api/archive'),
-  nominate: (id: string) =>
-    req<{ noms: number; archived: boolean; mine: boolean }>(`/api/zines/${id}/nominate`, {
-      method: 'POST',
-    }),
+  nominate: (id: string) => req<NominateResponse>(`/api/zines/${id}/nominate`, { method: 'POST' }),
   margins: (id: string) => req<MarginsResponse>(`/api/zines/${id}/margins`),
   margin: (id: string, blockId: string, body: string) =>
-    req<{ note: MarginNote }>(`/api/zines/${id}/margins`, {
+    req<MarginOneResponse>(`/api/zines/${id}/margins`, {
       method: 'POST',
       body: JSON.stringify({ blockId, body }),
     }),
@@ -255,19 +258,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ zineId }),
     }),
-  claim: (id: string) =>
-    req<{ claimed: number; mine: boolean; out: boolean }>(`/api/zines/${id}/claim`, { method: 'POST' }),
+  claim: (id: string) => req<ClaimResponse>(`/api/zines/${id}/claim`, { method: 'POST' }),
   cork: () => req<CorkResponse>('/api/cork'),
   saveCork: (pins: CorkPin[]) =>
-    req<{ ok: boolean }>('/api/cork', {
+    req<OkBody>('/api/cork', {
       method: 'PUT',
       body: JSON.stringify({ pins }),
     }),
   loans: () => req<LoansResponse>('/api/loans'),
-  checkout: (id: string) =>
-    req<{ loan: Loan }>(`/api/zines/${id}/checkout`, { method: 'POST' }),
+  checkout: (id: string) => req<LoanOneResponse>(`/api/zines/${id}/checkout`, { method: 'POST' }),
   watchSeries: (series: string) =>
-    req<{ watching: boolean }>('/api/series/watch', {
+    req<WatchSeriesResponse>('/api/series/watch', {
       method: 'POST',
       body: JSON.stringify({ series }),
     }),

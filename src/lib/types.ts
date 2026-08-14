@@ -31,6 +31,9 @@ export type StickerBlock = {
   type: 'sticker'
   text: string
   rotation: number
+  src?: string
+  x?: number
+  y?: number
 }
 
 export type HeroBlock = {
@@ -40,6 +43,8 @@ export type HeroBlock = {
   caption: string
   density: number
   split: number
+  x?: number
+  y?: number
 }
 
 export type GridPanel = {
@@ -290,7 +295,7 @@ export type BadgeId =
   | 'compiler'
   | 'subscriber'
 
-export type Zine = {
+export type ZineCore = {
   id: string
   title: string
   vibe: VibeId
@@ -301,6 +306,9 @@ export type Zine = {
   views: number
   likes: number
   remixes: number
+}
+
+export type ZinePublish = {
   published: boolean
   dropsAt?: number | null
   remixedFrom?: string
@@ -308,24 +316,33 @@ export type Zine = {
   shareKey?: string
   hasPass?: boolean
   passHash?: string
+}
+
+export type ZineEdition = {
   tags?: string[]
   finish?: FinishId
-  chainKey?: string
-  chainOpen?: boolean
   series?: string
   issueNo?: number
   penName?: string
+  editionSize?: number
+  claimed?: number
+  claimedByMe?: boolean
+}
+
+export type ZineExtras = {
+  chainKey?: string
+  chainOpen?: boolean
   jamId?: string
   bSide?: string
   noms?: number
   archived?: boolean
-  editionSize?: number
-  claimed?: number
-  claimedByMe?: boolean
   errata?: string
   includes?: CompItem[]
   dedication?: string
+  scatter?: boolean
 }
+
+export type Zine = ZineCore & ZinePublish & ZineEdition & ZineExtras
 
 export type CompItem = {
   zineId: string

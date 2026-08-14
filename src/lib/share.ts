@@ -1,5 +1,4 @@
 import type { Block, VibeId, Zine } from './types'
-import { artForVibe } from './vibes'
 import { uid } from './id'
 
 export type SharePayload = {
@@ -11,22 +10,14 @@ export type SharePayload = {
   dropsAt: number | null
 }
 
-function portableBlock(block: Block, vibe: VibeId): Block {
-  if (block.type === 'hero' && block.src.startsWith('data:')) {
-    return { ...block, src: artForVibe(vibe) }
-  }
-  if (block.type === 'audio' && block.src.startsWith('data:')) {
-    return { ...block, src: '' }
-  }
-  if (block.type === 'grid') {
-    return {
-      ...block,
-      panels: block.panels.map((p) =>
-        p.src?.startsWith('data:') ? { ...p, src: artForVibe(vibe) } : p,
-      ),
-    }
-  }
-  return block
+export const SNAPSHOT_MAX_CHARS = 14_000
+
+function encodePayload(payload: SharePayload): string {
+  const json = JSON.stringify(payload)
+  const bytes = new TextEncoder().encode(json)
+  let bin = ''
+  for (const byte of bytes) bin += String.fromCharCode(byte)
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
 export function toSharePayload(zine: Zine): SharePayload {
@@ -36,16 +27,49 @@ export function toSharePayload(zine: Zine): SharePayload {
     vibe: zine.vibe,
     owner: zine.owner,
     dropsAt: zine.dropsAt ?? null,
-    blocks: zine.blocks.map((b) => portableBlock(b, zine.vibe)),
+    blocks: zine.blocks,
   }
 }
 
 export function encodeShare(zine: Zine): string {
-  const json = JSON.stringify(toSharePayload(zine))
-  const bytes = new TextEncoder().encode(json)
-  let bin = ''
-  for (const byte of bytes) bin += String.fromCharCode(byte)
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return encodePayload(toSharePayload(zine))
+}
+
+export function tryEncodeShare(
+  zine: Zine,
+): { ok: true; token: string } | { ok: false; reason: string } {
+  const token = encodeShare(zine)
+  if (token.length > SNAPSHOT_MAX_CHARS) {
+    return {
+      ok: false,
+      reason:
+        'Photos are too heavy for a snapshot link. Export JSON to move them, or copy the studio link.',
+    }
+  }
+  return { ok: true, token }
+}
+
+export function compressImage(src: string, maxEdge = 720, quality = 0.72): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const w = img.naturalWidth || img.width
+      const h = img.naturalHeight || img.height
+      const scale = Math.min(1, maxEdge / Math.max(w, h, 1))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(w * scale))
+      canvas.height = Math.max(1, Math.round(h * scale))
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('No canvas'))
+        return
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => reject(new Error('Could not read that photo'))
+    img.src = src
+  })
 }
 
 export function decodeShare(raw: string): SharePayload | null {
@@ -115,8 +139,8 @@ export async function copyText(text: string): Promise<boolean> {
 
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (file.size > 1_600_000) {
-      reject(new Error('Keep uploads under 1.5MB so the page stays light.'))
+    if (file.size > 4_000_000) {
+      reject(new Error('Keep uploads under 4MB. We shrink photos before they hit the page.'))
       return
     }
     const reader = new FileReader()
@@ -124,4 +148,9 @@ export function readFileAsDataUrl(file: File): Promise<string> {
     reader.onload = () => resolve(String(reader.result))
     reader.readAsDataURL(file)
   })
+}
+
+export async function readImageAsDataUrl(file: File): Promise<string> {
+  const raw = await readFileAsDataUrl(file)
+  return compressImage(raw)
 }

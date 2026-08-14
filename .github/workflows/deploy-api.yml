@@ -17,13 +17,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check for Fly token
+        id: fly
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "No FLY_API_TOKEN — deploy skipped. Not a failure."
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
-      - name: Skip without Fly token
-        if: ${{ secrets.FLY_API_TOKEN == '' }}
-        run: echo "Add repo secret FLY_API_TOKEN to deploy the API."
+        if: steps.fly.outputs.has_token == 'true'
       - uses: superfly/flyctl-actions/setup-flyctl@master
-        if: ${{ secrets.FLY_API_TOKEN != '' }}
+        if: steps.fly.outputs.has_token == 'true'
       - run: flyctl deploy --remote-only
-        if: ${{ secrets.FLY_API_TOKEN != '' }}
+        if: steps.fly.outputs.has_token == 'true'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

@@ -15,6 +15,7 @@ const Cork = lazy(() => import('./views/Cork').then((m) => ({ default: m.Cork })
 const Fest = lazy(() => import('./views/Fest').then((m) => ({ default: m.Fest })))
 const JamPage = lazy(() => import('./views/Jam').then((m) => ({ default: m.JamPage })))
 const Mail = lazy(() => import('./views/Mail').then((m) => ({ default: m.Mail })))
+const Help = lazy(() => import('./views/Help').then((m) => ({ default: m.Help })))
 const NotFound = lazy(() => import('./views/NotFound').then((m) => ({ default: m.NotFound })))
 
 function RouteFallback() {
@@ -40,6 +41,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/studio" element={<Studio />} />
+                <Route path="/help" element={<Help />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/board" element={<Board />} />
                 <Route path="/fest" element={<Fest />} />

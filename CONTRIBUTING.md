@@ -35,6 +35,7 @@ npm run dev
 
 ```bash
 npm test
+npm run test:e2e  # Playwright flows; needs `npm run dev` on :5173
 npm run lint      # oxlint + stylelint
 npm run build
 ```

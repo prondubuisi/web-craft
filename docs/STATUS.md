@@ -14,6 +14,7 @@ Routes (from `src/App.tsx`):
 
 - `/` — Cover
 - `/studio` — Studio
+- `/help` — Glossary
 - `/explore` — Stream (search, vibe, watching, jam, archive)
 - `/board` — Trade / collab / feedback pins (can mark swapped)
 - `/fest` — Fest tables + sit
@@ -30,7 +31,7 @@ Routes (from `src/App.tsx`):
 
 **Structure** (~8,800 lines of TS/TSX in `src/`):
 
-- `src/views/` — 13 screens. Largest: Editor (~681), Preview (~645)
+- `src/views/` — 14 screens (Help added). Editor canvas + extracted DropModal/EditorMeta. Preview chrome; social state in `useIssueSocial`
 - `src/components/` — Blocks, Chrome, Inspector, Comments, Reviews, Margins, FlipReader, FoldSheet
 - `src/lib/` — types, widgets, storage, share, social, api, jam, fest, fold, cutout, tags
 - `src/store/` — `ZineContext.tsx` + `reducer.ts`
@@ -45,15 +46,15 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (19 `*.test.ts` files, including `server/api.test.ts` plus migration and service tests). Puppeteer smoke script `scripts/verify.mjs` (~319 lines); 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0). No `CHANGELOG.md`.
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (next changes).
 
 ## Access & Security Review
 
-- **Auth exists when the API is up.** Handle + password (`scrypt`). Session is a Bearer token in `localStorage` (`zineverse.token`) so GitHub Pages can call a hosted API on another origin. Cookie also used same-origin. No rate limit, no token rotation — see `docs/ARCHITECTURE_PLAN.md` (auth hardening is out of scope there).
+- **Auth exists when the API is up.** Handle + password (`scrypt`). Session is a Bearer token in `localStorage` (`zineverse.token`) so GitHub Pages can call a hosted API on another origin. Cookie also used same-origin. No rate limit, no token rotation — deferred; see `sg.md`.
 - **Without the API the app is still a local studio.** `owner` is a display label (`you` or `@handle`). Anyone with the page can edit whatever is in that browser’s `localStorage`.
 - **Sharing is still a blob.** Snapshot URLs (`/s#…`) encode the issue. No revocation.
 - **Sealed drops and passphrases are enforced on the API** when it is up. Offline they are client-side checks only.
-- **CI and Pages are live.** `.github/workflows/ci.yml` on `main`/`develop`. `.github/workflows/pages.yml` deploys `main`. `.github/workflows/deploy-api.yml` deploys Fly when `FLY_API_TOKEN` is set; without the secret the job fails immediately.
+- **CI and Pages are live.** `.github/workflows/ci.yml` on `main`/`develop`. `.github/workflows/pages.yml` deploys `main`. `.github/workflows/deploy-api.yml` deploys Fly when `FLY_API_TOKEN` is set; without the secret the job skips (not a failure).
 - **Hosted API** is optional. `VITE_API_URL` is a repo Actions variable. Fly volume holds SQLite.
 
 ## Evaluation
@@ -66,10 +67,9 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 
 ## Suggested Next Steps
 
-Feature list: none open from `docs/IMPROVEMENTS.md`.
+Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at the top of that file). Product next steps live in `sg.md`.
 
-Still open (engineering, not product):
+Still open:
 
-1. Auth/session hardening (rate limit, token rotation) — tracked above, out of the architecture plan
-2. `FLY_API_TOKEN` if the hosted API should actually deploy
-3. A `CHANGELOG.md` if release notes should live in-repo
+1. Auth/session hardening (rate limit, token rotation) — deferred
+2. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)

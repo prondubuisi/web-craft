@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
-import { BottomSheet, ComicButton, Modal, VibePicks } from '../components/Chrome'
+import { BottomSheet, ComicButton, VibePicks } from '../components/Chrome'
+import { DropModal } from '../components/DropModal'
+import { EditorMeta } from '../components/EditorMeta'
 import { Inspector } from '../components/Inspector'
+import { cutoutImage } from '../lib/cutout'
 import { appHref } from '../lib/paths'
-import { copyText, downloadJson, encodeShare } from '../lib/share'
-import type { Block, BlockType, FinishId, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
-import { formatTags, parseTagField } from '../lib/tags'
+import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
+import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
-import { demoJams, formatHint, jamForPublish, liveJam } from '../lib/jam'
-import { issuePath, isPublicDrop, slugify } from '../lib/zine'
+import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 type Snap = { title: string; vibe: VibeId; blocks: Block[] }
@@ -164,11 +165,58 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   }
 
   async function share(kind: 'local' | 'snapshot') {
-    const url =
-      kind === 'local' ? appHref(`/z/${zine.id}`) : `${appHref('/s')}#${encodeShare(zine)}`
+    if (kind === 'snapshot') {
+      const packed = tryEncodeShare(zine)
+      if (!packed.ok) {
+        setCopied(packed.reason)
+        window.setTimeout(() => setCopied(null), 3600)
+        return
+      }
+      const url = `${appHref('/s')}#${packed.token}`
+      const ok = await copyText(url)
+      setCopied(ok ? 'Snapshot link copied' : url)
+      window.setTimeout(() => setCopied(null), 2400)
+      return
+    }
+    const url = appHref(`/z/${zine.id}`)
     const ok = await copyText(url)
-    setCopied(ok ? (kind === 'local' ? 'Studio link copied' : 'Snapshot link copied') : url)
+    setCopied(ok ? 'Studio link copied' : url)
     window.setTimeout(() => setCopied(null), 2400)
+  }
+
+  async function snapSticker(file: File | undefined) {
+    if (!file) return
+    try {
+      const raw = await readImageAsDataUrl(file)
+      const src = await cutoutImage(raw).catch(() => raw)
+      const block = createBlock('sticker', zine.vibe)
+      if (block.type === 'sticker') {
+        block.src = src
+        block.text = 'cut this out'
+        block.rotation = -3
+      }
+      const next = [...zine.blocks, block]
+      update(next)
+      setSelected(block.id)
+      setSheet(null)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Could not use that photo')
+    }
+  }
+
+  function onPageDrop(e: DragEvent<HTMLElement>) {
+    if (!zine.scatter || !dragId) return
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.max(2, Math.min(68, ((e.clientX - rect.left) / rect.width) * 100))
+    const y = Math.max(2, Math.min(72, ((e.clientY - rect.top) / rect.height) * 100))
+    const block = zine.blocks.find((item) => item.id === dragId)
+    if (block && (block.type === 'sticker' || block.type === 'hero')) {
+      update(
+        zine.blocks.map((item) => (item.id === dragId ? { ...item, x, y } : item)),
+      )
+    }
+    setDragId(null)
   }
 
   useEffect(() => {
@@ -271,101 +319,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           ☰
         </button>
       </header>
-      <div className="editor-meta no-print">
-        <input
-          value={formatTags(zine.tags)}
-          placeholder="tags: diary, protest, music"
-          onChange={(e) => patchZine(zine.id, { tags: parseTagField(e.target.value) })}
-          aria-label="Tags"
-        />
-        <input
-          value={zine.series ?? ''}
-          placeholder="series: rooftop hours"
-          onChange={(e) => patchZine(zine.id, { series: e.target.value })}
-          aria-label="Series"
-        />
-        <input
-          type="number"
-          min={1}
-          max={999}
-          value={zine.issueNo ?? ''}
-          placeholder="#"
-          onChange={(e) =>
-            patchZine(zine.id, { issueNo: e.target.value ? Number(e.target.value) : undefined })
-          }
-          aria-label="Issue number"
-          style={{ minWidth: 72, width: 72 }}
-        />
-        <input
-          value={zine.penName ?? ''}
-          placeholder="pen name"
-          onChange={(e) => patchZine(zine.id, { penName: e.target.value })}
-          aria-label="Pen name"
-        />
-        <input
-          value={zine.bSide ?? ''}
-          placeholder="b-side (hidden fold)"
-          onChange={(e) => patchZine(zine.id, { bSide: e.target.value })}
-          aria-label="B-side"
-        />
-        <input
-          value={zine.dedication ?? ''}
-          placeholder="dedication (for @handle)"
-          onChange={(e) => patchZine(zine.id, { dedication: e.target.value })}
-          aria-label="Dedication"
-        />
-        <input
-          value={zine.errata ?? ''}
-          placeholder="errata slip"
-          onChange={(e) => patchZine(zine.id, { errata: e.target.value })}
-          aria-label="Errata"
-        />
-        <input
-          type="number"
-          min={0}
-          max={999}
-          value={zine.editionSize ?? ''}
-          placeholder="run of"
-          onChange={(e) =>
-            patchZine(zine.id, { editionSize: e.target.value ? Number(e.target.value) : undefined })
-          }
-          aria-label="Edition size"
-          style={{ minWidth: 80, width: 88 }}
-        />
-        <div className="vibe-picks">
-          {(['clean', 'riso', 'grain'] as FinishId[]).map((id) => (
-            <button
-              key={id}
-              className={`tray-item ${ (zine.finish ?? 'clean') === id ? 'on' : ''}`}
-              onClick={() => patchZine(zine.id, { finish: id })}
-            >
-              {id}
-            </button>
-          ))}
-        </div>
-        <div className="vibe-picks" aria-label="Compilation">
-          {zines
-            .filter((item) => item.id !== zine.id && isPublicDrop(item))
-            .slice(0, 8)
-            .map((item) => {
-              const on = (zine.includes ?? []).some((row) => row.zineId === item.id)
-              return (
-                <button
-                  key={item.id}
-                  className={`tray-item ${on ? 'on' : ''}`}
-                  onClick={() => {
-                    const includes = on
-                      ? (zine.includes ?? []).filter((row) => row.zineId !== item.id)
-                      : [...(zine.includes ?? []), { zineId: item.id, title: item.title, owner: item.owner }]
-                    patchZine(zine.id, { includes })
-                  }}
-                >
-                  + {item.title}
-                </button>
-              )
-            })}
-        </div>
-      </div>
+      <EditorMeta zine={zine} zines={zines} patchZine={patchZine} />
 
       <div className="editor-stage">
         {trayOpen ? (
@@ -383,6 +337,20 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                   /{w.slash}
                 </button>
               ))}
+              <label className="tray-item" style={{ cursor: 'pointer' }}>
+                <span className="glyph">✂</span>
+                snap
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  onChange={(e) => {
+                    void snapSticker(e.target.files?.[0])
+                    e.target.value = ''
+                  }}
+                />
+              </label>
             </div>
           </aside>
         ) : (
@@ -392,20 +360,43 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         )}
 
         <div className="canvas-wrap" onClick={() => setSelected(null)}>
-          <article className={`zine-page ${mode}`} onClick={(e) => e.stopPropagation()}>
+          <article
+            className={`zine-page ${mode}${zine.scatter ? ' scatter' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+            onDragOver={(e) => {
+              if (zine.scatter) e.preventDefault()
+            }}
+            onDrop={zine.scatter ? onPageDrop : undefined}
+          >
             {zine.blocks.length === 0 ? (
               <p className="empty-hint">type / to drop a sticker. this page is yours.</p>
             ) : null}
-            {zine.blocks.map((block) => (
+            {zine.blocks.map((block, i) => (
               <div
                 key={block.id}
-                className={`block ${selected === block.id ? 'selected' : ''}`}
+                className={`block ${selected === block.id ? 'selected' : ''}${
+                  zine.scatter && (block.type === 'sticker' || block.type === 'hero')
+                    ? ' scatter-pin'
+                    : ''
+                }`}
+                style={
+                  zine.scatter && (block.type === 'sticker' || block.type === 'hero')
+                    ? {
+                        left: `${block.x ?? (i % 3) * 28 + 6}%`,
+                        top: `${block.y ?? Math.floor(i / 3) * 26 + 8}%`,
+                      }
+                    : undefined
+                }
                 onClick={(e) => {
                   e.stopPropagation()
                   setSelected(block.id)
                 }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => onDrop(block.id)}
+                onDragOver={(e) => {
+                  if (!zine.scatter) e.preventDefault()
+                }}
+                onDrop={() => {
+                  if (!zine.scatter) onDrop(block.id)
+                }}
               >
                 <button
                   className="block-handle"
@@ -490,6 +481,20 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                 /{w.slash}
               </button>
             ))}
+            <label className="tray-item" style={{ cursor: 'pointer' }}>
+              <span className="glyph">✂</span>
+              snap
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(e) => {
+                  void snapSticker(e.target.files?.[0])
+                  e.target.value = ''
+                }}
+              />
+            </label>
           </div>
         </BottomSheet>
       ) : null}
@@ -577,105 +582,5 @@ function EditorCanvas({ zine }: { zine: Zine }) {
 
       {copied ? <div className="drop-toast">{copied}</div> : null}
     </div>
-  )
-}
-
-function DropModal({
-  zine,
-  onClose,
-  onDrop,
-  onCopy,
-  onExport,
-}: {
-  zine: Zine
-  onClose: () => void
-  onDrop: (when: number, opts: { visibility: Visibility; password?: string; chain?: boolean }) => void
-  onCopy: (kind: 'local' | 'snapshot') => void
-  onExport: () => void
-}) {
-  const [visibility, setVisibility] = useState<Visibility>(zine.visibility ?? 'public')
-  const [password, setPassword] = useState('')
-  const [chain, setChain] = useState(Boolean(zine.chainOpen))
-  const jam = liveJam(demoJams())
-  const inJam = jam && jamForPublish({ blocks: zine.blocks, visibility }, demoJams())
-  const options = [
-    { label: 'Drop now', at: Date.now() },
-    { label: 'In a minute', at: Date.now() + 60_000 },
-    { label: 'In an hour', at: Date.now() + 3600_000 },
-    { label: 'Tomorrow', at: Date.now() + 86400_000 },
-    { label: 'In a year', at: Date.now() + 365 * 86400_000 },
-    { label: 'In a decade', at: Date.now() + 3650 * 86400_000 },
-  ]
-  return (
-    <Modal title="drop this issue" onClose={onClose}>
-      <p className="serif">
-        A public drop hits the stream. An unlisted drop is a secret link. A year or a decade is a
-        time capsule — write to someone who is not here yet.
-      </p>
-      <div className="vibe-picks" style={{ marginTop: 12 }}>
-        <button
-          className={`tray-item ${visibility === 'public' ? 'on' : ''}`}
-          onClick={() => setVisibility('public')}
-        >
-          public
-        </button>
-        <button
-          className={`tray-item ${visibility === 'unlisted' ? 'on' : ''}`}
-          onClick={() => setVisibility('unlisted')}
-        >
-          unlisted
-        </button>
-        <button className={`tray-item ${chain ? 'on' : ''}`} onClick={() => setChain((v) => !v)}>
-          exquisite corpse
-        </button>
-      </div>
-      {jam ? (
-        <p className="hand" style={{ margin: '0.7rem 0 0' }}>
-          {inJam
-            ? `enters ${jam.title} · ${formatHint(jam.format)}`
-            : `${jam.title} is live — ${formatHint(jam.format)}. trim the issue to enter.`}
-        </p>
-      ) : null}
-      <input
-        type="password"
-        value={password}
-        placeholder="optional passphrase (4+)"
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ marginTop: 10 }}
-      />
-      <div className="vibe-picks" style={{ marginTop: 12 }}>
-        {options.map((opt) => (
-          <button
-            key={opt.label}
-            className="tray-item"
-            onClick={() =>
-              onDrop(opt.at, {
-                visibility: chain ? 'unlisted' : visibility,
-                password: password.length >= 4 ? password : undefined,
-                chain,
-              })
-            }
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      {zine.published ? (
-        <p className="hand" style={{ margin: '0.8rem 0' }}>
-          {zine.visibility === 'unlisted' ? 'already unlisted.' : 'already on the stream.'}
-        </p>
-      ) : null}
-      <div className="cta-row" style={{ marginTop: 12 }}>
-        <ComicButton className="small" onClick={() => onCopy('local')}>
-          Copy studio link
-        </ComicButton>
-        <ComicButton className="small cyan" onClick={() => onCopy('snapshot')}>
-          Copy snapshot link
-        </ComicButton>
-        <ComicButton className="small ghost" onClick={onExport}>
-          Export JSON
-        </ComicButton>
-      </div>
-    </Modal>
   )
 }
