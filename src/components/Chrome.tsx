@@ -3,6 +3,7 @@ import type { BadgeId, VibeId } from '../lib/types'
 import { BADGE_META } from '../lib/seed'
 import { VIBES } from '../lib/vibes'
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
+import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
   return (
@@ -66,7 +67,7 @@ export function Halftone({
         } as CSSProperties
       }
     >
-      <img src={src} alt={alt} />
+      <img src={assetUrl(src)} alt={alt} />
     </div>
   )
 }
