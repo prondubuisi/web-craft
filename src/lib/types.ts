@@ -14,6 +14,8 @@ export type BlockType =
   | 'audio'
   | 'strip'
   | 'colophon'
+  | 'blackout'
+  | 'contents'
 
 export type HeadingBlock = {
   id: string
@@ -121,6 +123,23 @@ export type ColophonBlock = {
   thanks: string
 }
 
+export type BlackoutBlock = {
+  id: string
+  type: 'blackout'
+  text: string
+  hidden: number[]
+}
+
+export type ContentsLine = {
+  label: string
+}
+
+export type ContentsBlock = {
+  id: string
+  type: 'contents'
+  lines: ContentsLine[]
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -135,6 +154,8 @@ export type Block =
   | AudioBlock
   | StripBlock
   | ColophonBlock
+  | BlackoutBlock
+  | ContentsBlock
 
 export type Visibility = 'public' | 'unlisted'
 export type FinishId = 'clean' | 'riso' | 'grain'
@@ -244,6 +265,7 @@ export type BadgeId =
   | 'remixer'
   | 'multiverse'
   | 'jammer'
+  | 'fest-goer'
 
 export type Zine = {
   id: string
@@ -289,11 +311,31 @@ export type Notice = {
   createdAt: number
 }
 
+export type FestTable = {
+  id: string
+  owner: string
+  name: string
+  scene: string
+  blurb: string
+  zineIds: string[]
+  createdAt: number
+}
+
+export type Stamp = {
+  zineId: string
+  title: string
+  owner: string
+  vibe?: VibeId
+  scene?: string
+  createdAt: number
+}
+
 export type Profile = {
   name: string
   remixPoints: number
   likedIds: string[]
   following: string[]
+  scene?: string
 }
 
 export type AppState = {

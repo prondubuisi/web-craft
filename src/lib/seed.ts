@@ -23,9 +23,15 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   remixer: { label: 'REMIXER', blurb: 'Forked someone else’s issue' },
   multiverse: { label: 'MULTIVERSE', blurb: 'Built in all five vibes' },
   jammer: { label: 'JAMMER', blurb: 'Dropped into a live jam' },
+  'fest-goer': { label: 'FEST GOER', blurb: 'Collected three passport stamps' },
 }
 
-export function computeBadges(zines: Zine[], remixPoints: number, handle?: string | null): BadgeId[] {
+export function computeBadges(
+  zines: Zine[],
+  remixPoints: number,
+  handle?: string | null,
+  stamps = 0,
+): BadgeId[] {
   const owned = zines.filter((z) => isMine(z, handle))
   const badges: BadgeId[] = []
   if (owned.some((z) => z.blocks.some((b) => b.type === 'sticker'))) badges.push('sticker-fiend')
@@ -35,6 +41,7 @@ export function computeBadges(zines: Zine[], remixPoints: number, handle?: strin
   if (remixPoints > 0 || owned.some((z) => z.remixedFrom)) badges.push('remixer')
   if (new Set(owned.map((z) => z.vibe)).size >= 5) badges.push('multiverse')
   if (owned.some((z) => z.jamId)) badges.push('jammer')
+  if (stamps >= 3) badges.push('fest-goer')
   return badges
 }
 
@@ -209,6 +216,17 @@ export function createSeed(): AppState {
           type: 'quote',
           text: 'it rained like a confession and the gutter took notes.',
           cite: 'issue zero',
+        },
+        {
+          id: uid(),
+          type: 'blackout',
+          text: 'it rained like a confession and the gutter took notes',
+          hidden: [2, 5, 8],
+        },
+        {
+          id: uid(),
+          type: 'contents',
+          lines: [{ label: 'cover — rain' }, { label: 'inside — redacted' }, { label: 'back — umbrella' }],
         },
         { id: uid(), type: 'glitch', text: 'REDACC TED' },
         {

@@ -1,4 +1,4 @@
-import type { Block, BlockType, VibeId } from './types'
+import type { Block, BlockType, ContentsBlock, VibeId } from './types'
 import { artForVibe } from './vibes'
 import { uid } from './id'
 
@@ -24,6 +24,8 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'audio', slash: 'tape', label: 'Mixtape', hint: 'Voice memo or a 10-second hook', glyph: '♪' },
   { type: 'strip', slash: 'strip', label: 'Mini comic', hint: 'Four panels in a row', glyph: '▮' },
   { type: 'colophon', slash: 'colophon', label: 'Colophon', hint: 'Edition, press, thanks', glyph: '¶' },
+  { type: 'blackout', slash: 'blackout', label: 'Blackout', hint: 'Redact a found poem', glyph: '█' },
+  { type: 'contents', slash: 'toc', label: 'Contents', hint: 'Hand-lettered table of contents', glyph: '≡' },
 ]
 
 export function createBlock(type: BlockType, vibe: VibeId): Block {
@@ -114,9 +116,37 @@ export function createBlock(type: BlockType, vibe: VibeId): Block {
         place: 'wherever the toner is cheap',
         thanks: 'to the person who mailed first',
       }
+    case 'blackout':
+      return {
+        id: uid(),
+        type,
+        text: 'if the city prints itself wrong on purpose the gutter still takes notes',
+        hidden: [1, 4, 6, 9],
+      }
+    case 'contents':
+      return {
+        id: uid(),
+        type,
+        lines: [
+          { label: 'cover — enter' },
+          { label: 'page two — tear' },
+          { label: 'back — leave a note' },
+        ],
+      }
   }
 }
 
 export function widgetByType(type: BlockType): WidgetDef {
   return WIDGETS.find((w) => w.type === type) ?? WIDGETS[0]
+}
+
+export function contentsFrom(blocks: Block[]): ContentsBlock {
+  const lines = blocks
+    .filter((block): block is Extract<Block, { type: 'heading' }> => block.type === 'heading')
+    .map((block) => ({ label: block.text.trim() || 'untitled' }))
+  return {
+    id: uid(),
+    type: 'contents',
+    lines: lines.length ? lines : [{ label: 'cover — still blank' }],
+  }
 }

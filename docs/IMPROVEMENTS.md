@@ -53,10 +53,15 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Marginalia** — 0.9.0 (¶ on a block)
 - **Pseudonym per issue** — 0.9.0 (pen name in the editor)
 - **B-side / secret page** — 0.9.0 (hidden fold on the reader)
+- **Zine fest** — 1.0.0 (`/fest` tables + scene)
+- **Passport stamps** — 1.0.0 (visit an issue, collect a stamp)
+- **Scene / city** — 1.0.0 (profile + fest filter)
+- **Blackout poetry** — 1.0.0 (`/blackout`)
+- **Table of contents** — 1.0.0 (`/toc`)
 
 ## Suggested starting point
 
-Round 3 shipped in 0.9.0.
+1.0.0 is the fest-floor release.
 
 ## More ideas, tied to the project's actual identity
 

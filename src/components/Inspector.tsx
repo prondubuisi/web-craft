@@ -240,6 +240,28 @@ export function Inspector({
           </div>
         </>
       ) : null}
+      {block.type === 'blackout' ? (
+        <p className="serif">Tap words on the page to redact them. The reader only sees the holes.</p>
+      ) : null}
+      {block.type === 'contents' ? (
+        <div className="cta-row" style={{ marginTop: 8 }}>
+          <button
+            className="tray-item"
+            onClick={() =>
+              onChange({ ...block, lines: [...block.lines, { label: `page ${block.lines.length + 1}` }] }, true)
+            }
+          >
+            add line
+          </button>
+          <button
+            className="tray-item"
+            disabled={block.lines.length <= 1}
+            onClick={() => onChange({ ...block, lines: block.lines.slice(0, -1) }, true)}
+          >
+            drop last
+          </button>
+        </div>
+      ) : null}
       {block.type === 'colophon' ? (
         <>
           <label>Press</label>

@@ -18,6 +18,7 @@ import {
   loadPageStats,
   nomState,
   nominateLocal,
+  stampIssue,
   stockShelf,
   tuckBag,
   voteLocalPoll,
@@ -83,6 +84,16 @@ export function Preview() {
 
   useEffect(() => {
     if (id && zine && !locked) recordView(id)
+    if (id && zine && !locked && !needsPass && !mine) {
+      stampIssue(session?.name ?? profile.name, {
+        zineId: zine.id,
+        title: zine.title,
+        owner: zine.owner,
+        vibe: zine.vibe,
+        createdAt: Date.now(),
+      })
+      if (online && session) void api.stamp(zine.id).catch(() => undefined)
+    }
   }, [id])
 
   const remoteSocial = Boolean(online && zine?.published && zine.owner !== 'you')

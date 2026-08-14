@@ -23,6 +23,7 @@ export function Topbar() {
         <NavLink to="/studio">Studio</NavLink>
         <NavLink to="/explore">Stream</NavLink>
         <NavLink to="/board">Board</NavLink>
+        <NavLink to="/fest">Fest</NavLink>
         <NavLink to="/mail">Letters</NavLink>
         {session ? <NavLink to={`/u/${session.name}`}>@{session.name}</NavLink> : null}
         <Inbox />

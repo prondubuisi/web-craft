@@ -22,6 +22,10 @@ import {
   loadMargins,
   nominateLocal,
   nomState,
+  loadTables,
+  upsertTable,
+  loadStamps,
+  stampIssue,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -125,6 +129,28 @@ describe('archive nominations', () => {
     const second = nominateLocal('yuzu', 'z1')
     expect(second.archived).toBe(true)
     expect(nomState('you', 'z1').mine).toBe(true)
+  })
+})
+
+describe('fest and passport', () => {
+  it('seeds tables and upserts one', () => {
+    expect(loadTables().length).toBeGreaterThan(0)
+    const next = upsertTable({
+      id: 't1',
+      owner: '@you',
+      name: 'my table',
+      scene: 'bushwick',
+      blurb: 'sit down',
+      zineIds: [],
+      createdAt: Date.now(),
+    })
+    expect(next[0]?.name).toBe('my table')
+  })
+
+  it('stamps an issue once', () => {
+    stampIssue('you', { zineId: 'z1', title: 'sunday market', owner: '@yuzu', createdAt: 1 })
+    stampIssue('you', { zineId: 'z1', title: 'sunday market', owner: '@yuzu', createdAt: 2 })
+    expect(loadStamps('you')).toHaveLength(1)
   })
 })
 

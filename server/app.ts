@@ -6,6 +6,7 @@ import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
 import { normalizeTags } from '../src/lib/tags.ts'
 import { demoJams, fitsJam, isJamLive, liveJam, ARCHIVE_THRESHOLD } from '../src/lib/jam.ts'
 import type { Jam, JamFormat } from '../src/lib/types.ts'
+import { normalizeScene } from '../src/lib/fest.ts'
 import { normalizeIssueNo, normalizeSeries } from '../src/lib/zine.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
@@ -38,6 +39,44 @@ function jamForLive(db: Db, visibility: string, blockCount: number): Jam | undef
   const jam = liveJam(listJams(db))
   if (!jam || !fitsJam(blockCount, jam.format)) return undefined
   return jam
+}
+
+function listStamps(db: Db, userId: string) {
+  return (
+    db
+      .prepare(
+        `SELECT s.zine_id, s.created_at, z.title, z.vibe, u.name AS owner_name
+         FROM stamps s JOIN zines z ON z.id = s.zine_id JOIN users u ON u.id = z.owner_id
+         WHERE s.user_id = ? ORDER BY s.created_at DESC`,
+      )
+      .all(userId) as { zine_id: string; created_at: number; title: string; vibe: string; owner_name: string }[]
+  ).map((row) => ({
+    zineId: row.zine_id,
+    title: row.title,
+    owner: `@${row.owner_name}`,
+    vibe: row.vibe,
+    createdAt: row.created_at,
+  }))
+}
+
+function tableFor(db: Db, userId: string) {
+  const row = db
+    .prepare(
+      `SELECT t.*, u.name AS owner_name FROM fest_tables t JOIN users u ON u.id = t.user_id WHERE t.user_id = ?`,
+    )
+    .get(userId) as
+    | { name: string; scene: string; blurb: string; zine_ids_json: string; created_at: number; owner_name: string; user_id: string }
+    | undefined
+  if (!row) return null
+  return {
+    id: row.user_id,
+    owner: `@${row.owner_name}`,
+    name: row.name,
+    scene: row.scene,
+    blurb: row.blurb,
+    zineIds: JSON.parse(row.zine_ids_json || '[]') as string[],
+    createdAt: row.created_at,
+  }
 }
 
 function listJams(db: Db): Jam[] {
@@ -367,6 +406,7 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM reviews WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM nominations WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM margins WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM stamps WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -508,8 +548,9 @@ export function createApp(db: Db) {
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     const body = await c.req.json().catch(() => null)
     const bio = String(body?.bio ?? '').slice(0, 200)
-    db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio, user.id)
-    return c.json({ name: user.name, bio })
+    const scene = normalizeScene(typeof body?.scene === 'string' ? body.scene : user.scene) ?? ''
+    db.prepare('UPDATE users SET bio = ?, scene = ? WHERE id = ?').run(bio, scene, user.id)
+    return c.json({ name: user.name, bio, scene })
   })
 
   app.get('/api/users/:name', (c) => {
@@ -542,6 +583,7 @@ export function createApp(db: Db) {
     return c.json({
       name: user.name,
       bio: user.bio ?? '',
+      scene: user.scene ?? '',
       remixPoints: user.remix_points,
       createdAt: user.created_at,
       followers,
@@ -584,6 +626,8 @@ export function createApp(db: Db) {
         note: row.note,
         vibe: row.vibe,
       })),
+      stamps: listStamps(db, user.id),
+      table: tableFor(db, user.id),
     })
   })
 
@@ -1296,6 +1340,80 @@ export function createApp(db: Db) {
     return c.json({
       note: { id, zineId: row.id, blockId, author: `@${user.name}`, body: text, createdAt: now },
     })
+  })
+
+  app.get('/api/fest', (c) => {
+    const rows = db
+      .prepare(
+        `SELECT t.*, u.name AS owner_name FROM fest_tables t JOIN users u ON u.id = t.user_id
+         ORDER BY t.created_at DESC`,
+      )
+      .all() as {
+      user_id: string
+      name: string
+      scene: string
+      blurb: string
+      zine_ids_json: string
+      created_at: number
+      owner_name: string
+    }[]
+    return c.json({
+      tables: rows.map((row) => ({
+        id: row.user_id,
+        owner: `@${row.owner_name}`,
+        name: row.name,
+        scene: row.scene,
+        blurb: row.blurb,
+        zineIds: JSON.parse(row.zine_ids_json || '[]') as string[],
+        createdAt: row.created_at,
+      })),
+    })
+  })
+
+  app.post('/api/fest', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const name = String(body?.name ?? '').trim().slice(0, 48) || `${user.name}'s table`
+    const scene = normalizeScene(body?.scene) ?? ''
+    const blurb = String(body?.blurb ?? '').trim().slice(0, 200)
+    const zineIds = Array.isArray(body?.zineIds) ? (body.zineIds as string[]).slice(0, 8) : []
+    const now = Date.now()
+    db.prepare(
+      `INSERT INTO fest_tables (user_id, name, scene, blurb, zine_ids_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET name = excluded.name, scene = excluded.scene,
+         blurb = excluded.blurb, zine_ids_json = excluded.zine_ids_json`,
+    ).run(user.id, name, scene, blurb, JSON.stringify(zineIds), now)
+    if (scene) {
+      db.prepare(`UPDATE users SET scene = ? WHERE id = ? AND (scene IS NULL OR scene = '')`).run(scene, user.id)
+    }
+    return c.json({
+      table: { id: user.id, owner: `@${user.name}`, name, scene, blurb, zineIds, createdAt: now },
+    })
+  })
+
+  app.get('/api/stamps', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    return c.json({ stamps: listStamps(db, user.id) })
+  })
+
+  app.post('/api/stamps', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const zineId = String(body?.zineId ?? '')
+    const zine = getZineRow(db, zineId)
+    if (!zine || !zine.published || zine.visibility === 'unlisted') {
+      return c.json({ error: 'Cannot stamp that' }, 404)
+    }
+    if (zine.owner_id === user.id) return c.json({ stamps: listStamps(db, user.id) })
+    db.prepare(
+      `INSERT INTO stamps (user_id, zine_id, created_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id, zine_id) DO NOTHING`,
+    ).run(user.id, zineId, Date.now())
+    return c.json({ stamps: listStamps(db, user.id) })
   })
 
   return app

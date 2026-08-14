@@ -434,4 +434,43 @@ describe('social', () => {
     const archive = await json(await client.request('/api/archive'))
     expect((archive.zines as { title: string }[]).some((z) => z.title === 'cheap copy')).toBe(true)
   })
+
+  it('sets a fest table and stamps an issue', async () => {
+    const client = app()
+    const author = await register(client, 'author0', 'strawberry1')
+    await client.request('/api/zines/fest-one', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(sample),
+    })
+    await client.request('/api/zines/fest-one/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const table = await client.request('/api/fest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ name: 'booth zero', scene: 'bushwick', blurb: 'sit down', zineIds: ['fest-one'] }),
+    })
+    expect(table.status).toBe(200)
+    const floor = await json(await client.request('/api/fest'))
+    expect((floor.tables as { name: string }[]).some((row) => row.name === 'booth zero')).toBe(true)
+    const reader = await register(client, 'reader0', 'cartoon99')
+    const stamped = await json(
+      await client.request('/api/stamps', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: reader.cookie },
+        body: JSON.stringify({ zineId: 'fest-one' }),
+      }),
+    )
+    expect((stamped.stamps as { zineId: string }[]).some((row) => row.zineId === 'fest-one')).toBe(true)
+    await client.request('/api/users/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ bio: 'walking the floor', scene: 'bushwick' }),
+    })
+    const wall = await json(await client.request('/api/users/reader0'))
+    expect(wall.scene).toBe('bushwick')
+  })
 })
