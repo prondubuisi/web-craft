@@ -242,4 +242,27 @@ describe('social', () => {
     )
     expect((watching.zines as { title: string }[]).some((z) => z.title === 'rooftop')).toBe(true)
   })
+
+  it('pins a trade to the board', async () => {
+    const client = app()
+    const author = await register(client, 'trader1', 'strawberry1')
+    await client.request('/api/zines/swap', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(sample),
+    })
+    await client.request('/api/zines/swap/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const posted = await client.request('/api/board', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ kind: 'trade', body: 'rooftop for rain pages', zineId: 'swap' }),
+    })
+    expect(posted.status).toBe(200)
+    const board = await json(await client.request('/api/board?kind=trade'))
+    expect((board.listings as { body: string }[]).some((row) => row.body.includes('rooftop'))).toBe(true)
+  })
 })

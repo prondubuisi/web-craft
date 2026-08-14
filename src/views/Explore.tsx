@@ -56,7 +56,8 @@ export function Explore() {
             <div className="issue-chip">ONE-CLICK REMIX</div>
             <h1 className="display chroma">the stream</h1>
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
-              A website is a gathering place, not a billboard. Fork anything you like.
+              A website is a gathering place, not a billboard. Fork anything you like.{' '}
+              <Link to="/board">Need a trade or a second pair of eyes? The board is up.</Link>
             </p>
           </div>
         </div>

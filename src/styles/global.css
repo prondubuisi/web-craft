@@ -1200,6 +1200,108 @@ p {
   text-underline-offset: 3px;
 }
 
+.board-form {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1.4rem;
+  max-width: 40rem;
+}
+
+.board-form textarea,
+.board-form select {
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+}
+
+.board-form textarea {
+  min-height: 88px;
+}
+
+.board-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.board-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 5px 6px 0 var(--ink);
+  padding: 0.85rem 0.95rem;
+}
+
+.board-card.trade { border-left: 10px solid var(--accent); }
+.board-card.collab { border-left: 10px solid var(--accent-2); }
+.board-card.feedback { border-left: 10px solid var(--accent-3); }
+
+.fold-wrap {
+  display: none;
+  margin-top: 1.4rem;
+}
+
+.fold-wrap.on {
+  display: block;
+}
+
+.fold-help {
+  max-width: 40rem;
+  margin-bottom: 0.7rem;
+}
+
+.fold-sheet {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr 1fr;
+  width: 100%;
+  aspect-ratio: 11 / 8.5;
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: #111;
+}
+
+.fold-cell {
+  border: 1px dashed #111;
+  padding: 0.35rem;
+  overflow: hidden;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  position: relative;
+}
+
+.fold-cell.flip {
+  transform: rotate(180deg);
+}
+
+.fold-n {
+  position: absolute;
+  right: 4px;
+  top: 2px;
+  font-family: var(--font-badge);
+  font-size: 0.65rem;
+}
+
+.fold-h {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  line-height: 0.95;
+  margin: 0 0 0.2rem;
+}
+
+.fold-cell img {
+  width: 100%;
+  height: 42%;
+  object-fit: cover;
+  border: 1px solid #111;
+}
+
+.fold-blank {
+  opacity: 0.55;
+  font-family: var(--font-hand);
+}
+
 .caption {
   font-family: var(--font-script);
   font-size: 1.15rem;
@@ -1650,6 +1752,47 @@ p {
     width: 100%;
     min-height: 0;
     border: 2px solid #000;
+  }
+
+  .fold-wrap {
+    display: none !important;
+  }
+
+  body.fold-print {
+    background: #fff;
+  }
+
+  body.fold-print .preview-page {
+    padding: 0;
+  }
+
+  body.fold-print .zine-page,
+  body.fold-print .fold-help {
+    display: none !important;
+  }
+
+  body.fold-print .fold-wrap {
+    display: block !important;
+    margin: 0;
+  }
+
+  body.fold-print .fold-sheet {
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: auto;
+    border: 0;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 0.3in;
+  }
+
+  body.fold-print {
+    @page {
+      size: landscape;
+      margin: 0.2in;
+    }
   }
 }
 

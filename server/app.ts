@@ -11,6 +11,7 @@ import {
   listFollowing,
   notify,
   rowToComment,
+  rowToListing,
   rowToNotice,
   rowToZine,
   type Db,
@@ -565,6 +566,86 @@ export function createApp(db: Db) {
        ON CONFLICT(user_id, zine_id, block_id) DO UPDATE SET option_idx = excluded.option_idx`,
     ).run(user.id, row.id, block.id, option)
     return c.json(pollTallies(row, user.id)[block.id])
+  })
+
+  const LISTING_KINDS = new Set(['trade', 'collab', 'feedback'])
+
+  app.get('/api/board', (c) => {
+    const kind = c.req.query('kind') ?? ''
+    const where = LISTING_KINDS.has(kind) ? 'WHERE l.kind = ?' : ''
+    const params = LISTING_KINDS.has(kind) ? [kind] : []
+    const rows = db
+      .prepare(
+        `SELECT l.*, u.name AS author_name, z.title AS zine_title
+         FROM listings l
+         JOIN users u ON u.id = l.user_id
+         LEFT JOIN zines z ON z.id = l.zine_id
+         ${where}
+         ORDER BY l.created_at DESC
+         LIMIT 80`,
+      )
+      .all(...params) as {
+      id: string
+      kind: string
+      body: string
+      created_at: number
+      author_name: string
+      zine_id: string | null
+      zine_title: string | null
+    }[]
+    return c.json({ listings: rows.map(rowToListing) })
+  })
+
+  app.post('/api/board', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const kind = String(body?.kind ?? '')
+    const text = String(body?.body ?? '').trim().slice(0, 280)
+    if (!LISTING_KINDS.has(kind)) return c.json({ error: 'Pick trade, collab, or feedback' }, 400)
+    if (text.length < 1) return c.json({ error: 'Write a want first' }, 400)
+    const zineId = body?.zineId ? String(body.zineId) : null
+    if (zineId) {
+      const zine = getZineRow(db, zineId)
+      if (!zine || (!zine.published && zine.owner_id !== user.id)) {
+        return c.json({ error: 'Unknown issue' }, 404)
+      }
+    }
+    const id = randomUUID()
+    const now = Date.now()
+    db.prepare(
+      `INSERT INTO listings (id, user_id, zine_id, kind, body, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run(id, user.id, zineId, kind, text, now)
+    const row = db
+      .prepare(
+        `SELECT l.*, u.name AS author_name, z.title AS zine_title
+         FROM listings l
+         JOIN users u ON u.id = l.user_id
+         LEFT JOIN zines z ON z.id = l.zine_id
+         WHERE l.id = ?`,
+      )
+      .get(id) as {
+      id: string
+      kind: string
+      body: string
+      created_at: number
+      author_name: string
+      zine_id: string | null
+      zine_title: string | null
+    }
+    return c.json({ listing: rowToListing(row) })
+  })
+
+  app.delete('/api/board/:id', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = db.prepare('SELECT user_id FROM listings WHERE id = ?').get(c.req.param('id')) as
+      | { user_id: string }
+      | undefined
+    if (!row) return c.json({ error: 'missing pin' }, 404)
+    if (row.user_id !== user.id) return c.json({ error: 'Not your pin' }, 403)
+    db.prepare('DELETE FROM listings WHERE id = ?').run(c.req.param('id'))
+    return c.json({ ok: true })
   })
 
   return app

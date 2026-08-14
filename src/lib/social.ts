@@ -1,9 +1,10 @@
-import type { Comment, Notice, PollTally } from './types'
+import type { Comment, Listing, ListingKind, Notice, PollTally } from './types'
 import { uid } from './id'
 
 const COMMENTS_KEY = 'zineverse.comments.v1'
 const POLLS_KEY = 'zineverse.polls.v1'
 const NOTICES_KEY = 'zineverse.notices.v1'
+const BOARD_KEY = 'zineverse.board.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -145,4 +146,75 @@ export function noticeCopy(notice: Notice): string {
   if (notice.kind === 'remix') return `${who} remixed ${notice.zineTitle ?? 'your issue'}`
   if (notice.kind === 'follow') return `${who} is watching your wall`
   return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
+}
+
+function demoListings(): Listing[] {
+  const now = Date.now()
+  return [
+    {
+      id: 'list-1',
+      author: '@wobble',
+      kind: 'trade',
+      body: 'sunday market stickers for your ham pages. i mail first.',
+      zineTitle: 'sunday market',
+      createdAt: now - 5 * 3600_000,
+    },
+    {
+      id: 'list-2',
+      author: '@yuzu',
+      kind: 'collab',
+      body: 'need a guest panel for booth 12. robots that apologize preferred.',
+      zineTitle: 'sunday market',
+      createdAt: now - 3 * 3600_000,
+    },
+    {
+      id: 'list-3',
+      author: '@inkstain',
+      kind: 'feedback',
+      body: 'issue 13 — too much rain or not enough?',
+      zineTitle: 'issue 13',
+      createdAt: now - 90 * 60_000,
+    },
+    {
+      id: 'list-4',
+      author: '@rio.bytes',
+      kind: 'trade',
+      body: 'dimension hop for anything that glitches on purpose.',
+      zineTitle: 'dimension hop',
+      createdAt: now - 40 * 60_000,
+    },
+  ]
+}
+
+export function loadLocalListings(): Listing[] {
+  const stored = readJson<Listing[] | null>(BOARD_KEY, null)
+  if (stored) return stored
+  const seeded = demoListings()
+  writeJson(BOARD_KEY, seeded)
+  return seeded
+}
+
+export function addLocalListing(
+  author: string,
+  kind: ListingKind,
+  body: string,
+  extra?: { zineId?: string; zineTitle?: string },
+): Listing {
+  const listing: Listing = {
+    id: uid(),
+    author: author.startsWith('@') || author === 'you' ? author : `@${author}`,
+    kind,
+    body: body.trim().slice(0, 280),
+    zineId: extra?.zineId,
+    zineTitle: extra?.zineTitle,
+    createdAt: Date.now(),
+  }
+  writeJson(BOARD_KEY, [listing, ...loadLocalListings()])
+  return listing
+}
+
+export function removeLocalListing(id: string): Listing[] {
+  const next = loadLocalListings().filter((item) => item.id !== id)
+  writeJson(BOARD_KEY, next)
+  return next
 }
