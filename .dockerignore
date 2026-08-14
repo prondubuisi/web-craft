@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+scripts/shots
+server/data/*.sqlite
+server/data/*.sqlite-*
+*.md
+.github

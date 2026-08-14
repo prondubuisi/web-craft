@@ -11,27 +11,11 @@ import {
 import { api, apiHealth, type Session } from '../lib/api'
 import { uid } from '../lib/id'
 import { computeBadges } from '../lib/seed'
-import { loadState, resetState, saveState } from '../lib/storage'
+import { loadState, saveState } from '../lib/storage'
 import type { AppState, Block, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
 import { isMine } from '../lib/zine'
-
-type Action =
-  | { type: 'insert'; zine: Zine }
-  | { type: 'patch'; id: string; patch: Partial<Zine> }
-  | { type: 'setBlocks'; id: string; blocks: Block[] }
-  | { type: 'delete'; id: string }
-  | { type: 'like'; id: string }
-  | { type: 'bumpRemix'; id: string }
-  | { type: 'awardRemixPoint' }
-  | { type: 'publish'; id: string; dropsAt: number }
-  | { type: 'view'; id: string }
-  | { type: 'renameProfile'; name: string }
-  | { type: 'reset' }
-  | { type: 'setOnline'; online: boolean }
-  | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[] }
-  | { type: 'replaceZines'; zines: Zine[] }
-  | { type: 'mergeZines'; zines: Zine[] }
+import { apply } from './reducer'
 
 type Store = AppState & {
   online: boolean
@@ -54,94 +38,6 @@ type Store = AppState & {
 }
 
 const Ctx = createContext<Store | null>(null)
-
-type FullState = AppState & { online: boolean; session: Session | null }
-
-function apply(state: FullState, action: Action): FullState {
-  switch (action.type) {
-    case 'insert':
-      return { ...state, zines: [action.zine, ...state.zines.filter((z) => z.id !== action.zine.id)] }
-    case 'patch':
-      return {
-        ...state,
-        zines: state.zines.map((z) =>
-          z.id === action.id ? { ...z, ...action.patch, updatedAt: Date.now() } : z,
-        ),
-      }
-    case 'setBlocks':
-      return {
-        ...state,
-        zines: state.zines.map((z) =>
-          z.id === action.id ? { ...z, blocks: action.blocks, updatedAt: Date.now() } : z,
-        ),
-      }
-    case 'delete':
-      return { ...state, zines: state.zines.filter((z) => z.id !== action.id) }
-    case 'like': {
-      const already = state.profile.likedIds.includes(action.id)
-      const likedIds = already
-        ? state.profile.likedIds.filter((id) => id !== action.id)
-        : [...state.profile.likedIds, action.id]
-      return {
-        ...state,
-        profile: { ...state.profile, likedIds },
-        zines: state.zines.map((z) =>
-          z.id === action.id ? { ...z, likes: Math.max(0, z.likes + (already ? -1 : 1)) } : z,
-        ),
-      }
-    }
-    case 'bumpRemix':
-      return {
-        ...state,
-        zines: state.zines.map((z) =>
-          z.id === action.id ? { ...z, remixes: z.remixes + 1 } : z,
-        ),
-      }
-    case 'awardRemixPoint':
-      return {
-        ...state,
-        profile: { ...state.profile, remixPoints: state.profile.remixPoints + 1 },
-      }
-    case 'publish':
-      return {
-        ...state,
-        zines: state.zines.map((z) =>
-          z.id === action.id
-            ? { ...z, published: true, dropsAt: action.dropsAt, updatedAt: Date.now() }
-            : z,
-        ),
-      }
-    case 'view':
-      return {
-        ...state,
-        zines: state.zines.map((z) => (z.id === action.id ? { ...z, views: z.views + 1 } : z)),
-      }
-    case 'renameProfile':
-      return { ...state, profile: { ...state.profile, name: action.name } }
-    case 'reset':
-      return { ...resetState(), online: state.online, session: state.session }
-    case 'setOnline':
-      return { ...state, online: action.online }
-    case 'setSession':
-      return {
-        ...state,
-        session: action.session,
-        profile: {
-          ...state.profile,
-          name: action.session?.name ?? state.profile.name,
-          remixPoints: action.remixPoints ?? state.profile.remixPoints,
-          likedIds: action.likedIds ?? state.profile.likedIds,
-        },
-      }
-    case 'replaceZines':
-      return { ...state, zines: action.zines }
-    case 'mergeZines': {
-      const map = new Map(state.zines.map((z) => [z.id, z]))
-      for (const zine of action.zines) map.set(zine.id, zine)
-      return { ...state, zines: [...map.values()] }
-    }
-  }
-}
 
 export function ZineProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(apply, undefined, () => ({

@@ -22,6 +22,8 @@ export function createApp(db: Db) {
         'http://localhost:5173',
         'https://prondubuisi.github.io',
       ],
+      allowHeaders: ['Content-Type', 'Authorization'],
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
     }),
   )
@@ -41,7 +43,8 @@ export function createApp(db: Db) {
   }
 
   function sessionCookie(token: string) {
-    return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure; SameSite=None' : '; SameSite=Lax'
+    return `${COOKIE}=${token}; Path=/; HttpOnly; Max-Age=${60 * 60 * 24 * 30}${secure}`
   }
 
   function jsonAuth(body: unknown, token: string, status = 200) {
