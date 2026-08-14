@@ -2,6 +2,10 @@
 
 _Compiled: 2026-08-14_
 
+**Won’t add (for now).** This file is history. Rounds 1–6 shipped. Do not start a seventh round of mechanics until the readable slice in `sg.md` is done — no new block types, community routes, badges, or notice kinds. New ideas have to help someone finish a first issue, share it, or find one other person.
+
+---
+
 A survey of real-world zine culture and other digital zine/collage tools (ZINECORE, Flipsnack, Flipbooks AI, ZineMap), filtered down to ideas that fit Zineverse's existing block/social/server model and aren't already covered by current features (accounts, publish/drop, likes, remixes, comments, street polls, letters to the editor, badges, snapshot links, JSON export, PWA install, print issue, stream search/filter/sort).
 
 ## Reader experience

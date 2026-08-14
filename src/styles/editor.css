@@ -67,6 +67,29 @@
 .zine-page.tablet { width: min(640px, 100%); }
 .zine-page.fold { width: min(360px, 48%); min-width: 260px; }
 
+.zine-page.scatter {
+  position: relative;
+  min-height: 72vh;
+}
+
+.zine-page.scatter .block.scatter-pin {
+  position: absolute;
+  width: min(46%, 280px);
+  z-index: 1;
+}
+
+.zine-page.scatter .block.scatter-pin.selected {
+  z-index: 3;
+}
+
+.sticker-cutout {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 0.45rem;
+  mix-blend-mode: multiply;
+}
+
 .block {
   position: relative;
   margin: 0.85rem 0;

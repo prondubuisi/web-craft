@@ -23,6 +23,7 @@ describe('migrate', () => {
     expect(applied.map((row) => row.id)).toContain('0001_init')
     const cols = (db.prepare('PRAGMA table_info(zines)').all() as { name: string }[]).map((row) => row.name)
     expect(cols).toContain('dedication')
+    expect(cols).toContain('scatter')
     db.close()
   })
 
@@ -45,7 +46,7 @@ describe('migrate', () => {
     migrate(db)
     migrate(db)
     const applied = db.prepare('SELECT id FROM schema_migrations').all() as { id: string }[]
-    expect(applied).toHaveLength(1)
+    expect(applied.map((row) => row.id).sort()).toEqual(['0001_init', '0002_scatter'])
     db.close()
   })
 })

@@ -11,10 +11,12 @@ import { currentUser, VIBES } from '../http.ts'
 import { listJams } from '../services/jams.ts'
 import { notify } from '../services/notify.ts'
 import { publishZine } from '../services/publish.ts'
+import { refreshDemoDrop } from '../community.ts'
 import { accessZine, decorate } from '../services/zines.ts'
 
 export function registerZines(app: Hono, db: Db) {
   app.get('/api/stream', (c) => {
+    refreshDemoDrop(db)
     const user = currentUser(db, c)
     const q = (c.req.query('q') ?? '').trim().toLowerCase()
     const vibe = c.req.query('vibe') ?? ''
@@ -187,9 +189,23 @@ export function registerZines(app: Hono, db: Db) {
     const errata = String(body.errata ?? existing?.errata ?? '').trim().slice(0, 200)
     const includes = Array.isArray(body.includes) ? body.includes.slice(0, 12) : []
     const dedication = String(body.dedication ?? existing?.dedication ?? '').trim().slice(0, 120)
+    const scatter = body.scatter ?? Boolean(existing?.scatter)
     db.prepare(
-      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ?, dedication = ? WHERE id = ?',
-    ).run(JSON.stringify(tags), finish, series, issueNo, penName, bSide, editionSize, errata, JSON.stringify(includes), dedication, id)
+      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ?, dedication = ?, scatter = ? WHERE id = ?',
+    ).run(
+      JSON.stringify(tags),
+      finish,
+      series,
+      issueNo,
+      penName,
+      bSide,
+      editionSize,
+      errata,
+      JSON.stringify(includes),
+      dedication,
+      scatter ? 1 : 0,
+      id,
+    )
     const row = getZineRow(db, id)
     return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
   })

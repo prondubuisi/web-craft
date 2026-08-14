@@ -35,7 +35,7 @@ type Store = AppState & {
   setBlocks: (id: string, blocks: Block[]) => void
   deleteZine: (id: string) => void
   likeZine: (id: string) => void
-  remixZine: (id: string) => Promise<string | null>
+  remixZine: (id: string, source?: Zine) => Promise<string | null>
   importZine: (source: Zine) => string
   publishZine: (
     id: string,
@@ -185,8 +185,8 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     [queueUpsert],
   )
 
-  const remixZine = useCallback(async (id: string) => {
-    const source = stateRef.current.zines.find((z) => z.id === id)
+  const remixZine = useCallback(async (id: string, fallback?: Zine) => {
+    const source = stateRef.current.zines.find((z) => z.id === id) ?? fallback
     if (!source) return null
     if (stateRef.current.session) {
       try {
@@ -196,14 +196,15 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'awardRemixPoint' })
         return res.zine.id
       } catch {
-        return null
+        /* fall through to a local fork so a stream card still remixed */
       }
     }
+    const handle = stateRef.current.session?.name
     const copy: Zine = {
       ...source,
       id: uid(),
       title: `${source.title} (remix)`,
-      owner: 'you',
+      owner: handle ? `@${handle}` : 'you',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       views: 0,
@@ -217,8 +218,9 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'insert', zine: copy })
     dispatch({ type: 'bumpRemix', id: source.id })
     dispatch({ type: 'awardRemixPoint' })
+    queueUpsert(copy.id)
     return copy.id
-  }, [])
+  }, [queueUpsert])
 
   const signIn = useCallback(
     async (name: string, password: string, mode: 'login' | 'register') => {

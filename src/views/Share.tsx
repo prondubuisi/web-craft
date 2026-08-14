@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { decodeShare, payloadToZine } from '../lib/share'
@@ -8,7 +8,8 @@ import { coverSrc } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Share() {
-  const payload = useMemo(() => decodeShare(window.location.hash), [])
+  const { hash } = useLocation()
+  const payload = useMemo(() => decodeShare(hash || window.location.hash), [hash])
   const zine = useMemo(() => (payload ? payloadToZine(payload) : null), [payload])
   const drop = useCountdown(zine?.dropsAt)
   const { importZine } = useZines()

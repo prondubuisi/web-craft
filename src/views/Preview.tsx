@@ -7,33 +7,12 @@ import { FlipReader } from '../components/FlipReader'
 import { Comments } from '../components/Comments'
 import { Margins } from '../components/Margins'
 import { Reviews } from '../components/Reviews'
-import { appHref } from '../lib/paths'
-import { copyText, encodeShare } from '../lib/share'
-import {
-  bumpPageStat,
-  checkoutLocal,
-  claimLocal,
-  claimState,
-  dumpBag,
-  loadLoans,
-  loadSeriesWatch,
-  sendLetter,
-  toggleSeriesWatch,
-  inBag,
-  loadLocalPolls,
-  loadMargins,
-  loadPageStats,
-  nomState,
-  nominateLocal,
-  stampIssue,
-  stockShelf,
-  tuckBag,
-  voteLocalPoll,
-} from '../lib/social'
-import { createBlock } from '../lib/widgets'
-import { useCountdown } from '../lib/useCountdown'
 import { api } from '../lib/api'
-import type { Block, MarginNote, PageStat, PollTally } from '../lib/types'
+import { appHref } from '../lib/paths'
+import { copyText, tryEncodeShare } from '../lib/share'
+import { stampIssue } from '../lib/social'
+import { useCountdown } from '../lib/useCountdown'
+import { useIssueSocial } from '../lib/useIssueSocial'
 import {
   byline,
   canOpenSecret,
@@ -64,26 +43,26 @@ export function Preview() {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
   const [fold, setFold] = useState(false)
-  const [polls, setPolls] = useState<Record<string, PollTally>>({})
   const [flip, setFlip] = useState(false)
-  const [stats, setStats] = useState<PageStat[]>([])
-  const [chainPrev, setChainPrev] = useState<Block[] | null>(null)
-  const [chainText, setChainText] = useState('the next fold.')
-  const [chainMsg, setChainMsg] = useState('')
-  const [bagged, setBagged] = useState(false)
-  const [margins, setMargins] = useState<MarginNote[]>([])
-  const [archive, setArchive] = useState({ noms: 0, archived: false, mine: false })
   const [bOpen, setBOpen] = useState(false)
-  const [run, setRun] = useState({ claimed: 0, mine: false, out: false })
-  const [loaned, setLoaned] = useState(false)
-  const [watchingRun, setWatchingRun] = useState(false)
-  const [mailNote, setMailNote] = useState('')
+  const [more, setMore] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
   const hiddenUnlisted = Boolean(zine && zine.visibility === 'unlisted' && !mine && !secretOk)
   const needsPass = Boolean(zine && zine.hasPass && !mine && !unlocked)
   const locked = Boolean(zine && zine.published && !drop.live && !mine)
+  const social = useIssueSocial({
+    id,
+    zine,
+    locked,
+    needsPass,
+    mine,
+    online,
+    session,
+    profileName: profile.name,
+    chainInvite,
+  })
 
   useEffect(() => {
     if (!id || found || !online) return
@@ -110,81 +89,6 @@ export function Preview() {
     }
   }, [id])
 
-  const remoteSocial = Boolean(online && zine?.published && zine.owner !== 'you')
-
-  useEffect(() => {
-    if (!id || locked) return
-    if (remoteSocial) {
-      void api
-        .polls(id)
-        .then((res) => setPolls(res.polls))
-        .catch(() => setPolls(loadLocalPolls(id)))
-    } else {
-      setPolls(id ? loadLocalPolls(id) : {})
-    }
-  }, [id, remoteSocial, locked])
-
-  const bagOwner = session?.name ?? profile.name
-
-  useEffect(() => {
-    if (!zine) return
-    if (online && session) {
-      void api
-        .bag()
-        .then((res) => setBagged(res.bag.some((item) => item.zineId === zine.id)))
-        .catch(() => setBagged(inBag(bagOwner, zine.id)))
-      return
-    }
-    setBagged(inBag(bagOwner, zine.id))
-  }, [zine?.id, online, session, bagOwner])
-
-  useEffect(() => {
-    if (!id || locked || needsPass) return
-    if (remoteSocial) {
-      void api
-        .margins(id)
-        .then((res) => setMargins(res.notes))
-        .catch(() => setMargins(loadMargins(id)))
-    } else {
-      setMargins(loadMargins(id))
-    }
-    const local = nomState(bagOwner, id)
-    setArchive({
-      noms: zine?.noms ?? local.noms,
-      archived: zine?.archived ?? local.archived,
-      mine: local.mine,
-    })
-    setLoaned(loadLoans(bagOwner).some((row) => row.zineId === id))
-    setWatchingRun(
-      Boolean(zine?.series && loadSeriesWatch(bagOwner).includes(zine.series.trim().toLowerCase())),
-    )
-    if (zine?.editionSize) {
-      const claim = claimState(bagOwner, id, zine.editionSize)
-      setRun({
-        claimed: zine.claimed ?? claim.claimed,
-        mine: zine.claimedByMe ?? claim.mine,
-        out: claim.out || (zine.claimed ?? 0) >= zine.editionSize,
-      })
-    }
-  }, [id, remoteSocial, locked, needsPass, bagOwner, zine?.noms, zine?.archived, zine?.editionSize, zine?.claimed, zine?.claimedByMe])
-
-  useEffect(() => {
-    if (!id || locked || needsPass) return
-    if (online && mine) {
-      void api.pageStats(id).then((res) => setStats(res.pages)).catch(() => setStats(loadPageStats(id)))
-    } else if (id) {
-      setStats(loadPageStats(id))
-    }
-  }, [id, online, mine, locked, needsPass])
-
-  useEffect(() => {
-    if (!id || !chainInvite || !online) return
-    void api
-      .chainPeek(id, chainInvite)
-      .then((res) => setChainPrev(res.previous))
-      .catch(() => setChainPrev(null))
-  }, [id, chainInvite, online])
-
   if (!zine || hiddenUnlisted) {
     return (
       <div data-vibe="miles">
@@ -203,11 +107,18 @@ export function Preview() {
 
   async function share() {
     const target = zine as NonNullable<typeof zine>
-    const url =
-      target.visibility === 'unlisted'
-        ? appHref(issuePath(target))
-        : `${appHref('/s')}#${encodeShare(target)}`
-    const ok = await copyText(url)
+    if (target.visibility === 'unlisted') {
+      const ok = await copyText(appHref(issuePath(target)))
+      setCopied(ok)
+      window.setTimeout(() => setCopied(false), 2000)
+      return
+    }
+    const packed = tryEncodeShare(target)
+    if (!packed.ok) {
+      window.alert(packed.reason)
+      return
+    }
+    const ok = await copyText(`${appHref('/s')}#${packed.token}`)
     setCopied(ok)
     window.setTimeout(() => setCopied(false), 2000)
   }
@@ -238,7 +149,7 @@ export function Preview() {
     <div className={`finish-${zine.finish ?? 'clean'} wear-${wearLevel(zine)}`} data-vibe={zine.vibe}>
       <Topbar />
       <div className="preview-page">
-        <article className="zine-page">
+        <article className={`zine-page${zine.scatter ? ' scatter' : ''}`}>
           {!drop.live && zine.published ? (
             <div className="next-issue">
               <span className="kicker">{isCapsule(zine) ? 'TIME CAPSULE' : 'NEXT ISSUE'}</span>
@@ -257,6 +168,9 @@ export function Preview() {
             <div className="drop-lock">
               <h1 className="display chroma">{zine.title}</h1>
               <p className="serif">This issue is folded behind a passphrase.</p>
+              {!online ? (
+                <p className="hand">theater until the API is up — the pages still live in this browser.</p>
+              ) : null}
               <form
                 className="board-form"
                 onSubmit={(e) => {
@@ -311,7 +225,7 @@ export function Preview() {
                 <span className="issue-chip">{zine.vibe}</span>
                 {seriesLabel(zine) ? <span className="issue-chip">{seriesLabel(zine)}</span> : null}
                 {zine.jamId ? <span className="issue-chip">JAM</span> : null}
-                {archive.archived ? <span className="issue-chip">ARCHIVE</span> : null}
+                {social.archive.archived ? <span className="issue-chip">ARCHIVE</span> : null}
                 {runLabel(zine) ? <span className="issue-chip">{runLabel(zine)}</span> : null}
                 {(zine.includes ?? []).length ? <span className="issue-chip">COMP</span> : null}
                 <Link className="owner-link" to={profilePath(zine.owner)}>
@@ -319,10 +233,10 @@ export function Preview() {
                 </Link>
                 <span>{zine.views} views</span>
               </div>
-              {chainInvite && chainPrev ? (
+              {chainInvite && social.chainPrev ? (
                 <div className="chain-peek">
                   <div className="issue-chip">EXQUISITE CORPSE · last page only</div>
-                  {chainPrev.map((block) => (
+                  {social.chainPrev.map((block) => (
                     <div key={block.id} className="block">
                       <BlockView block={block} />
                     </div>
@@ -331,110 +245,64 @@ export function Preview() {
                     className="board-form"
                     onSubmit={(e) => {
                       e.preventDefault()
-                      const next = [createBlock('sticker', zine.vibe)]
-                      if (next[0] && next[0].type === 'sticker') next[0].text = chainText
-                      if (online) {
-                        void api
-                          .chainAdd(zine.id, chainInvite, next)
-                          .then((res) => {
-                            const url = appHref(`/z/${zine.id}?chain=${res.invite}`)
-                            void copyText(url)
-                            setChainMsg('page added. next invite copied.')
-                          })
-                          .catch((err: unknown) =>
-                            setChainMsg(err instanceof Error ? err.message : 'could not add'),
-                          )
-                      } else {
-                        setChainMsg('claim a handle to pass the corpse on the API')
-                      }
+                      social.passCorpse()
                     }}
                   >
                     <textarea
-                      value={chainText}
-                      onChange={(e) => setChainText(e.target.value)}
+                      value={social.chainText}
+                      onChange={(e) => social.setChainText(e.target.value)}
                       placeholder="add the next page"
                     />
                     <ComicButton className="pink">Pass it on</ComicButton>
-                    {chainMsg ? <p className="hand">{chainMsg}</p> : null}
+                    {social.chainMsg ? <p className="hand">{social.chainMsg}</p> : null}
                   </form>
                 </div>
               ) : flip ? (
                 <FlipReader
                   zine={zine}
-                  polls={polls}
-                  stats={mine ? stats : undefined}
+                  polls={social.polls}
+                  stats={mine ? social.stats : undefined}
                   onVote={(blockId, option) => {
                     const block = zine.blocks.find((b) => b.id === blockId)
                     if (!block || block.type !== 'poll') return
-                    if (online && session) {
-                      void api
-                        .votePoll(zine.id, blockId, option)
-                        .then((res) => setPolls((prev) => ({ ...prev, [blockId]: res })))
-                      return
-                    }
-                    setPolls((prev) => ({
-                      ...prev,
-                      [blockId]: voteLocalPoll(zine.id, blockId, option, block.options.length),
-                    }))
+                    social.vote(blockId, option, block.options.length)
                   }}
-                  onPage={(page, dwell) => {
-                    setStats(bumpPageStat(zine.id, page, dwell))
-                    if (online) void api.pageHit(zine.id, page, dwell).catch(() => undefined)
-                  }}
+                  onPage={social.hitPage}
                 />
               ) : (
-                zine.blocks.map((block) => (
-                  <div key={block.id} className="block">
+                zine.blocks.map((block, i) => (
+                  <div
+                    key={block.id}
+                    className={`block${
+                      zine.scatter && (block.type === 'sticker' || block.type === 'hero')
+                        ? ' scatter-pin'
+                        : ''
+                    }`}
+                    style={
+                      zine.scatter && (block.type === 'sticker' || block.type === 'hero')
+                        ? {
+                            left: `${block.x ?? (i % 3) * 28 + 6}%`,
+                            top: `${block.y ?? Math.floor(i / 3) * 26 + 8}%`,
+                          }
+                        : undefined
+                    }
+                  >
                     <BlockView
                       block={block}
-                      poll={polls[block.id]}
-                      onMail={
-                        block.type === 'reply' && !mine
-                          ? (text) => {
-                              const dest = zine.owner.replace(/^@/, '')
-                              if (dest === 'you') {
-                                sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
-                                setMailNote('postcard folded.')
-                                return
-                              }
-                              if (online && session) {
-                                void api
-                                  .sendMail(dest, text, { postcard: true, vibe: zine.vibe })
-                                  .then(() => setMailNote('postcard mailed.'))
-                                  .catch(() =>
-                                    sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe }),
-                                  )
-                                return
-                              }
-                              sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
-                              setMailNote('postcard folded.')
-                            }
-                          : undefined
-                      }
+                      poll={social.polls[block.id]}
+                      onMail={block.type === 'reply' && !mine ? social.mailMaker : undefined}
                       onVote={
                         block.type === 'poll'
-                          ? (option) => {
-                              if (online && session) {
-                                void api
-                                  .votePoll(zine.id, block.id, option)
-                                  .then((res) => setPolls((prev) => ({ ...prev, [block.id]: res })))
-                                  .catch(() => undefined)
-                                return
-                              }
-                              setPolls((prev) => ({
-                                ...prev,
-                                [block.id]: voteLocalPoll(zine.id, block.id, option, block.options.length),
-                              }))
-                            }
+                          ? (option) => social.vote(block.id, option, block.options.length)
                           : undefined
                       }
                     />
                     <Margins
                       zineId={zine.id}
                       blockId={block.id}
-                      notes={margins}
-                      remote={remoteSocial}
-                      onAdd={(note) => setMargins((prev) => [...prev, note])}
+                      notes={social.margins}
+                      remote={social.remoteSocial}
+                      onAdd={social.addMargin}
                     />
                   </div>
                 ))
@@ -442,7 +310,7 @@ export function Preview() {
             </>
           )}
 
-          <div className="cta-row" style={{ marginTop: '1.4rem' }}>
+          <div className="cta-row issue-actions" style={{ marginTop: '1.4rem' }}>
             {!locked ? (
               <ComicButton className={liked ? 'pink' : ''} onClick={() => likeZine(zine.id)}>
                 {liked ? 'Liked' : 'Like'} · {zine.likes}
@@ -451,22 +319,47 @@ export function Preview() {
             <ComicButton
               className="cyan"
               onClick={() => {
-                void remixZine(zine.id).then((next) => {
+                void remixZine(zine.id, zine).then((next) => {
                   if (next) navigate(`/edit/${next}`)
                 })
               }}
             >
               Remix · {zine.remixes}
             </ComicButton>
-            <ComicButton className="small" onClick={() => void share()}>
-              {copied ? 'Copied' : 'Copy snapshot'}
-            </ComicButton>
             {!locked ? (
               <ComicButton className="small ghost no-print" onClick={() => window.print()}>
                 Print issue
               </ComicButton>
             ) : null}
+            {!locked && !needsPass ? (
+              <ComicButton className="small no-print" onClick={() => setFlip((v) => !v)}>
+                {flip ? 'Scroll' : 'Flip pages'}
+              </ComicButton>
+            ) : null}
+            {!locked && !needsPass ? (
+              <ComicButton
+                className={`small no-print ${social.bagged ? 'pink' : 'ghost'}`}
+                onClick={social.toggleBag}
+              >
+                {social.bagged ? 'In the bag' : 'Stuff in bag'}
+              </ComicButton>
+            ) : null}
+            {isMine(zine, session?.name) ? (
+              <Link to={`/edit/${zine.id}`} className="comic-btn ghost">
+                Edit
+              </Link>
+            ) : null}
             {!locked ? (
+              <ComicButton className="small ghost no-print" onClick={() => setMore((v) => !v)}>
+                {more ? 'Less' : 'More on this issue'}
+              </ComicButton>
+            ) : null}
+          </div>
+          {more && !locked ? (
+            <div className="cta-row issue-more" style={{ marginTop: '0.7rem' }}>
+              <ComicButton className="small" onClick={() => void share()}>
+                {copied ? 'Copied' : 'Copy snapshot'}
+              </ComicButton>
               <ComicButton
                 className="small no-print"
                 onClick={() => {
@@ -480,155 +373,86 @@ export function Preview() {
               >
                 Print fold sheet
               </ComicButton>
-            ) : null}
-            {!locked ? (
               <ComicButton className="small ghost no-print" onClick={() => setFold((v) => !v)}>
                 {fold ? 'Hide fold' : 'Preview fold'}
               </ComicButton>
-            ) : null}
-            {!locked && !needsPass ? (
-              <ComicButton className="small no-print" onClick={() => setFlip((v) => !v)}>
-                {flip ? 'Scroll' : 'Flip pages'}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && !mine ? (
-              <ComicButton
-                className="small cyan no-print"
-                onClick={() => {
-                  const owner = session?.name ?? profile.name
-                  stockShelf(owner, {
-                    zineId: zine.id,
-                    title: zine.title,
-                    owner: zine.owner,
-                    note: 'stocked from the pile',
-                    vibe: zine.vibe,
-                  })
-                  if (session && online) void api.stock(zine.id).catch(() => undefined)
-                  setCopied(true)
-                  window.setTimeout(() => setCopied(false), 1600)
-                }}
-              >
-                Stock in distro
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass ? (
-              <ComicButton
-                className={`small no-print ${bagged ? 'pink' : 'ghost'}`}
-                onClick={() => {
-                  if (bagged) {
-                    dumpBag(bagOwner, zine.id)
-                    if (session && online) void api.dump(zine.id).catch(() => undefined)
-                    setBagged(false)
-                    return
-                  }
-                  tuckBag(bagOwner, {
-                    zineId: zine.id,
-                    title: zine.title,
-                    owner: zine.owner,
-                    vibe: zine.vibe,
-                  })
-                  if (session && online) void api.tuck(zine.id).catch(() => undefined)
-                  setBagged(true)
-                }}
-              >
-                {bagged ? 'In the bag' : 'Stuff in bag'}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && !mine ? (
-              <ComicButton
-                className={`small no-print ${archive.mine ? 'pink' : 'ghost'}`}
-                onClick={() => {
-                  if (session && online) {
-                    void api
-                      .nominate(zine.id)
-                      .then((res) => setArchive(res))
-                      .catch(() => setArchive(nominateLocal(bagOwner, zine.id)))
-                    return
-                  }
-                  setArchive(nominateLocal(bagOwner, zine.id))
-                }}
-              >
-                {archive.mine ? 'Nominated' : 'Nominate'} · {archive.noms}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && zine.series ? (
-              <ComicButton
-                className={`small no-print ${watchingRun ? 'pink' : 'ghost'}`}
-                onClick={() => {
-                  const next = toggleSeriesWatch(bagOwner, zine.series ?? '')
-                  setWatchingRun(next.includes((zine.series ?? '').trim().toLowerCase()))
-                  if (session && online) void api.watchSeries(zine.series ?? '').catch(() => undefined)
-                }}
-              >
-                {watchingRun ? 'Watching run' : 'Watch this run'}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && archive.archived && !mine ? (
-              <ComicButton
-                className={`small no-print ${loaned ? 'pink' : 'ghost'}`}
-                onClick={() => {
-                  checkoutLocal(bagOwner, zine.id, zine.title)
-                  setLoaned(true)
-                  if (session && online) void api.checkout(zine.id).catch(() => undefined)
-                }}
-              >
-                {loaned ? 'On loan' : 'Check out'}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && zine.editionSize && !mine ? (
-              <ComicButton
-                className={`small no-print ${run.mine ? 'pink' : ''}`}
-                disabled={run.out && !run.mine}
-                onClick={() => {
-                  if (session && online) {
-                    void api
-                      .claim(zine.id)
-                      .then((res) => setRun(res))
-                      .catch(() => setRun(claimLocal(bagOwner, zine.id, zine.editionSize ?? 0)))
-                    return
-                  }
-                  setRun(claimLocal(bagOwner, zine.id, zine.editionSize ?? 0))
-                }}
-              >
-                {run.out && !run.mine
-                  ? 'Out of print'
-                  : run.mine
-                    ? `Copy ${run.claimed}/${zine.editionSize}`
-                    : `Claim ${run.claimed + 1}/${zine.editionSize}`}
-              </ComicButton>
-            ) : null}
-            {!locked && !needsPass && zine.bSide ? (
-              <ComicButton className="small no-print" onClick={() => setBOpen((v) => !v)}>
-                {bOpen ? 'Fold the b-side' : 'Unfold the b-side'}
-              </ComicButton>
-            ) : null}
-            {mine && zine.chainOpen && zine.chainKey ? (
-              <ComicButton
-                className="small no-print"
-                onClick={() => {
-                  void copyText(appHref(`/z/${zine.id}?chain=${zine.chainKey}`))
-                  setCopied(true)
-                  window.setTimeout(() => setCopied(false), 2000)
-                }}
-              >
-                Copy corpse link
-              </ComicButton>
-            ) : null}
-            {isMine(zine, session?.name) ? (
-              <Link to={`/edit/${zine.id}`} className="comic-btn ghost">
-                Edit
-              </Link>
-            ) : null}
-          </div>
-          {mailNote ? <p className="hand">{mailNote}</p> : null}
+              {!needsPass && !mine ? (
+                <ComicButton
+                  className="small cyan no-print"
+                  onClick={() => {
+                    social.stock()
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1600)
+                  }}
+                >
+                  Stock in distro
+                </ComicButton>
+              ) : null}
+              {!needsPass && !mine ? (
+                <ComicButton
+                  className={`small no-print ${social.archive.mine ? 'pink' : 'ghost'}`}
+                  onClick={social.nominate}
+                >
+                  {social.archive.mine ? 'Nominated' : 'Nominate'} · {social.archive.noms}
+                </ComicButton>
+              ) : null}
+              {!needsPass && zine.series ? (
+                <ComicButton
+                  className={`small no-print ${social.watchingRun ? 'pink' : 'ghost'}`}
+                  onClick={social.watchRun}
+                >
+                  {social.watchingRun ? 'Watching run' : 'Watch this run'}
+                </ComicButton>
+              ) : null}
+              {!needsPass && social.archive.archived && !mine ? (
+                <ComicButton
+                  className={`small no-print ${social.loaned ? 'pink' : 'ghost'}`}
+                  onClick={social.checkout}
+                >
+                  {social.loaned ? 'On loan' : 'Check out'}
+                </ComicButton>
+              ) : null}
+              {!needsPass && zine.editionSize && !mine ? (
+                <ComicButton
+                  className={`small no-print ${social.run.mine ? 'pink' : ''}`}
+                  disabled={social.run.out && !social.run.mine}
+                  onClick={social.claim}
+                >
+                  {social.run.out && !social.run.mine
+                    ? 'Out of print'
+                    : social.run.mine
+                      ? `Copy ${social.run.claimed}/${zine.editionSize}`
+                      : `Claim ${social.run.claimed + 1}/${zine.editionSize}`}
+                </ComicButton>
+              ) : null}
+              {!needsPass && zine.bSide ? (
+                <ComicButton className="small no-print" onClick={() => setBOpen((v) => !v)}>
+                  {bOpen ? 'Fold the b-side' : 'Unfold the b-side'}
+                </ComicButton>
+              ) : null}
+              {mine && zine.chainOpen && zine.chainKey ? (
+                <ComicButton
+                  className="small no-print"
+                  onClick={() => {
+                    void copyText(appHref(`/z/${zine.id}?chain=${zine.chainKey}`))
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 2000)
+                  }}
+                >
+                  Copy corpse link
+                </ComicButton>
+              ) : null}
+            </div>
+          ) : null}
+          {social.mailNote ? <p className="hand">{social.mailNote}</p> : null}
           {bOpen && zine.bSide ? (
             <aside className="bside-reveal">
               <div className="issue-chip">B-SIDE</div>
               <p className="serif">{zine.bSide}</p>
             </aside>
           ) : null}
-          <Reviews zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
-          <Comments zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
+          <Reviews zineId={zine.id} locked={locked || needsPass} remote={social.remoteSocial} />
+          <Comments zineId={zine.id} locked={locked || needsPass} remote={social.remoteSocial} />
         </article>
         {!locked ? (
           <div className={`fold-wrap ${fold ? 'on' : ''}`}>

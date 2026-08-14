@@ -59,6 +59,7 @@ export type ZineRow = {
   errata: string
   includes_json: string
   dedication: string
+  scatter: number
 }
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -123,6 +124,7 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
         return []
       }
     })(),
+    scatter: Boolean(row.scatter),
   }
 }
 

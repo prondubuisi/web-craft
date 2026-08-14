@@ -1,7 +1,7 @@
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
-import { readFileAsDataUrl } from '../lib/share'
+import { readFileAsDataUrl, readImageAsDataUrl } from '../lib/share'
 import type { Block } from '../lib/types'
 import { widgetByType } from '../lib/widgets'
 
@@ -17,10 +17,19 @@ export function Inspector({
   const meta = widgetByType(block.type)
 
   async function onUpload(file: File | undefined) {
-    if (!file || (block.type !== 'hero' && block.type !== 'audio')) return
+    if (!file) return
     try {
-      const src = await readFileAsDataUrl(file)
-      onChange({ ...block, src }, true)
+      if (block.type === 'hero') {
+        onChange({ ...block, src: await readImageAsDataUrl(file) }, true)
+        return
+      }
+      if (block.type === 'sticker') {
+        onChange({ ...block, src: await readImageAsDataUrl(file) }, true)
+        return
+      }
+      if (block.type === 'audio') {
+        onChange({ ...block, src: await readFileAsDataUrl(file) }, true)
+      }
     } catch (err) {
       window.alert(err instanceof Error ? err.message : 'Upload failed')
     }
@@ -56,6 +65,34 @@ export function Inspector({
             onChange={(e) => onChange({ ...block, rotation: Number(e.target.value) }, false)}
             onPointerDown={() => onCommit?.()}
           />
+          <label className="comic-btn small" style={{ marginTop: 10, cursor: 'pointer' }}>
+            Snap / upload
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+              onChange={(e) => {
+                void onUpload(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+          </label>
+          {block.src ? (
+            <button
+              className="tray-item"
+              style={{ marginTop: 10 }}
+              onClick={() => {
+                void cutoutImage(block.src ?? '')
+                  .then((src) => onChange({ ...block, src }, true))
+                  .catch((err: unknown) =>
+                    window.alert(err instanceof Error ? err.message : 'Cutout failed'),
+                  )
+              }}
+            >
+              Cut out background
+            </button>
+          ) : null}
         </>
       ) : null}
       {block.type === 'hero' ? (
@@ -119,6 +156,7 @@ export function Inspector({
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               hidden
               onChange={(e) => {
                 void onUpload(e.target.files?.[0])

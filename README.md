@@ -28,10 +28,11 @@ npm run build     # typecheck + production bundle
 
 ## What you can do
 
-- **Cover** (`/`) — vibe switcher, widget zoo, start an issue
+- **Cover** (`/`) — start an issue, vibes, a seeded sample, first-visit primer
 - **Studio** (`/studio`) — your zines, comic badges, **in my bag**, community stream, corkboard
+- **Help** (`/help`) — glossary for drops, bags, fests, and the rest of the vocabulary
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
-- **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**
+- **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**. Board, fest, and desk are one hop from here when the API is up.
 - **Board** (`/board`) — trade, collab, and feedback pins. Mark a swap done. Mail-swap culture, not a marketplace.
 - **Fest** (`/fest`) — tables on the floor, filtered by scene. Sit if you want. Not a marketplace.
 - **Issue** (`/z/:id`) — flip or scroll, like/remix/letters/blurbs/polls/marginalia, fold-sheet print with QR, distro stock, **stuff in bag**, archive nominate, library checkout, b-side fold, errata, compilations, corpse invites, unlisted/password links
@@ -44,7 +45,7 @@ npm run build     # typecheck + production bundle
 
 **Drop issue** publishes now or on a timer. A future drop shows a comic countdown and keeps pages sealed for everyone except the author.
 
-**Copy snapshot link** packs the zine into the URL so it can be opened in another browser. Custom photo uploads stay local (they’re too heavy for a link); export JSON to move those.
+**Copy snapshot link** packs the zine into the URL so it can be opened in another browser. Photos are compressed on upload. If they still will not fit the link, copy refuses instead of dropping the pictures — export JSON to move those.
 
 Everything else lives in `localStorage` (`zineverse.v1`). **Reset demo** restores the seeded issues, including a sealed `midnight run` drop.
 

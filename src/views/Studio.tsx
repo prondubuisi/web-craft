@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Badge, ComicButton, Halftone, Modal, Topbar, VibePicks } from '../components/Chrome'
+import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
 import { useRemote } from '../lib/useRemote'
@@ -56,6 +56,7 @@ export function Studio() {
     <div data-vibe="miles">
       <Topbar />
       <main className="studio">
+        <LocalNote />
         <div className="studio-head">
           <div>
             <div className="issue-chip">
