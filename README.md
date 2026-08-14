@@ -32,7 +32,8 @@ npm run build     # typecheck + production bundle
 - **Studio** (`/studio`) — your zines, comic badges, community stream
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
 - **Stream** (`/explore`) — published zines, search, vibe filters, a **watching** lane, sort by new/likes/remixes, scheduled **NEXT ISSUE** drops, one-click remix
-- **Issue** (`/z/:id`) — reader view with like, remix, street polls, letters to the editor, snapshot link
+- **Board** (`/board`) — trade, collab, and feedback pins. Mail-swap culture, not a marketplace.
+- **Issue** (`/z/:id`) — reader view with like, remix, street polls, letters, snapshot link, **print issue** or **print fold sheet** (8-page mini-zine on one landscape page)
 - **Profile** (`/u/:handle`) — public wall, bio, remix badges, **Watch wall**
 - **The wire** (MAIL in the topbar) — likes, letters, remixes, follows, and new drops from people you watch
 - **Snapshot** (`/s#…`) — portable copy of an issue that works without the original studio

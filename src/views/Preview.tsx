@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { FoldSheet } from '../components/FoldSheet'
 import { Comments } from '../components/Comments'
 import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
@@ -20,6 +21,7 @@ export function Preview() {
   const zine = local ?? remote
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
+  const [fold, setFold] = useState(false)
   const [polls, setPolls] = useState<Record<string, PollTally>>({})
   const drop = useCountdown(zine?.dropsAt)
   const locked = Boolean(zine && zine.published && !drop.live && !isMine(zine, session?.name))
@@ -161,6 +163,26 @@ export function Preview() {
                 Print issue
               </ComicButton>
             ) : null}
+            {!locked ? (
+              <ComicButton
+                className="small no-print"
+                onClick={() => {
+                  setFold(true)
+                  document.body.classList.add('fold-print')
+                  window.setTimeout(() => {
+                    window.print()
+                    document.body.classList.remove('fold-print')
+                  }, 50)
+                }}
+              >
+                Print fold sheet
+              </ComicButton>
+            ) : null}
+            {!locked ? (
+              <ComicButton className="small ghost no-print" onClick={() => setFold((v) => !v)}>
+                {fold ? 'Hide fold' : 'Preview fold'}
+              </ComicButton>
+            ) : null}
             {isMine(zine, session?.name) ? (
               <Link to={`/edit/${zine.id}`} className="comic-btn ghost">
                 Edit
@@ -169,6 +191,15 @@ export function Preview() {
           </div>
           <Comments zineId={zine.id} locked={locked} remote={remoteSocial} />
         </article>
+        {!locked ? (
+          <div className={`fold-wrap ${fold ? 'on' : ''}`}>
+            <p className="serif no-print fold-help">
+              One landscape sheet. Top row prints upside-down. Fold in half, then quarters, slit the
+              middle, and staple the spine. Page 1 is the cover.
+            </p>
+            <FoldSheet zine={zine} />
+          </div>
+        ) : null}
       </div>
     </div>
   )

@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
-import type { Block, Comment, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
+import type { Block, Comment, Listing, ListingKind, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
 
 export type Db = Database.Database
 
@@ -121,6 +121,15 @@ CREATE TABLE IF NOT EXISTS notices (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (actor_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS listings (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  zine_id TEXT,
+  kind TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -172,6 +181,26 @@ export function getZineRow(db: Db, id: string): ZineRow | undefined {
        WHERE z.id = ?`,
     )
     .get(id) as ZineRow | undefined
+}
+
+export function rowToListing(row: {
+  id: string
+  kind: string
+  body: string
+  created_at: number
+  author_name: string
+  zine_id: string | null
+  zine_title: string | null
+}): Listing {
+  return {
+    id: row.id,
+    kind: row.kind as ListingKind,
+    body: row.body,
+    author: row.author_name.startsWith('@') ? row.author_name : `@${row.author_name}`,
+    zineId: row.zine_id ?? undefined,
+    zineTitle: row.zine_title ?? undefined,
+    createdAt: row.created_at,
+  }
 }
 
 export function dropIsLive(row: Pick<ZineRow, 'published' | 'drops_at'>, now = Date.now()): boolean {
