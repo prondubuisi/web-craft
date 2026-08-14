@@ -105,6 +105,18 @@ export type Block =
 
 export type StreamSort = 'new' | 'likes' | 'remixes'
 
+export type ListingKind = 'trade' | 'collab' | 'feedback'
+
+export type Listing = {
+  id: string
+  author: string
+  kind: ListingKind
+  body: string
+  zineId?: string
+  zineTitle?: string
+  createdAt: number
+}
+
 export type Comment = {
   id: string
   zineId: string

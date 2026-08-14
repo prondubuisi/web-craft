@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   addLocalComment,
+  addLocalListing,
   loadLocalComments,
+  loadLocalListings,
   loadLocalNotices,
   loadLocalPolls,
   markLocalNoticesRead,
@@ -64,5 +66,13 @@ describe('local notices', () => {
     expect(noticeCopy(inbox[0]!)).toContain(inbox[0]!.actor)
     const read = markLocalNoticesRead()
     expect(read.every((item) => item.read)).toBe(true)
+  })
+})
+
+describe('local board', () => {
+  it('pins a trade', () => {
+    const pin = addLocalListing('rio', 'trade', 'toner for rain')
+    expect(pin.kind).toBe('trade')
+    expect(loadLocalListings()[0]?.body).toBe('toner for rain')
   })
 })

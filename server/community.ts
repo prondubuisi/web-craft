@@ -18,6 +18,7 @@ export function seedCommunity(db: Db): void {
     enrichWidgets(db)
     refreshDemoDrop(db)
     seedFollows(db)
+    seedBoard(db)
     return
   }
 
@@ -69,8 +70,49 @@ export function seedCommunity(db: Db): void {
     enrichWidgets(db)
     refreshDemoDrop(db)
     seedFollows(db)
+    seedBoard(db)
   })
   tx()
+}
+
+function seedBoard(db: Db): void {
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM listings').get() as { n: number }).n
+  if (count > 0) return
+  const pins: { from: string; kind: string; title: string; body: string }[] = [
+    {
+      from: 'wobble',
+      kind: 'trade',
+      title: 'sunday market',
+      body: 'sunday market stickers for your ham pages. i mail first.',
+    },
+    {
+      from: 'yuzu',
+      kind: 'collab',
+      title: 'sunday market',
+      body: 'need a guest panel for booth 12. robots that apologize preferred.',
+    },
+    {
+      from: 'inkstain',
+      kind: 'feedback',
+      title: 'issue 13',
+      body: 'issue 13 — too much rain or not enough?',
+    },
+    {
+      from: 'rio.bytes',
+      kind: 'trade',
+      title: 'dimension hop',
+      body: 'dimension hop for anything that glitches on purpose.',
+    },
+  ]
+  const insert = db.prepare(
+    `INSERT INTO listings (id, user_id, zine_id, kind, body, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+  )
+  pins.forEach((pin, i) => {
+    const author = db.prepare('SELECT id FROM users WHERE name = ?').get(pin.from) as { id: string } | undefined
+    const issue = db.prepare('SELECT id FROM zines WHERE title = ?').get(pin.title) as { id: string } | undefined
+    if (!author) return
+    insert.run(randomUUID(), author.id, issue?.id ?? null, pin.kind, pin.body, Date.now() - (i + 1) * 3600_000)
+  })
 }
 
 function seedFollows(db: Db): void {

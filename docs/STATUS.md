@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.4.0)_
+_Last reviewed: 2026-08-14 (0.5.0 board + fold sheet)_
 
 ## Overview
 
@@ -11,8 +11,9 @@ Routes (from `src/App.tsx` / `src/views/`):
 - `/studio` — Studio (issue list / create)
 - `/edit/:id` — Editor (block-based page editor)
 - `/explore` — Stream (search, vibe filter, watching lane)
+- `/board` — Trade / collab / feedback pins
 - `/u/:handle` — Public creator wall + Watch wall
-- `/z/:id` — Preview (issue reader, polls, letters)
+- `/z/:id` — Preview (issue reader, polls, letters, fold-sheet print)
 - `/s#…` — Snapshot (portable, base64-encoded state in the URL fragment)
 
 ## Development Status
@@ -68,5 +69,5 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. Collections / clips if people want a private reading pile.
-2. Push-style live notices (the wire currently refreshes on load and after follow).
+1. Password-protected / unlisted preview links.
+2. Audio blocks and page-flip reader (see `docs/IMPROVEMENTS.md`).

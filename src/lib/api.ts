@@ -1,4 +1,4 @@
-import type { Comment, Notice, PollTally, StreamSort, VibeId, Zine } from './types'
+import type { Comment, Listing, ListingKind, Notice, PollTally, StreamSort, VibeId, Zine } from './types'
 
 export type Session = { name: string }
 
@@ -101,6 +101,14 @@ export const api = {
     req<{ following: boolean }>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
   notices: () => req<{ notices: Notice[] }>('/api/notices'),
   readNotices: () => req<{ ok: boolean }>('/api/notices/read', { method: 'POST' }),
+  board: (kind?: ListingKind) =>
+    req<{ listings: Listing[] }>(`/api/board${kind ? `?kind=${kind}` : ''}`),
+  postListing: (body: { kind: ListingKind; body: string; zineId?: string }) =>
+    req<{ listing: Listing }>('/api/board', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  removeListing: (id: string) => req<{ ok: boolean }>(`/api/board/${id}`, { method: 'DELETE' }),
   updateMe: (bio: string) =>
     req<{ name: string; bio: string }>('/api/users/me', {
       method: 'PATCH',
