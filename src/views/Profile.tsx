@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
-import type { BadgeId, FestTable, GuestNote, ShelfItem, Stamp, Zine } from '../lib/types'
-import { addGuestNote, loadGuestNotes, loadShelf, loadStamps, loadTables } from '../lib/social'
+import type { BadgeId, FestTable, GuestNote, Loan, ShelfItem, Stamp, Zine } from '../lib/types'
+import { addGuestNote, loadGuestNotes, loadLoans, loadShelf, loadStamps, loadTables } from '../lib/social'
 import { byline, coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -36,6 +36,7 @@ export function Profile() {
   const [bio, setBio] = useState('')
   const [scene, setScene] = useState(profile.scene ?? '')
   const [stamps, setStamps] = useState<Stamp[]>(() => loadStamps(name))
+  const [loans, setLoans] = useState<Loan[]>(() => loadLoans(name))
   const [table, setTable] = useState<FestTable | null>(
     () => loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null,
   )
@@ -77,6 +78,12 @@ export function Profile() {
           if (res.guestbook) setNotes(res.guestbook)
           if (res.shelf) setShelf(res.shelf)
           if (res.stamps) setStamps(res.stamps)
+          if (mine && session) {
+            void api
+              .loans()
+              .then((loanRes) => setLoans(loanRes.loans))
+              .catch(() => setLoans(loadLoans(name)))
+          }
           if (res.table !== undefined) setTable(res.table ?? null)
         }
       })
@@ -93,6 +100,7 @@ export function Profile() {
     setNotes(loadGuestNotes(name))
     setShelf(loadShelf(name))
     setStamps(loadStamps(name))
+    setLoans(loadLoans(name))
     setTable(loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null)
   }, [name, online])
 
@@ -242,6 +250,19 @@ export function Profile() {
             <Link to="/fest" className="comic-btn small">
               the floor
             </Link>
+          </section>
+        ) : null}
+
+        {loans.length ? (
+          <section className="comments" aria-label="On loan">
+            <div className="issue-chip">ON LOAN</div>
+            <div className="badge-row" style={{ marginTop: 8 }}>
+              {loans.map((loan) => (
+                <Link key={loan.zineId} to={`/z/${loan.zineId}`} className="comic-badge">
+                  {loan.title}
+                </Link>
+              ))}
+            </div>
           </section>
         ) : null}
 

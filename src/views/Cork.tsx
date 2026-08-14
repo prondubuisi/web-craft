@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { uid } from '../lib/id'
 import { loadCork, saveCork } from '../lib/social'
 import type { CorkPin } from '../lib/types'
+import { createBlock } from '../lib/widgets'
+import { isMine } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Cork() {
-  const { session, online, profile } = useZines()
+  const { session, online, profile, zines, setBlocks } = useZines()
+  const navigate = useNavigate()
   const me = session?.name ?? profile.name
+  const draftIssue = zines.find((z) => isMine(z, session?.name) && !z.published)
   const [pins, setPins] = useState<CorkPin[]>(() => loadCork(me))
   const [draft, setDraft] = useState('')
   const board = useRef<HTMLDivElement>(null)
@@ -105,6 +109,21 @@ export function Cork() {
               }}
             >
               <p className="hand">{pin.text}</p>
+              {draftIssue ? (
+                <button
+                  type="button"
+                  className="comic-btn small"
+                  onClick={() => {
+                    const sticker = createBlock('sticker', draftIssue.vibe)
+                    if (sticker.type === 'sticker') sticker.text = pin.text
+                    setBlocks(draftIssue.id, [...draftIssue.blocks, sticker])
+                    persist(pins.filter((row) => row.id !== pin.id))
+                    navigate(`/edit/${draftIssue.id}`)
+                  }}
+                >
+                  paste
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="icon-btn"

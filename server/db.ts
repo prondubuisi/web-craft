@@ -56,6 +56,8 @@ export type ZineRow = {
   jam_id: string | null
   b_side: string
   edition_size: number
+  errata: string
+  includes_json: string
 }
 
 const SCHEMA = `
@@ -104,6 +106,8 @@ CREATE TABLE IF NOT EXISTS zines (
   jam_id TEXT,
   b_side TEXT NOT NULL DEFAULT '',
   edition_size INTEGER NOT NULL DEFAULT 0,
+  errata TEXT NOT NULL DEFAULT '',
+  includes_json TEXT NOT NULL DEFAULT '[]',
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -224,6 +228,14 @@ CREATE TABLE IF NOT EXISTS claims (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
 );
+CREATE TABLE IF NOT EXISTS loans (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  due_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
 CREATE TABLE IF NOT EXISTS cork_pins (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -309,6 +321,8 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('jam_id')) db.exec(`ALTER TABLE zines ADD COLUMN jam_id TEXT`)
   if (!zineNames.has('b_side')) db.exec(`ALTER TABLE zines ADD COLUMN b_side TEXT NOT NULL DEFAULT ''`)
   if (!zineNames.has('edition_size')) db.exec(`ALTER TABLE zines ADD COLUMN edition_size INTEGER NOT NULL DEFAULT 0`)
+  if (!zineNames.has('errata')) db.exec(`ALTER TABLE zines ADD COLUMN errata TEXT NOT NULL DEFAULT ''`)
+  if (!zineNames.has('includes_json')) db.exec(`ALTER TABLE zines ADD COLUMN includes_json TEXT NOT NULL DEFAULT '[]'`)
   const letterCols = db.prepare(`PRAGMA table_info(letters)`).all() as { name: string }[]
   const letterNames = new Set(letterCols.map((col) => col.name))
   if (!letterNames.has('postcard')) db.exec(`ALTER TABLE letters ADD COLUMN postcard INTEGER NOT NULL DEFAULT 0`)
@@ -360,6 +374,14 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     jamId: row.jam_id ?? undefined,
     bSide: row.b_side || undefined,
     editionSize: row.edition_size || undefined,
+    errata: row.errata || undefined,
+    includes: (() => {
+      try {
+        return JSON.parse(row.includes_json || '[]') as { zineId: string; title: string; owner: string }[]
+      } catch {
+        return []
+      }
+    })(),
   }
 }
 
