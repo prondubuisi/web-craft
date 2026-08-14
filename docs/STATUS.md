@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.1.2 website pass)_
+_Last reviewed: 2026-08-14 (0.2.1 ship-everything pass)_
 
 ## Overview
 
@@ -67,6 +67,4 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. **Host the API** (Fly/Railway/a VPS) and set `VITE_API_URL` if the Pages demo should sign in.
-2. **Vitest for more of `src/store`** if reducer bugs start showing up.
-3. **CONTRIBUTING.md** if more than one person is committing.
+1. **Create the Fly app once** (`flyctl auth login && flyctl launch --copy-config`) and set GitHub `VITE_API_URL` + `FLY_API_TOKEN`. Dockerfile and `fly.toml` are in the repo; CI deploys when the token exists.

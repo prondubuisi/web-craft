@@ -8,18 +8,40 @@ export type Me = {
   likedIds?: string[]
 }
 
-const prefix = () => (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+const TOKEN_KEY = 'zineverse.token'
+
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token: string | null): void {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // private mode
+  }
+}
+
+const prefix = () => (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
 
 async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = getToken()
   const res = await fetch(`${prefix()}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
       ...(init.body ? { 'content-type': 'application/json' } : {}),
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...init.headers,
     },
   })
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string }
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string; token?: string }
+  if (data.token) setToken(data.token)
   if (!res.ok) throw new Error(data.error || `API ${res.status}`)
   return data
 }
@@ -27,7 +49,7 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
 export async function apiHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${prefix()}/api/health`, {
-      signal: AbortSignal.timeout(800),
+      signal: AbortSignal.timeout(3000),
     })
     return res.ok
   } catch {
@@ -38,16 +60,22 @@ export async function apiHealth(): Promise<boolean> {
 export const api = {
   me: () => req<Me>('/api/auth/me'),
   register: (name: string, password: string) =>
-    req<{ name: string; remixPoints: number }>('/api/auth/register', {
+    req<{ name: string; remixPoints: number; token: string }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
     }),
   login: (name: string, password: string) =>
-    req<{ name: string; remixPoints: number }>('/api/auth/login', {
+    req<{ name: string; remixPoints: number; token: string }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ name, password }),
     }),
-  logout: () => req<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    const result = await req<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }).catch(
+      () => ({ ok: true }),
+    )
+    setToken(null)
+    return result
+  },
   stream: () => req<{ zines: Zine[] }>('/api/stream'),
   mine: () => req<{ zines: Zine[] }>('/api/zines'),
   get: (id: string) => req<{ zine: Zine; sealed: boolean }>(`/api/zines/${id}`),
