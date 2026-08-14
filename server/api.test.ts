@@ -265,4 +265,38 @@ describe('social', () => {
     const board = await json(await client.request('/api/board?kind=trade'))
     expect((board.listings as { body: string }[]).some((row) => row.body.includes('rooftop'))).toBe(true)
   })
+
+  it('hides unlisted issues without the secret key', async () => {
+    const client = app()
+    const author = await register(client, 'ghost1', 'strawberry1')
+    await client.request('/api/zines/alley', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(sample),
+    })
+    const pub = await json(
+      await client.request('/api/zines/alley/publish', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: author.cookie },
+        body: JSON.stringify({ dropsAt: Date.now() - 1, visibility: 'unlisted', password: 'rain4you' }),
+      }),
+    )
+    const key = (pub.zine as { shareKey: string }).shareKey
+    expect(key.length).toBeGreaterThan(4)
+    const stream = await json(await client.request('/api/stream'))
+    expect((stream.zines as { id: string }[]).some((z) => z.id === 'alley')).toBe(false)
+    const denied = await client.request('/api/zines/alley')
+    expect(denied.status).toBe(404)
+    const peek = await json(await client.request(`/api/zines/alley?k=${key}`))
+    expect(peek.locked).toBe(true)
+    const open = await json(
+      await client.request('/api/zines/alley/unlock', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'rain4you', k: key }),
+      }),
+    )
+    expect((open.zine as { title: string }).title).toBe('rooftop')
+    expect(((open.zine as { blocks: unknown[] }).blocks ?? []).length).toBeGreaterThan(0)
+  })
 })

@@ -247,5 +247,24 @@ export function BlockView({
         </div>
       )
     }
+    case 'audio':
+      return (
+        <figure className="audio-block">
+          <div className="issue-chip">MIXTAPE</div>
+          {block.src ? (
+            <audio controls src={block.src} preload="metadata">
+              Your browser skipped the tape.
+            </audio>
+          ) : (
+            <p className="hand">no tape loaded. upload one in the inspector.</p>
+          )}
+          <figcaption className="caption">
+            <Field
+              value={block.caption}
+              onChange={onChange ? (caption) => onChange({ ...block, caption }) : undefined}
+            />
+          </figcaption>
+        </figure>
+      )
   }
 }

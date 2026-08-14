@@ -29,10 +29,12 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Follow a creator** — 0.4.0 (`Watch wall`, watching lane, MAIL)
 - **Trade & collab board** — 0.5.0 (`/board`, trade / collab / feedback pins)
 - **Foldable print layout** — 0.5.0 (Print fold sheet on `/z/:id`)
+- **Password-protected / unlisted preview links** — 0.6.0 (Drop as unlisted + optional passphrase)
+- **Audio blocks** — 0.6.0 (`/tape` mixtape widget)
 
 ## Suggested starting point
 
-**Trade/collab board** and **foldable print layout** were the cheapest relative to the current architecture and most directly reinforce the "real zine culture" identity of the app. Both shipped in 0.5.0. Next cheapest: password-protected preview links, then audio blocks.
+Unlisted/password links and audio blocks shipped in 0.6.0. Next cheapest: page-flip reader, then photo cutout.
 
 ## Sources
 

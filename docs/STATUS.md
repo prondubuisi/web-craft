@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.5.0)_
+_Last reviewed: 2026-08-14 (0.6.0)_
 
 ## Overview
 
@@ -69,5 +69,5 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. Password-protected / unlisted preview links.
-2. Audio blocks and page-flip reader (see `docs/IMPROVEMENTS.md`).
+1. Page-flip reader on `/z/:id`.
+2. Photo cutout for hero/sticker uploads (see `docs/IMPROVEMENTS.md`).

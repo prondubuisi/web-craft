@@ -1,6 +1,6 @@
 import type { Session } from '../lib/api'
 import { resetState } from '../lib/storage'
-import type { AppState, Block, Zine } from '../lib/types'
+import type { AppState, Block, Visibility, Zine } from '../lib/types'
 
 export type Action =
   | { type: 'insert'; zine: Zine }
@@ -10,7 +10,15 @@ export type Action =
   | { type: 'like'; id: string }
   | { type: 'bumpRemix'; id: string }
   | { type: 'awardRemixPoint' }
-  | { type: 'publish'; id: string; dropsAt: number }
+  | {
+      type: 'publish'
+      id: string
+      dropsAt: number
+      visibility?: Visibility
+      shareKey?: string
+      hasPass?: boolean
+      passHash?: string
+    }
   | { type: 'view'; id: string }
   | { type: 'renameProfile'; name: string }
   | { type: 'reset' }
@@ -73,7 +81,16 @@ export function apply(state: FullState, action: Action): FullState {
         ...state,
         zines: state.zines.map((z) =>
           z.id === action.id
-            ? { ...z, published: true, dropsAt: action.dropsAt, updatedAt: Date.now() }
+            ? {
+                ...z,
+                published: true,
+                dropsAt: action.dropsAt,
+                updatedAt: Date.now(),
+                visibility: action.visibility ?? z.visibility ?? 'public',
+                shareKey: action.shareKey ?? z.shareKey,
+                hasPass: action.hasPass ?? z.hasPass,
+                passHash: action.passHash ?? z.passHash,
+              }
             : z,
         ),
       }

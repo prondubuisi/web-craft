@@ -21,6 +21,7 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'stack', slash: 'stack', label: 'Zine stack', hint: 'Overlapping scrapbook cards', glyph: '▤' },
   { type: 'quote', slash: 'quote', label: 'Pull quote', hint: 'Hand-lettered citation', glyph: '“' },
   { type: 'poll', slash: 'poll', label: 'Street poll', hint: 'Ask the stream a question', glyph: '?' },
+  { type: 'audio', slash: 'tape', label: 'Mixtape', hint: 'Voice memo or a 10-second hook', glyph: '♪' },
 ]
 
 export function createBlock(type: BlockType, vibe: VibeId): Block {
@@ -83,6 +84,13 @@ export function createBlock(type: BlockType, vibe: VibeId): Block {
         type,
         question: 'what should the next issue smell like?',
         options: ['toner and rain', 'strawberry milk', 'wet newsprint', 'ozone'],
+      }
+    case 'audio':
+      return {
+        id: uid(),
+        type,
+        src: '',
+        caption: 'press play. hold the note.',
       }
   }
 }
