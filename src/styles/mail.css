@@ -1,0 +1,26 @@
+.mail-layout {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.mail-threads {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.mail-thread {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.comment.mine {
+  background: var(--accent-3);
+}
+
+.comment.postcard {
+  transform: rotate(-1.2deg);
+  border-left: 10px solid var(--accent);
+  min-height: 88px;
+}

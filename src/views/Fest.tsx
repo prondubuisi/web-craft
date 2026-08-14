@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { loadSits, loadTables, toggleSit, upsertTable } from '../lib/social'
 import type { FestTable } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
@@ -17,27 +18,21 @@ export function Fest() {
   const [picked, setPicked] = useState<string[]>([])
   const [sits, setSits] = useState<Record<string, string[]>>({})
 
+  const remote = useRemote(() => api.fest(), [])
   useEffect(() => {
-    if (!online) {
+    if (!online || remote.error) {
       const local = loadTables()
       setTables(local)
       setSits(Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])))
       return
     }
-    void api
-      .fest()
-      .then((res) => {
-        setTables(res.tables)
-        const next: Record<string, string[]> = {}
-        for (const table of res.tables) next[table.id] = table.sitters ?? []
-        setSits(next)
-      })
-      .catch(() => {
-        const local = loadTables()
-        setTables(local)
-        setSits(Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])))
-      })
-  }, [online])
+    if (remote.data) {
+      setTables(remote.data.tables)
+      const next: Record<string, string[]> = {}
+      for (const table of remote.data.tables) next[table.id] = table.sitters ?? []
+      setSits(next)
+    }
+  }, [online, remote.data, remote.error])
 
   const visible = useMemo(() => {
     const q = scene.trim().toLowerCase()

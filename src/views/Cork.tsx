@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { uid } from '../lib/id'
 import { loadCork, saveCork } from '../lib/social'
 import type { CorkPin } from '../lib/types'
@@ -19,16 +20,14 @@ export function Cork() {
   const board = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; dx: number; dy: number } | null>(null)
 
+  const remote = useRemote(() => api.cork(), [session?.name], { enabled: Boolean(online && session) })
   useEffect(() => {
-    if (online && session) {
-      void api
-        .cork()
-        .then((res) => setPins(res.pins))
-        .catch(() => setPins(loadCork(me)))
+    if (!online || !session || remote.error) {
+      setPins(loadCork(me))
       return
     }
-    setPins(loadCork(me))
-  }, [online, session, me])
+    if (remote.data) setPins(remote.data.pins)
+  }, [online, session, me, remote.data, remote.error])
 
   function persist(next: CorkPin[]) {
     setPins(next)

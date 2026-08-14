@@ -1,0 +1,43 @@
+.board-form {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1.4rem;
+  max-width: 40rem;
+}
+
+.board-form textarea,
+.board-form select {
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+}
+
+.board-form textarea {
+  min-height: 88px;
+}
+
+.board-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.board-card {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 5px 6px 0 var(--ink);
+  padding: 0.85rem 0.95rem;
+}
+
+.board-card.trade { border-left: 10px solid var(--accent); }
+.board-card.collab { border-left: 10px solid var(--accent-2); }
+.board-card.feedback { border-left: 10px solid var(--accent-3); }
+.board-card.on {
+  outline: 3px solid var(--accent);
+}
+.board-card.swapped {
+  opacity: 0.55;
+  text-decoration: line-through;
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
 import type { Letter, MailThread, VibeId } from '../lib/types'
 import { profilePath } from '../lib/zine'
@@ -21,31 +22,28 @@ export function Mail() {
   const [card, setCard] = useState(false)
   const [vibe, setVibe] = useState<VibeId>('miles')
 
+  const inbox = useRemote(() => api.mail(), [session?.name], { enabled: Boolean(online && session) })
+  const thread = useRemote(() => api.thread(other), [other, session?.name], {
+    enabled: Boolean(online && session && other),
+  })
   useEffect(() => {
     setTo(other)
-    if (online && session) {
-      void api
-        .mail()
-        .then((res) => setThreads(res.threads))
-        .catch(() => setThreads(listThreads(me)))
-      if (other) {
-        void api
-          .thread(other)
-          .then((res) => setLetters(res.letters))
-          .catch(() => setLetters(threadWith(me, other)))
-      } else {
-        setLetters([])
-      }
+    if (!online || !session || inbox.error) {
+      setThreads(listThreads(me))
+    } else if (inbox.data) {
+      setThreads(inbox.data.threads)
+    }
+    if (!other) {
+      setLetters([])
       return
     }
-    setThreads(listThreads(me))
-    if (other) {
+    if (!online || !session || thread.error) {
       markThreadRead(me, other)
       setLetters(threadWith(me, other))
-    } else {
-      setLetters([])
+    } else if (thread.data) {
+      setLetters(thread.data.letters)
     }
-  }, [other, online, session, me])
+  }, [other, online, session, me, inbox.data, inbox.error, thread.data, thread.error])
 
   async function send() {
     const text = body.trim()
