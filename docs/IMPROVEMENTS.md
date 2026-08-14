@@ -58,10 +58,15 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Scene / city** — 1.0.0 (profile + fest filter)
 - **Blackout poetry** — 1.0.0 (`/blackout`)
 - **Table of contents** — 1.0.0 (`/toc`)
+- **Numbered limited run** — 1.1.0 (cap copies; claim until out of print)
+- **Aging / wear** — 1.1.0 (creases and a coffee ring from circulation)
+- **Time capsule drop** — 1.1.0 (in a year / in a decade)
+- **Postcard** — 1.1.0 (tiny card in `/mail`)
+- **Corkboard** — 1.1.0 (`/cork` cutting table)
 
 ## Suggested starting point
 
-1.0.0 is the fest-floor release.
+Round 4 shipped in 1.1.0.
 
 ## More ideas, tied to the project's actual identity
 
@@ -98,6 +103,23 @@ The first two rounds covered the individual-creator and one-to-one social mechan
 - **Pseudonym per issue** — publish under a chosen pen name distinct from your account handle, matching the long punk-zine tradition of anonymous or pseudonymous authorship (bylines are often optional or fictional in print zine culture).
 - **B-side / secret page** — a hidden bonus block revealed only by a specific in-reader interaction (long-press, tap sequence), echoing the handmade-zine tradition of hidden folds and secret messages.
 
+## Round 4 (post-0.9.0) — scarcity, time, and the making process
+
+Rounds 1–3 covered creation tools, one-to-one social mechanics, and collective/preservation features. What's still untouched: the **scarcity and time** dimensions real zine culture uses to make objects feel special (numbered runs, out-of-print status), the **long-timescale mail-art tradition** (time capsules), a **private one-to-one** format smaller than a full issue, and the **pre-page** part of making a zine — the cutting-table/corkboard stage before anything becomes a linear page.
+
+**Scarcity & editions**
+- **Numbered limited run** — builds on the existing series/issue numbers (0.8.0): let a creator cap an issue at N numbered copies. Once all N are claimed by readers it goes "out of print" until the creator drops a new numbered edition (a remix). Real precedent: hand-numbered riso zine editions (e.g. "200/200"), where scarcity — not paywalling — is what makes a copy feel worth keeping. Pure metadata + a counter, no payment involved, so it stays inside the existing non-commercial framing.
+- **Aging / wear aesthetic** — an issue's rendering picks up creases, fading, or a coffee-ring as it accumulates remixes or circulation, purely presentational on top of the existing vibe engine (halftone/chromatic-split already ride the vibe). Mirrors how a physical zine visibly wears out from being passed hand to hand — no new content model, just a derived visual state from data already tracked (remix count).
+
+**Long-timescale mail art**
+- **Time capsule drop** — a drop scheduled far in the future (months or years out, not the near-term "NEXT ISSUE" countdown), explicitly framed as writing to future readers or your future self. Grounded directly in mail-art and zine culture, which has a long history of treating zines as literal time capsules (crowd-sourced time-capsule zine projects, "letters to my future self" as a genre). Reuses the existing sealed-drop/countdown mechanism, just with a much longer horizon and different framing copy.
+
+**Private, small-scale mail**
+- **Postcard** — a tiny, single-block object sent directly to one person's Mail inbox rather than published to the public stream — smaller and more private than even a jam micro-format zine. Fits the "mail-swap culture, not a marketplace" framing at its smallest possible scale.
+
+**The making process**
+- **Corkboard / moodboard mode** — a freeform, scatter-pin canvas for collecting clippings and inspiration before committing anything to a linear page, mirroring the actual physical process of cutting up magazines on a desk or corkboard before assembling final pages. Distinct from the Editor's linear block-and-page model — this is explicitly pre-structure.
+
 ## Sources
 
 - [ZINECORE App](https://apps.apple.com/us/app/zinecore/id6763522374)
@@ -107,6 +129,9 @@ The first two rounds covered the individual-creator and one-to-one social mechan
 - [The economy of zines - Cool Schmool Zines](https://coolschmool.com/news/economy-of-zines)
 - [Lisa Bowman's Exquisite Corpse Makes Connections Through the Mail](https://hyperallergic.com/754882/lisa-bowmans-exquisite-corpse-makes-connections-through-the-mail/)
 - [Round-robin story — Wikipedia](https://en.wikipedia.org/wiki/Round-robin_story)
+- [Custom Magazine Printing — Local Artists Printing Zines as Limited Edition Works of Art](https://www.bestypeimaging.com/custom-magazine-printing-how-local-artists-are-printing-zines-as-limited-edition-works-of-art/)
+- [Mail Art — ZineWiki](https://zinewiki.com/wiki/Mail_Art)
+- [The Legacy of Zine Culture — Medium](https://medium.com/@jani1973/ink-rebellion-the-time-capsule-of-zine-culture-ce7a9d9b161f)
 - [What is a Zine? — Sprout Distro](https://www.sproutdistro.com/about/what-is-a-zine/)
 - [International Zine Month — zine trades](https://echopublishing.wordpress.com/2021/07/18/international-zine-month-2021-zine-trades/)
 - [D20 Zine Jam 2026 — itch.io](https://itch.io/jam/d20-zine-jam-2026)

@@ -139,6 +139,12 @@ function seedJams(db: Db): void {
   db.prepare(
     `UPDATE zines SET b_side = ? WHERE title = 'sunday market' AND (b_side IS NULL OR b_side = '')`,
   ).run('booth 12 keeps the extra bows under the table.')
+  db.prepare(
+    `UPDATE zines SET edition_size = 40 WHERE title = 'sunday market' AND (edition_size IS NULL OR edition_size = 0)`,
+  ).run()
+  db.prepare(
+    `UPDATE zines SET edition_size = 13 WHERE title = 'issue 13' AND (edition_size IS NULL OR edition_size = 0)`,
+  ).run()
 }
 
 function seedArchive(db: Db): void {

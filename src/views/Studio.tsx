@@ -78,6 +78,9 @@ export function Studio() {
             <ComicButton className="pink" onClick={() => setOpen(true)}>
               Drop a new issue
             </ComicButton>
+            <Link to="/cork" className="comic-btn ghost">
+              Corkboard
+            </Link>
             <label className="comic-btn ghost">
               Import JSON
               <input

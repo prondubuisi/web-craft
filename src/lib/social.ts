@@ -1,6 +1,7 @@
 import type {
   BagItem,
   Comment,
+  CorkPin,
   GuestNote,
   Letter,
   Listing,
@@ -14,6 +15,7 @@ import type {
   ShelfItem,
   FestTable,
   Stamp,
+  VibeId,
 } from './types'
 import { demoTables } from './fest'
 import { ARCHIVE_THRESHOLD } from './jam'
@@ -33,6 +35,8 @@ const MARGIN_KEY = 'zineverse.margins.v1'
 const NOM_KEY = 'zineverse.noms.v1'
 const FEST_KEY = 'zineverse.fest.v1'
 const STAMP_KEY = 'zineverse.stamps.v1'
+const CLAIM_KEY = 'zineverse.claims.v1'
+const CORK_KEY = 'zineverse.cork.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -174,7 +178,11 @@ export function noticeCopy(notice: Notice): string {
   if (notice.kind === 'remix') return `${who} remixed ${notice.zineTitle ?? 'your issue'}`
   if (notice.kind === 'follow') return `${who} is watching your wall`
   if (notice.kind === 'review') return `${who} blurb'd ${notice.zineTitle ?? 'your issue'}`
-  if (notice.kind === 'mail') return `${who} sent you a letter`
+  if (notice.kind === 'mail') {
+    return notice.body?.startsWith('postcard:')
+      ? `${who} mailed you a postcard`
+      : `${who} sent you a letter`
+  }
   if (notice.kind === 'archive') return `${who} nominated ${notice.zineTitle ?? 'your issue'} for the archive`
   return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
 }
@@ -393,14 +401,21 @@ export function loadLetters(): Letter[] {
   return seeded
 }
 
-export function sendLetter(from: string, to: string, body: string): Letter {
+export function sendLetter(
+  from: string,
+  to: string,
+  body: string,
+  extra?: { postcard?: boolean; vibe?: VibeId },
+): Letter {
   const letter: Letter = {
     id: uid(),
     from: handleOf(from),
     to: handleOf(to),
-    body: body.trim().slice(0, 400),
+    body: body.trim().slice(0, extra?.postcard ? 140 : 400),
     read: false,
     createdAt: Date.now(),
+    postcard: extra?.postcard,
+    vibe: extra?.vibe,
   }
   writeJson(MAIL_KEY, [letter, ...loadLetters()].slice(0, 120))
   return letter
@@ -517,4 +532,45 @@ export function stampIssue(owner: string, stamp: Stamp): Stamp[] {
   all[key] = next
   writeJson(STAMP_KEY, all)
   return next
+}
+
+export function claimLocal(
+  owner: string,
+  zineId: string,
+  editionSize: number,
+): { claimed: number; mine: boolean; out: boolean } {
+  const who = handleOf(owner)
+  const all = readJson<Record<string, string[]>>(CLAIM_KEY, {})
+  const holders = all[zineId] ?? []
+  if (holders.includes(who)) {
+    return { claimed: holders.length, mine: true, out: holders.length >= editionSize }
+  }
+  if (holders.length >= editionSize) {
+    return { claimed: holders.length, mine: false, out: true }
+  }
+  const next = [...holders, who]
+  all[zineId] = next
+  writeJson(CLAIM_KEY, all)
+  return { claimed: next.length, mine: true, out: next.length >= editionSize }
+}
+
+export function claimState(owner: string, zineId: string, editionSize = 0) {
+  const holders = readJson<Record<string, string[]>>(CLAIM_KEY, {})[zineId] ?? []
+  return {
+    claimed: holders.length,
+    mine: holders.includes(handleOf(owner)),
+    out: editionSize > 0 && holders.length >= editionSize,
+  }
+}
+
+export function loadCork(owner: string): CorkPin[] {
+  const all = readJson<Record<string, CorkPin[]>>(CORK_KEY, {})
+  return all[owner.replace(/^@/, '')] ?? []
+}
+
+export function saveCork(owner: string, pins: CorkPin[]): CorkPin[] {
+  const all = readJson<Record<string, CorkPin[]>>(CORK_KEY, {})
+  all[owner.replace(/^@/, '')] = pins.slice(0, 40)
+  writeJson(CORK_KEY, all)
+  return all[owner.replace(/^@/, '')]
 }

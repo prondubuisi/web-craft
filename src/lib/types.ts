@@ -238,6 +238,8 @@ export type Letter = {
   body: string
   read: boolean
   createdAt: number
+  postcard?: boolean
+  vibe?: VibeId
 }
 
 export type MailThread = {
@@ -266,6 +268,7 @@ export type BadgeId =
   | 'multiverse'
   | 'jammer'
   | 'fest-goer'
+  | 'collector'
 
 export type Zine = {
   id: string
@@ -296,6 +299,9 @@ export type Zine = {
   bSide?: string
   noms?: number
   archived?: boolean
+  editionSize?: number
+  claimed?: number
+  claimedByMe?: boolean
 }
 
 export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop' | 'review' | 'mail' | 'archive'
@@ -319,6 +325,15 @@ export type FestTable = {
   blurb: string
   zineIds: string[]
   createdAt: number
+}
+
+export type CorkPin = {
+  id: string
+  text: string
+  x: number
+  y: number
+  rotation: number
+  src?: string
 }
 
 export type Stamp = {

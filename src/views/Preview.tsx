@@ -11,6 +11,8 @@ import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
 import {
   bumpPageStat,
+  claimLocal,
+  claimState,
   dumpBag,
   inBag,
   loadLocalPolls,
@@ -32,10 +34,13 @@ import {
   canOpenSecret,
   coverSrc,
   fingerprint,
+  isCapsule,
   isMine,
   issuePath,
   profilePath,
+  runLabel,
   seriesLabel,
+  wearLevel,
 } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -64,6 +69,7 @@ export function Preview() {
   const [margins, setMargins] = useState<MarginNote[]>([])
   const [archive, setArchive] = useState({ noms: 0, archived: false, mine: false })
   const [bOpen, setBOpen] = useState(false)
+  const [run, setRun] = useState({ claimed: 0, mine: false, out: false })
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
@@ -140,7 +146,15 @@ export function Preview() {
       archived: zine?.archived ?? local.archived,
       mine: local.mine,
     })
-  }, [id, remoteSocial, locked, needsPass, bagOwner, zine?.noms, zine?.archived])
+    if (zine?.editionSize) {
+      const claim = claimState(bagOwner, id, zine.editionSize)
+      setRun({
+        claimed: zine.claimed ?? claim.claimed,
+        mine: zine.claimedByMe ?? claim.mine,
+        out: claim.out || (zine.claimed ?? 0) >= zine.editionSize,
+      })
+    }
+  }, [id, remoteSocial, locked, needsPass, bagOwner, zine?.noms, zine?.archived, zine?.editionSize, zine?.claimed, zine?.claimedByMe])
 
   useEffect(() => {
     if (!id || locked || needsPass) return
@@ -209,18 +223,20 @@ export function Preview() {
   }
 
   return (
-    <div className={`finish-${zine.finish ?? 'clean'}`} data-vibe={zine.vibe}>
+    <div className={`finish-${zine.finish ?? 'clean'} wear-${wearLevel(zine)}`} data-vibe={zine.vibe}>
       <Topbar />
       <div className="preview-page">
         <article className="zine-page">
           {!drop.live && zine.published ? (
             <div className="next-issue">
-              <span className="kicker">NEXT ISSUE</span>
+              <span className="kicker">{isCapsule(zine) ? 'TIME CAPSULE' : 'NEXT ISSUE'}</span>
               <strong className="display">{drop.label}</strong>
               {isMine(zine, session?.name) ? (
                 <p className="hand">you can still read your own drop.</p>
               ) : (
-                <p className="hand">come back when the clock hits.</p>
+                <p className="hand">
+                  {isCapsule(zine) ? 'sealed for a future reader. do not open early.' : 'come back when the clock hits.'}
+                </p>
               )}
             </div>
           ) : null}
@@ -263,6 +279,7 @@ export function Preview() {
                 {seriesLabel(zine) ? <span className="issue-chip">{seriesLabel(zine)}</span> : null}
                 {zine.jamId ? <span className="issue-chip">JAM</span> : null}
                 {archive.archived ? <span className="issue-chip">ARCHIVE</span> : null}
+                {runLabel(zine) ? <span className="issue-chip">{runLabel(zine)}</span> : null}
                 <Link className="owner-link" to={profilePath(zine.owner)}>
                   {byline(zine)}
                 </Link>
@@ -475,6 +492,28 @@ export function Preview() {
                 }}
               >
                 {archive.mine ? 'Nominated' : 'Nominate'} · {archive.noms}
+              </ComicButton>
+            ) : null}
+            {!locked && !needsPass && zine.editionSize && !mine ? (
+              <ComicButton
+                className={`small no-print ${run.mine ? 'pink' : ''}`}
+                disabled={run.out && !run.mine}
+                onClick={() => {
+                  if (session && online) {
+                    void api
+                      .claim(zine.id)
+                      .then((res) => setRun(res))
+                      .catch(() => setRun(claimLocal(bagOwner, zine.id, zine.editionSize ?? 0)))
+                    return
+                  }
+                  setRun(claimLocal(bagOwner, zine.id, zine.editionSize ?? 0))
+                }}
+              >
+                {run.out && !run.mine
+                  ? 'Out of print'
+                  : run.mine
+                    ? `Copy ${run.claimed}/${zine.editionSize}`
+                    : `Claim ${run.claimed + 1}/${zine.editionSize}`}
               </ComicButton>
             ) : null}
             {!locked && !needsPass && zine.bSide ? (

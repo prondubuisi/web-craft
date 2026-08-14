@@ -1,10 +1,10 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (1.0.0)_
+_Last reviewed: 2026-08-14 (1.1.0)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.0.0`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19.2.8 + TypeScript ~6.0.2 + Vite ^8.2.0, with `react-router-dom` for routing. Persistence is `localStorage` plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.1.0`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19.2.8 + TypeScript ~6.0.2 + Vite ^8.2.0, with `react-router-dom` for routing. Persistence is `localStorage` plus an optional Hono + SQLite API.
 
 Routes (from `src/App.tsx` / `src/views/`):
 - `/` — Landing (vibe picker / cover)
@@ -13,6 +13,7 @@ Routes (from `src/App.tsx` / `src/views/`):
 - `/explore` — Stream (search, vibe filter, watching lane)
 - `/board` — Trade / collab / feedback pins
 - `/fest` — Zine fest tables by scene
+- `/cork` — Pre-page corkboard
 - `/mail` — Pen-pal letters
 - `/jam/:id` — Live or closed jam collection
 - `/u/:handle` — Public creator wall + Watch wall
@@ -72,4 +73,4 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. None from `docs/IMPROVEMENTS.md` — the list is implemented as of 1.0.0 (fest floor, passport, scene, blackout, contents).
+1. None from `docs/IMPROVEMENTS.md` — the list is implemented as of 1.1.0 (limited runs, wear, capsules, postcards, corkboard).

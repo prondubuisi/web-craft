@@ -308,6 +308,18 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           onChange={(e) => patchZine(zine.id, { bSide: e.target.value })}
           aria-label="B-side"
         />
+        <input
+          type="number"
+          min={0}
+          max={999}
+          value={zine.editionSize ?? ''}
+          placeholder="run of"
+          onChange={(e) =>
+            patchZine(zine.id, { editionSize: e.target.value ? Number(e.target.value) : undefined })
+          }
+          aria-label="Edition size"
+          style={{ minWidth: 80, width: 88 }}
+        />
         <div className="vibe-picks">
           {(['clean', 'riso', 'grain'] as FinishId[]).map((id) => (
             <button
@@ -557,12 +569,14 @@ function DropModal({
     { label: 'In a minute', at: Date.now() + 60_000 },
     { label: 'In an hour', at: Date.now() + 3600_000 },
     { label: 'Tomorrow', at: Date.now() + 86400_000 },
+    { label: 'In a year', at: Date.now() + 365 * 86400_000 },
+    { label: 'In a decade', at: Date.now() + 3650 * 86400_000 },
   ]
   return (
     <Modal title="drop this issue" onClose={onClose}>
       <p className="serif">
-        A public drop hits the stream. An unlisted drop is a secret link — share it before the
-        official issue, distinct from a snapshot blob.
+        A public drop hits the stream. An unlisted drop is a secret link. A year or a decade is a
+        time capsule — write to someone who is not here yet.
       </p>
       <div className="vibe-picks" style={{ marginTop: 12 }}>
         <button

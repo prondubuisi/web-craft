@@ -9,6 +9,7 @@ import { Explore } from './views/Explore'
 import { Board } from './views/Board'
 import { Profile } from './views/Profile'
 import { Share } from './views/Share'
+import { Cork } from './views/Cork'
 import { Fest } from './views/Fest'
 import { JamPage } from './views/Jam'
 import { Mail } from './views/Mail'
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/explore" element={<Explore />} />
               <Route path="/board" element={<Board />} />
               <Route path="/fest" element={<Fest />} />
+              <Route path="/cork" element={<Cork />} />
               <Route path="/mail/:handle" element={<Mail />} />
               <Route path="/mail" element={<Mail />} />
               <Route path="/jam/:id" element={<JamPage />} />

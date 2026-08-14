@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
-import type { Letter, MailThread } from '../lib/types'
+import type { Letter, MailThread, VibeId } from '../lib/types'
 import { profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -18,6 +18,8 @@ export function Mail() {
   const [body, setBody] = useState('')
   const [to, setTo] = useState(other)
   const [error, setError] = useState('')
+  const [card, setCard] = useState(false)
+  const [vibe, setVibe] = useState<VibeId>('miles')
 
   useEffect(() => {
     setTo(other)
@@ -52,12 +54,12 @@ export function Mail() {
     setError('')
     try {
       if (online && session) {
-        const res = await api.sendMail(dest, text)
+        const res = await api.sendMail(dest, text, card ? { postcard: true, vibe } : undefined)
         setLetters((prev) => [...prev, res.letter])
         const next = await api.mail()
         setThreads(next.threads)
       } else {
-        const letter = sendLetter(me, dest, text)
+        const letter = sendLetter(me, dest, text, card ? { postcard: true, vibe } : undefined)
         setLetters((prev) => [...prev, letter])
         setThreads(listThreads(me))
       }
@@ -130,10 +132,12 @@ export function Mail() {
                 {letters.map((letter) => (
                   <article
                     key={letter.id}
-                    className={`comment ${letter.from.replace(/^@/, '') === me.replace(/^@/, '') ? 'mine' : ''}`}
+                    className={`comment ${letter.from.replace(/^@/, '') === me.replace(/^@/, '') ? 'mine' : ''} ${letter.postcard ? 'postcard' : ''}`}
+                    data-vibe={letter.postcard ? letter.vibe ?? 'miles' : undefined}
                   >
                     <div className="meta-line">
                       <span>{letter.from}</span>
+                      {letter.postcard ? <span className="issue-chip">POSTCARD</span> : null}
                       <span>{new Date(letter.createdAt).toLocaleString()}</span>
                     </div>
                     <p className="serif">{letter.body}</p>
@@ -141,15 +145,36 @@ export function Mail() {
                 ))}
                 {other && !letters.length ? <p className="hand">blank page. start it.</p> : null}
               </div>
+              <button
+                type="button"
+                className={`tray-item ${card ? 'on' : ''}`}
+                onClick={() => setCard((v) => !v)}
+              >
+                postcard
+              </button>
+              {card ? (
+                <div className="vibe-picks">
+                  {(['miles', 'gwen', 'peni', 'ham', 'noir'] as VibeId[]).map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`tray-item ${vibe === id ? 'on' : ''}`}
+                      onClick={() => setVibe(id)}
+                    >
+                      {id}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <textarea
                 value={body}
-                maxLength={400}
-                placeholder="fold it twice. mail it once."
+                maxLength={card ? 140 : 400}
+                placeholder={card ? 'one side. no stamp required.' : 'fold it twice. mail it once.'}
                 onChange={(e) => setBody(e.target.value)}
               />
               {error ? <p className="hand">{error}</p> : null}
               <ComicButton className="pink" disabled={!body.trim() || !(to || other).trim()}>
-                Send letter
+                {card ? 'Mail postcard' : 'Send letter'}
               </ComicButton>
               {!online ? <span className="meta-line">saved in this browser</span> : null}
             </form>
