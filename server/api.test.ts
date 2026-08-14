@@ -203,4 +203,43 @@ describe('social', () => {
     expect(second.counts).toEqual([0, 1])
     expect(second.mine).toBe(1)
   })
+
+  it('follows a wall and notifies the author on like', async () => {
+    const client = app()
+    const author = await register(client, 'author5', 'strawberry1')
+    await client.request('/api/zines/watched', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(sample),
+    })
+    await client.request('/api/zines/watched/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const fan = await register(client, 'reader5', 'cartoon99')
+    const follow = await json(
+      await client.request('/api/users/author5/follow', {
+        method: 'POST',
+        headers: { authorization: fan.cookie },
+      }),
+    )
+    expect(follow.following).toBe(true)
+    const profile = await json(await client.request('/api/users/author5', { headers: { authorization: fan.cookie } }))
+    expect(profile.followedByMe).toBe(true)
+    expect(profile.followers).toBe(1)
+
+    await client.request('/api/zines/watched/like', {
+      method: 'POST',
+      headers: { authorization: fan.cookie },
+    })
+    const mail = await json(await client.request('/api/notices', { headers: { authorization: author.cookie } }))
+    expect((mail.notices as { kind: string }[]).some((n) => n.kind === 'like')).toBe(true)
+    expect((mail.notices as { kind: string }[]).some((n) => n.kind === 'follow')).toBe(true)
+
+    const watching = await json(
+      await client.request('/api/stream?following=1', { headers: { authorization: fan.cookie } }),
+    )
+    expect((watching.zines as { title: string }[]).some((z) => z.title === 'rooftop')).toBe(true)
+  })
 })

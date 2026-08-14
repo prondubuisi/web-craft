@@ -377,6 +377,76 @@ p {
   transform: rotate(-1deg);
 }
 
+.inbox {
+  position: relative;
+}
+
+.inbox-btn {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.7rem;
+  border: 2px solid var(--paper);
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.inbox-btn.hot {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.inbox-count {
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: var(--accent-3);
+  color: var(--ink);
+  font-size: 0.68rem;
+  display: grid;
+  place-items: center;
+}
+
+.inbox-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(320px, 80vw);
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: 5px 6px 0 var(--ink);
+  padding: 0.7rem 0.8rem;
+  z-index: 40;
+}
+
+.inbox-panel ul {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.inbox-panel li a {
+  display: block;
+  border: 2px solid var(--ink);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #fff;
+  color: var(--ink);
+}
+
+.inbox-panel li.fresh a {
+  background: var(--accent-3);
+}
+
 /* LANDING */
 .hero-spread {
   position: relative;
@@ -1555,7 +1625,8 @@ p {
   .no-print,
   .footer-issue,
   .comment-form,
-  .filter-bar {
+  .filter-bar,
+  .inbox {
     display: none !important;
   }
 

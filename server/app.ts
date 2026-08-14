@@ -5,7 +5,16 @@ import { cors } from 'hono/cors'
 import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
-import { dropIsLive, getZineRow, rowToComment, rowToZine, type Db } from './db.ts'
+import {
+  dropIsLive,
+  getZineRow,
+  listFollowing,
+  notify,
+  rowToComment,
+  rowToNotice,
+  rowToZine,
+  type Db,
+} from './db.ts'
 
 const COOKIE = 'zv_session'
 const VIBES = new Set(['miles', 'gwen', 'peni', 'ham', 'noir'])
@@ -107,6 +116,7 @@ export function createApp(db: Db) {
       session: { name: user.name },
       remixPoints: user.remix_points,
       likedIds: liked.map((row) => row.zine_id),
+      following: listFollowing(db, user.id),
     })
   })
 
@@ -120,6 +130,13 @@ export function createApp(db: Db) {
     if (VIBES.has(vibe)) {
       where.push('z.vibe = ?')
       params.push(vibe)
+    }
+    if (c.req.query('following') === '1') {
+      if (!user) {
+        return c.json({ zines: [] })
+      }
+      where.push('z.owner_id IN (SELECT followee_id FROM follows WHERE follower_id = ?)')
+      params.push(user.id)
     }
     if (q) {
       where.push('(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ?)')
@@ -240,6 +257,18 @@ export function createApp(db: Db) {
       Date.now(),
       row.id,
     )
+    const followers = db
+      .prepare('SELECT follower_id FROM follows WHERE followee_id = ?')
+      .all(user.id) as { follower_id: string }[]
+    for (const fan of followers) {
+      notify(db, {
+        recipientId: fan.follower_id,
+        actorId: user.id,
+        kind: 'drop',
+        zineId: row.id,
+        body: row.title,
+      })
+    }
     return c.json({ zine: rowToZine(getZineRow(db, row.id)!) })
   })
 
@@ -257,6 +286,13 @@ export function createApp(db: Db) {
     } else {
       db.prepare('INSERT INTO likes (user_id, zine_id) VALUES (?, ?)').run(user.id, row.id)
       db.prepare('UPDATE zines SET likes = likes + 1 WHERE id = ?').run(row.id)
+      notify(db, {
+        recipientId: row.owner_id,
+        actorId: user.id,
+        kind: 'like',
+        zineId: row.id,
+        body: row.title,
+      })
     }
     const next = getZineRow(db, row.id)!
     return c.json({ liked: !liked, likes: next.likes })
@@ -293,6 +329,13 @@ export function createApp(db: Db) {
     )
     db.prepare('UPDATE zines SET remixes = remixes + 1 WHERE id = ?').run(row.id)
     db.prepare('UPDATE users SET remix_points = remix_points + 1 WHERE id = ?').run(user.id)
+    notify(db, {
+      recipientId: row.owner_id,
+      actorId: user.id,
+      kind: 'remix',
+      zineId: row.id,
+      body: source.title,
+    })
     const copy = getZineRow(db, copyId)!
     return c.json({ zine: rowToZine(copy) })
   })
@@ -327,15 +370,88 @@ export function createApp(db: Db) {
          ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
       )
       .all(user.id) as import('./db.ts').ZineRow[]
+    const followers = (
+      db.prepare('SELECT COUNT(*) AS n FROM follows WHERE followee_id = ?').get(user.id) as { n: number }
+    ).n
+    const following = (
+      db.prepare('SELECT COUNT(*) AS n FROM follows WHERE follower_id = ?').get(user.id) as { n: number }
+    ).n
+    const followedByMe = Boolean(
+      viewer &&
+        db
+          .prepare('SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?')
+          .get(viewer.id, user.id),
+    )
     return c.json({
       name: user.name,
       bio: user.bio ?? '',
       remixPoints: user.remix_points,
       createdAt: user.created_at,
+      followers,
+      following,
+      followedByMe,
       zines: rows.map((row) =>
         rowToZine(row, { hideBlocks: !dropIsLive(row) && row.owner_id !== viewer?.id }),
       ),
     })
+  })
+
+  app.post('/api/users/:name/follow', (c) => {
+    const viewer = currentUser(c)
+    if (!viewer) return c.json({ error: 'Sign in first' }, 401)
+    const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
+    const target = db.prepare('SELECT * FROM users WHERE name = ?').get(name) as
+      | import('./db.ts').UserRow
+      | undefined
+    if (!target) return c.json({ error: 'Nobody with that handle' }, 404)
+    if (target.id === viewer.id) return c.json({ error: 'You already live here' }, 400)
+    const existing = db
+      .prepare('SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?')
+      .get(viewer.id, target.id)
+    if (existing) {
+      db.prepare('DELETE FROM follows WHERE follower_id = ? AND followee_id = ?').run(viewer.id, target.id)
+      return c.json({ following: false })
+    }
+    db.prepare('INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)').run(
+      viewer.id,
+      target.id,
+      Date.now(),
+    )
+    notify(db, { recipientId: target.id, actorId: viewer.id, kind: 'follow' })
+    return c.json({ following: true })
+  })
+
+  app.get('/api/notices', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const rows = db
+      .prepare(
+        `SELECT n.*, a.name AS actor_name, z.title AS zine_title
+         FROM notices n
+         JOIN users a ON a.id = n.actor_id
+         LEFT JOIN zines z ON z.id = n.zine_id
+         WHERE n.user_id = ?
+         ORDER BY n.created_at DESC
+         LIMIT 50`,
+      )
+      .all(user.id) as {
+      id: string
+      kind: string
+      actor_name: string
+      zine_id: string | null
+      zine_title: string | null
+      body: string | null
+      read: number
+      created_at: number
+    }[]
+    return c.json({ notices: rows.map(rowToNotice) })
+  })
+
+  app.post('/api/notices/read', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    db.prepare('UPDATE notices SET read = 1 WHERE user_id = ?').run(user.id)
+    return c.json({ ok: true })
   })
 
   app.get('/api/zines/:id/comments', (c) => {
@@ -375,6 +491,13 @@ export function createApp(db: Db) {
       text,
       now,
     )
+    notify(db, {
+      recipientId: row.owner_id,
+      actorId: user.id,
+      kind: 'comment',
+      zineId: row.id,
+      body: row.title,
+    })
     return c.json({
       comment: {
         id,

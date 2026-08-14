@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.3.0 social layer)_
+_Last reviewed: 2026-08-14 (0.4.0)_
 
 ## Overview
 
@@ -10,8 +10,8 @@ Routes (from `src/App.tsx` / `src/views/`):
 - `/` — Landing (vibe picker / cover)
 - `/studio` — Studio (issue list / create)
 - `/edit/:id` — Editor (block-based page editor)
-- `/explore` — Stream (search, vibe filter, sort)
-- `/u/:handle` — Public creator wall
+- `/explore` — Stream (search, vibe filter, watching lane)
+- `/u/:handle` — Public creator wall + Watch wall
 - `/z/:id` — Preview (issue reader, polls, letters)
 - `/s#…` — Snapshot (portable, base64-encoded state in the URL fragment)
 
@@ -68,5 +68,5 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. Follows / notifications if the stream needs a second social beat.
-2. Re-seed production poll blocks on older community issues (new widgets land on new issues + local demo seed).
+1. Collections / clips if people want a private reading pile.
+2. Push-style live notices (the wire currently refreshes on load and after follow).

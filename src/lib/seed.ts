@@ -283,6 +283,7 @@ export function createSeed(): AppState {
       name: 'you',
       remixPoints: 6,
       likedIds: [],
+      following: ['yuzu', 'inkstain'],
     },
     zines: [...mine, ...community],
   }

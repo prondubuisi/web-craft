@@ -141,10 +141,24 @@ export type Zine = {
   remixedFrom?: string
 }
 
+export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop'
+
+export type Notice = {
+  id: string
+  kind: NoticeKind
+  actor: string
+  zineId?: string
+  zineTitle?: string
+  body?: string
+  read: boolean
+  createdAt: number
+}
+
 export type Profile = {
   name: string
   remixPoints: number
   likedIds: string[]
+  following: string[]
 }
 
 export type AppState = {

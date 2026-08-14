@@ -15,7 +15,9 @@ export type Action =
   | { type: 'renameProfile'; name: string }
   | { type: 'reset' }
   | { type: 'setOnline'; online: boolean }
-  | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[] }
+  | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[]; following?: string[] }
+  | { type: 'follow'; handle: string }
+  | { type: 'unfollow'; handle: string }
   | { type: 'replaceZines'; zines: Zine[] }
   | { type: 'mergeZines'; zines: Zine[] }
 
@@ -95,8 +97,27 @@ export function apply(state: FullState, action: Action): FullState {
           name: action.session?.name ?? state.profile.name,
           remixPoints: action.remixPoints ?? state.profile.remixPoints,
           likedIds: action.likedIds ?? state.profile.likedIds,
+          following: action.following ?? state.profile.following,
         },
       }
+    case 'follow': {
+      const handle = action.handle.replace(/^@/, '').toLowerCase()
+      if (state.profile.following.includes(handle)) return state
+      return {
+        ...state,
+        profile: { ...state.profile, following: [...state.profile.following, handle] },
+      }
+    }
+    case 'unfollow': {
+      const handle = action.handle.replace(/^@/, '').toLowerCase()
+      return {
+        ...state,
+        profile: {
+          ...state.profile,
+          following: state.profile.following.filter((name) => name !== handle),
+        },
+      }
+    }
     case 'replaceZines':
       return { ...state, zines: action.zines }
     case 'mergeZines': {

@@ -46,14 +46,18 @@ export function profilePath(owner: string): string {
 
 export function filterStream(
   zines: Zine[],
-  opts: { q?: string; vibe?: VibeId | 'all'; sort?: StreamSort } = {},
+  opts: { q?: string; vibe?: VibeId | 'all'; sort?: StreamSort; following?: string[] | null } = {},
 ): Zine[] {
   const q = (opts.q ?? '').trim().toLowerCase()
   const vibe = opts.vibe && opts.vibe !== 'all' ? opts.vibe : null
   const sort = opts.sort ?? 'new'
+  const watching = opts.following?.map((name) => name.replace(/^@/, '').toLowerCase()) ?? null
   const next = zines.filter((z) => {
     if (!z.published) return false
     if (vibe && z.vibe !== vibe) return false
+    if (watching) {
+      if (!watching.includes(ownerHandle(z.owner).toLowerCase())) return false
+    }
     if (!q) return true
     const hay = `${z.title} ${z.owner} ${z.vibe}`.toLowerCase()
     return hay.includes(q)

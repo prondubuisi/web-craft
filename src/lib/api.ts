@@ -1,4 +1,4 @@
-import type { Comment, PollTally, StreamSort, VibeId, Zine } from './types'
+import type { Comment, Notice, PollTally, StreamSort, VibeId, Zine } from './types'
 
 export type Session = { name: string }
 
@@ -6,6 +6,7 @@ export type Me = {
   session: Session | null
   remixPoints?: number
   likedIds?: string[]
+  following?: string[]
 }
 
 const TOKEN_KEY = 'zineverse.token'
@@ -76,18 +77,30 @@ export const api = {
     setToken(null)
     return result
   },
-  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort }) => {
+  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort; following?: boolean }) => {
     const params = new URLSearchParams()
     if (opts?.q) params.set('q', opts.q)
     if (opts?.vibe) params.set('vibe', opts.vibe)
     if (opts?.sort && opts.sort !== 'new') params.set('sort', opts.sort)
+    if (opts?.following) params.set('following', '1')
     const qs = params.toString()
     return req<{ zines: Zine[] }>(`/api/stream${qs ? `?${qs}` : ''}`)
   },
   user: (name: string) =>
-    req<{ name: string; bio: string; remixPoints: number; createdAt: number; zines: Zine[] }>(
-      `/api/users/${encodeURIComponent(name)}`,
-    ),
+    req<{
+      name: string
+      bio: string
+      remixPoints: number
+      createdAt: number
+      followers?: number
+      following?: number
+      followedByMe?: boolean
+      zines: Zine[]
+    }>(`/api/users/${encodeURIComponent(name)}`),
+  follow: (name: string) =>
+    req<{ following: boolean }>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
+  notices: () => req<{ notices: Notice[] }>('/api/notices'),
+  readNotices: () => req<{ ok: boolean }>('/api/notices/read', { method: 'POST' }),
   updateMe: (bio: string) =>
     req<{ name: string; bio: string }>('/api/users/me', {
       method: 'PATCH',
