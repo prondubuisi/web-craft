@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.4.0 follows + the wire)_
+_Last reviewed: 2026-08-14 (0.4.0)_
 
 ## Overview
 
