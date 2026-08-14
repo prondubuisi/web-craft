@@ -1,5 +1,6 @@
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
+import { cutoutImage } from '../lib/cutout'
 import { readFileAsDataUrl } from '../lib/share'
 import type { Block } from '../lib/types'
 import { widgetByType } from '../lib/widgets'
@@ -100,6 +101,19 @@ export function Inspector({
               </button>
             ))}
           </div>
+          <button
+            className="tray-item"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              void cutoutImage(block.src)
+                .then((src) => onChange({ ...block, src }, true))
+                .catch((err: unknown) =>
+                  window.alert(err instanceof Error ? err.message : 'Cutout failed'),
+                )
+            }}
+          >
+            Cut out background
+          </button>
           <label className="comic-btn small" style={{ marginTop: 10, cursor: 'pointer' }}>
             Upload photo
             <input

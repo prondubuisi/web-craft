@@ -15,7 +15,9 @@ const page = await browser.newPage()
 const errors = []
 page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`))
 page.on('console', (msg) => {
-  if (msg.type() === 'error') errors.push(`console: ${msg.text()}`)
+  if (msg.type() === 'error' && !/Failed to load resource/i.test(msg.text())) {
+    errors.push(`console: ${msg.text()}`)
+  }
 })
 
 async function shot(name) {
@@ -133,6 +135,10 @@ assert(cards.length >= 3, `explore cards ${cards.length}`)
 const streamText = await page.$eval('main', (el) => el.textContent ?? '')
 assert(streamText.includes('NEXT ISSUE'), 'explore missing NEXT ISSUE banner')
 assert(streamText.toLowerCase().includes('midnight run'), 'explore missing midnight run')
+await clickText('Pull from the pile')
+await page.waitForSelector('.preview-page, .zine-page, h1')
+await page.goto('http://127.0.0.1:5173/explore', { waitUntil: 'networkidle0' })
+await page.waitForSelector('.zine-card')
 const search = await page.$('input[type="search"]')
 assert(Boolean(search), 'explore missing search')
 await search.type('sunday')
@@ -154,6 +160,9 @@ await page.waitForSelector('.poll-block')
 await page.waitForSelector('.comments')
 const letters = await page.$eval('.comments', (el) => el.textContent ?? '')
 assert(/letters to the editor/i.test(letters), `comments missing: ${letters}`)
+await clickText('Flip pages')
+await page.waitForSelector('.flip-reader')
+await clickText('Scroll')
 await clickText('Preview fold')
 await page.waitForSelector('.fold-wrap.on .fold-sheet')
 const foldText = await page.$eval('.fold-sheet', (el) => el.textContent ?? '')

@@ -31,10 +31,39 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Foldable print layout** — 0.5.0 (Print fold sheet on `/z/:id`)
 - **Password-protected / unlisted preview links** — 0.6.0 (Drop as unlisted + optional passphrase)
 - **Audio blocks** — 0.6.0 (`/tape` mixtape widget)
+- **Page-flip reading mode** — 0.7.0 (Flip pages on `/z/:id`)
+- **Photo cutout** — 0.7.0 (Cut out background on hero)
+- **Per-page engagement** — 0.7.0 (linger/reads on flip, owner-visible)
+- **Chain zine / exquisite corpse** — 0.7.0 (drop as corpse, `?chain=` invite)
+- **Distro shelf** — 0.7.0 (Stock in distro on an issue, shown on profile)
+- **Guestbook** — 0.7.0 (per-profile notes)
+- **Pull from the pile** — 0.7.0 (random live issue on Stream)
+- **Community tags** — 0.7.0 (editor tags + stream `#chips`)
+- **QR on fold sheet** — 0.7.0 (page 8 of the print sheet)
+- **Riso/print-texture pass** — 0.7.0 (clean / riso / grain in the editor)
 
 ## Suggested starting point
 
-Unlisted/password links and audio blocks shipped in 0.6.0. Next cheapest: page-flip reader, then photo cutout.
+Everything on this list shipped by 0.7.0.
+
+## More ideas, tied to the project's actual identity
+
+Zineverse's own positioning (README: "mail-swap culture, not a marketplace," DIY comic-maximalist collage, Board for trades/collabs/feedback, MAIL wire, Watch wall) points toward real zine-culture mechanics rather than generic content-platform features. These build on what's already shipped instead of converging toward flipbook-SaaS territory (analytics dashboards, monetization, algorithmic feeds).
+
+**Collaboration & mail culture**
+- **Chain zine / exquisite corpse mode** — a zine type where each collaborator only sees the page(s) directly before theirs, adds one page, then passes it to the next person via a Board collab pin. This is a century-old, still-active zine-culture practice (mail art "exquisite corpse," round-robin chain tales) and would turn the existing Board from a matchmaking listing into an actual in-app co-creation flow — the natural next step for a "collab" pin that currently just connects two people who then have to coordinate elsewhere.
+
+**Community curation**
+- **Distro shelf** — let a profile curate and recommend *other people's* issues (not their own), the way a real zine distro stocks zines it believes in. Non-monetary, fits the "not a marketplace" framing directly, and is a thin addition on top of the existing Profile/Watch wall.
+- **Guestbook** — a public, per-profile note board (distinct from per-issue letters/comments) — an old-web and zine-culture staple (guestbooks, addresses printed in the back of a zine inviting mail) that fits the personal, address-book feel of `/u/:handle` better than another comment thread.
+
+**Discovery**
+- **"Pull from the pile"** — a random-issue button on `/explore` that simulates flipping through a stack at a zine fest, as a deliberate counterweight to the existing sort-by-new/likes/remixes — keeps discovery from tilting purely toward whatever's already popular.
+- **Community tags** — free-form theme tags (diary, protest, fan-art, music...) layered on top of the five fixed vibe palettes, so people can self-organize by *content* since vibes are currently palette-only, not genre.
+
+**Physical/digital bridge**
+- **QR code on print/fold sheet** — stamp the printed fold-sheet output (`src/lib/fold.ts`) with a QR code back to the live `/z/:id` URL, mirroring how zine trades in the wild often include a link or address back to the maker.
+- **Riso/print-texture finishing pass** — extend the existing vibe engine (halftone density, chromatic split) with optional misregistration and paper-grain overlays as a selectable finishing pass, reinforcing the print-zine look without a new content model.
 
 ## Sources
 
@@ -43,4 +72,7 @@ Unlisted/password links and audio blocks shipped in 0.6.0. Next cheapest: page-f
 - [Flipsnack Online Zine Maker](https://www.flipsnack.com/ezine)
 - [ZineMap — A Collaborative Map of the Global Zine Scene](https://zinemap.com/)
 - [The economy of zines - Cool Schmool Zines](https://coolschmool.com/news/economy-of-zines)
+- [Lisa Bowman's Exquisite Corpse Makes Connections Through the Mail](https://hyperallergic.com/754882/lisa-bowmans-exquisite-corpse-makes-connections-through-the-mail/)
+- [Round-robin story — Wikipedia](https://en.wikipedia.org/wiki/Round-robin_story)
+- [What is a Zine? — Sprout Distro](https://www.sproutdistro.com/about/what-is-a-zine/)
 - [International Zine Month — zine trades](https://echopublishing.wordpress.com/2021/07/18/international-zine-month-2021-zine-trades/)

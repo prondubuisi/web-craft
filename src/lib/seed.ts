@@ -124,6 +124,7 @@ export function createSeed(): AppState {
       likes: 210,
       remixes: 44,
       published: true,
+      tags: ['diary', 'market'],
       blocks: [
         { id: uid(), type: 'heading', text: 'sunday market', size: 'xl' },
         { id: uid(), type: 'sfx', word: 'PING!' },
@@ -161,6 +162,7 @@ export function createSeed(): AppState {
       likes: 388,
       remixes: 71,
       published: true,
+      tags: ['protest'],
       blocks: [
         { id: uid(), type: 'heading', text: 'issue 13', size: 'xl' },
         {
@@ -195,6 +197,7 @@ export function createSeed(): AppState {
       likes: 140,
       remixes: 22,
       published: true,
+      tags: ['music'],
       blocks: [
         { id: uid(), type: 'sfx', word: 'POW!' },
         { id: uid(), type: 'heading', text: 'LOUDER', size: 'xl' },
@@ -253,6 +256,7 @@ export function createSeed(): AppState {
       likes: 612,
       remixes: 103,
       published: true,
+      tags: ['fan-art'],
       blocks: [
         { id: uid(), type: 'heading', text: 'dimension hop', size: 'xl' },
         { id: uid(), type: 'glitch', text: 'OFFSET THE WORLD' },
