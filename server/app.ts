@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
 import { normalizeTags } from '../src/lib/tags.ts'
+import { normalizeIssueNo, normalizeSeries } from '../src/lib/zine.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
 import {
@@ -146,9 +147,11 @@ export function createApp(db: Db) {
       params.push(`%"${tag}"%`)
     }
     if (q) {
-      where.push('(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ?)')
+      where.push(
+        '(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ? OR LOWER(COALESCE(z.series, \'\')) LIKE ?)',
+      )
       const like = `%${q.replace(/[%_]/g, '')}%`
-      params.push(like, like, like)
+      params.push(like, like, like, like)
     }
     const order =
       sort === 'likes'
@@ -291,9 +294,13 @@ export function createApp(db: Db) {
     const finish = ['clean', 'riso', 'grain'].includes(String(body.finish ?? ''))
       ? String(body.finish)
       : (existing?.finish ?? 'clean')
-    db.prepare('UPDATE zines SET tags_json = ?, finish = ? WHERE id = ?').run(
+    const series = normalizeSeries(typeof body.series === 'string' ? body.series : existing?.series) ?? ''
+    const issueNo = normalizeIssueNo(body.issueNo ?? existing?.issue_no) ?? null
+    db.prepare('UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ? WHERE id = ?').run(
       JSON.stringify(tags),
       finish,
+      series,
+      issueNo,
       id,
     )
     const row = getZineRow(db, id)
@@ -311,6 +318,8 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM poll_votes WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM page_stats WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM shelves WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM bags WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM reviews WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -908,6 +917,227 @@ export function createApp(db: Db) {
       row.id,
     )
     return c.json({ invite: nextInvite, turn: blocks.length })
+  })
+
+  app.get('/api/bag', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const rows = db
+      .prepare(
+        `SELECT b.zine_id, z.title, z.vibe, u.name AS owner_name
+         FROM bags b JOIN zines z ON z.id = b.zine_id JOIN users u ON u.id = z.owner_id
+         WHERE b.user_id = ? ORDER BY b.created_at DESC`,
+      )
+      .all(user.id) as { zine_id: string; title: string; vibe: string; owner_name: string }[]
+    return c.json({
+      bag: rows.map((row) => ({
+        zineId: row.zine_id,
+        title: row.title,
+        owner: `@${row.owner_name}`,
+        vibe: row.vibe,
+      })),
+    })
+  })
+
+  app.post('/api/bag', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const zineId = String(body?.zineId ?? '')
+    const zine = getZineRow(db, zineId)
+    if (!zine || !zine.published) return c.json({ error: 'Cannot tuck that' }, 404)
+    db.prepare(
+      `INSERT INTO bags (user_id, zine_id, created_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id, zine_id) DO NOTHING`,
+    ).run(user.id, zineId, Date.now())
+    return c.json({
+      item: { zineId, title: zine.title, owner: `@${zine.owner_name}`, vibe: zine.vibe },
+    })
+  })
+
+  app.delete('/api/bag/:id', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    db.prepare('DELETE FROM bags WHERE user_id = ? AND zine_id = ?').run(user.id, c.req.param('id'))
+    return c.json({ ok: true })
+  })
+
+  app.get('/api/zines/:id/reviews', (c) => {
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row) return c.json({ error: 'missing issue' }, 404)
+    const rows = db
+      .prepare(
+        `SELECT r.*, u.name AS author_name FROM reviews r JOIN users u ON u.id = r.user_id
+         WHERE r.zine_id = ? ORDER BY r.created_at DESC`,
+      )
+      .all(row.id) as { id: string; zine_id: string; body: string; created_at: number; author_name: string }[]
+    return c.json({
+      reviews: rows.map((item) => ({
+        id: item.id,
+        zineId: item.zine_id,
+        author: `@${item.author_name}`,
+        body: item.body,
+        createdAt: item.created_at,
+      })),
+    })
+  })
+
+  app.post('/api/zines/:id/reviews', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.published) return c.json({ error: 'Cannot review that' }, 404)
+    if (!dropIsLive(row) && row.owner_id !== user.id) return c.json({ error: 'Still sealed' }, 403)
+    const body = await c.req.json().catch(() => null)
+    const text = String(body?.body ?? '').trim().slice(0, 240)
+    if (!text) return c.json({ error: 'Write a blurb' }, 400)
+    const now = Date.now()
+    const existing = db
+      .prepare('SELECT id FROM reviews WHERE zine_id = ? AND user_id = ?')
+      .get(row.id, user.id) as { id: string } | undefined
+    const id = existing?.id ?? randomUUID()
+    db.prepare(
+      `INSERT INTO reviews (id, zine_id, user_id, body, created_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(zine_id, user_id) DO UPDATE SET body = excluded.body, created_at = excluded.created_at`,
+    ).run(id, row.id, user.id, text, now)
+    if (row.owner_id !== user.id) {
+      notify(db, {
+        recipientId: row.owner_id,
+        actorId: user.id,
+        kind: 'review',
+        zineId: row.id,
+        body: row.title,
+      })
+    }
+    return c.json({
+      review: { id, zineId: row.id, author: `@${user.name}`, body: text, createdAt: now },
+    })
+  })
+
+  app.get('/api/mail', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const rows = db
+      .prepare(
+        `SELECT l.*, f.name AS from_name, t.name AS to_name
+         FROM letters l JOIN users f ON f.id = l.from_id JOIN users t ON t.id = l.to_id
+         WHERE l.from_id = ? OR l.to_id = ?
+         ORDER BY l.created_at DESC LIMIT 200`,
+      )
+      .all(user.id, user.id) as {
+      id: string
+      from_id: string
+      to_id: string
+      body: string
+      read: number
+      created_at: number
+      from_name: string
+      to_name: string
+    }[]
+    const map = new Map<
+      string,
+      { handle: string; last: { id: string; from: string; to: string; body: string; read: boolean; createdAt: number }; unread: number }
+    >()
+    for (const row of rows) {
+      const other = row.from_id === user.id ? row.to_name : row.from_name
+      const key = other.toLowerCase()
+      const letter = {
+        id: row.id,
+        from: `@${row.from_name}`,
+        to: `@${row.to_name}`,
+        body: row.body,
+        read: Boolean(row.read),
+        createdAt: row.created_at,
+      }
+      const prev = map.get(key)
+      if (!prev) {
+        map.set(key, {
+          handle: other,
+          last: letter,
+          unread: row.to_id === user.id && !row.read ? 1 : 0,
+        })
+      } else if (row.to_id === user.id && !row.read) {
+        prev.unread += 1
+      }
+    }
+    return c.json({ threads: [...map.values()] })
+  })
+
+  app.get('/api/mail/:name', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
+    const other = db.prepare('SELECT id, name FROM users WHERE name = ?').get(name) as
+      | { id: string; name: string }
+      | undefined
+    if (!other) return c.json({ error: 'Nobody with that handle' }, 404)
+    const rows = db
+      .prepare(
+        `SELECT l.*, f.name AS from_name, t.name AS to_name
+         FROM letters l JOIN users f ON f.id = l.from_id JOIN users t ON t.id = l.to_id
+         WHERE (l.from_id = ? AND l.to_id = ?) OR (l.from_id = ? AND l.to_id = ?)
+         ORDER BY l.created_at ASC`,
+      )
+      .all(user.id, other.id, other.id, user.id) as {
+      id: string
+      from_id: string
+      to_id: string
+      body: string
+      read: number
+      created_at: number
+      from_name: string
+      to_name: string
+    }[]
+    db.prepare('UPDATE letters SET read = 1 WHERE to_id = ? AND from_id = ?').run(user.id, other.id)
+    return c.json({
+      handle: other.name,
+      letters: rows.map((row) => ({
+        id: row.id,
+        from: `@${row.from_name}`,
+        to: `@${row.to_name}`,
+        body: row.body,
+        read: Boolean(row.read),
+        createdAt: row.created_at,
+      })),
+    })
+  })
+
+  app.post('/api/mail', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const name = String(body?.to ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, '')
+    const text = String(body?.body ?? '').trim().slice(0, 400)
+    if (!text) return c.json({ error: 'Write a letter' }, 400)
+    const other = db.prepare('SELECT id, name FROM users WHERE name = ?').get(name) as
+      | { id: string; name: string }
+      | undefined
+    if (!other) return c.json({ error: 'Nobody with that handle' }, 404)
+    if (other.id === user.id) return c.json({ error: 'Mail yourself on paper' }, 400)
+    const id = randomUUID()
+    const now = Date.now()
+    db.prepare(
+      'INSERT INTO letters (id, from_id, to_id, body, read, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+    ).run(id, user.id, other.id, text, now)
+    notify(db, {
+      recipientId: other.id,
+      actorId: user.id,
+      kind: 'mail',
+      body: text.slice(0, 80),
+    })
+    return c.json({
+      letter: {
+        id,
+        from: `@${user.name}`,
+        to: `@${other.name}`,
+        body: text,
+        read: false,
+        createdAt: now,
+      },
+    })
   })
 
   return app

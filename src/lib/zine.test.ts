@@ -9,8 +9,11 @@ import {
   isMine,
   isPublicDrop,
   issuePath,
+  normalizeIssueNo,
+  normalizeSeries,
   ownerHandle,
   profilePath,
+  seriesLabel,
   slugify,
 } from './zine'
 
@@ -121,9 +124,20 @@ describe('profiles', () => {
   })
 })
 
+describe('series', () => {
+  it('normalizes a run name and issue number', () => {
+    expect(normalizeSeries('  rooftop hours  ')).toBe('rooftop hours')
+    expect(normalizeSeries('   ')).toBeUndefined()
+    expect(normalizeIssueNo('3')).toBe(3)
+    expect(normalizeIssueNo(0)).toBeUndefined()
+    expect(seriesLabel({ series: 'confession', issueNo: 13 })).toBe('confession #13')
+    expect(seriesLabel({ series: 'confession' })).toBe('confession')
+  })
+})
+
 describe('filterStream', () => {
   const issues = [
-    zine({ id: 'a', title: 'sunday market', vibe: 'peni', owner: '@yuzu', published: true, likes: 2, remixes: 9, dropsAt: 10 }),
+    zine({ id: 'a', title: 'sunday market', vibe: 'peni', owner: '@yuzu', published: true, likes: 2, remixes: 9, dropsAt: 10, series: 'booth notes' }),
     zine({ id: 'b', title: 'LOUDER', vibe: 'ham', owner: '@wobble', published: true, likes: 8, remixes: 1, dropsAt: 20 }),
     zine({ id: 'c', title: 'draft', vibe: 'miles', owner: 'you', published: false, likes: 99, remixes: 99 }),
   ]
@@ -131,6 +145,7 @@ describe('filterStream', () => {
   it('hides drafts and matches a query', () => {
     expect(filterStream(issues, { q: 'market' }).map((z) => z.id)).toEqual(['a'])
     expect(filterStream(issues, { q: 'wobble' }).map((z) => z.id)).toEqual(['b'])
+    expect(filterStream(issues, { q: 'booth' }).map((z) => z.id)).toEqual(['a'])
   })
 
   it('filters by vibe and sorts by likes', () => {

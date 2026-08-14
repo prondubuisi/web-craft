@@ -1,4 +1,17 @@
-import type { Comment, GuestNote, Listing, ListingKind, Notice, PageStat, PollTally, ShelfItem } from './types'
+import type {
+  BagItem,
+  Comment,
+  GuestNote,
+  Letter,
+  Listing,
+  ListingKind,
+  MailThread,
+  Notice,
+  PageStat,
+  PollTally,
+  Review,
+  ShelfItem,
+} from './types'
 import { uid } from './id'
 
 const COMMENTS_KEY = 'zineverse.comments.v1'
@@ -8,6 +21,9 @@ const BOARD_KEY = 'zineverse.board.v1'
 const GUEST_KEY = 'zineverse.guestbook.v1'
 const SHELF_KEY = 'zineverse.shelf.v1'
 const PAGES_KEY = 'zineverse.pages.v1'
+const BAG_KEY = 'zineverse.bag.v1'
+const REVIEW_KEY = 'zineverse.reviews.v1'
+const MAIL_KEY = 'zineverse.mail.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -148,6 +164,8 @@ export function noticeCopy(notice: Notice): string {
   if (notice.kind === 'comment') return `${who} inked a letter on ${notice.zineTitle ?? 'your issue'}`
   if (notice.kind === 'remix') return `${who} remixed ${notice.zineTitle ?? 'your issue'}`
   if (notice.kind === 'follow') return `${who} is watching your wall`
+  if (notice.kind === 'review') return `${who} blurb'd ${notice.zineTitle ?? 'your issue'}`
+  if (notice.kind === 'mail') return `${who} sent you a letter`
   return `${who} dropped ${notice.zineTitle ?? 'a new issue'}`
 }
 
@@ -286,4 +304,136 @@ export function bumpPageStat(zineId: string, page: number, dwellMs: number): Pag
   all[zineId] = rows.sort((a, b) => a.page - b.page)
   writeJson(PAGES_KEY, all)
   return all[zineId]
+}
+
+export function loadBag(owner: string): BagItem[] {
+  const all = readJson<Record<string, BagItem[]>>(BAG_KEY, {})
+  return all[owner.replace(/^@/, '')] ?? []
+}
+
+export function tuckBag(owner: string, item: BagItem): BagItem[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, BagItem[]>>(BAG_KEY, {})
+  const next = [item, ...(all[key] ?? []).filter((row) => row.zineId !== item.zineId)].slice(0, 40)
+  all[key] = next
+  writeJson(BAG_KEY, all)
+  return next
+}
+
+export function dumpBag(owner: string, zineId: string): BagItem[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, BagItem[]>>(BAG_KEY, {})
+  const next = (all[key] ?? []).filter((row) => row.zineId !== zineId)
+  all[key] = next
+  writeJson(BAG_KEY, all)
+  return next
+}
+
+export function inBag(owner: string, zineId: string): boolean {
+  return loadBag(owner).some((row) => row.zineId === zineId)
+}
+
+export function loadReviews(zineId: string): Review[] {
+  const all = readJson<Record<string, Review[]>>(REVIEW_KEY, {})
+  return all[zineId] ?? []
+}
+
+export function upsertReview(zineId: string, author: string, body: string): Review {
+  const review: Review = {
+    id: uid(),
+    zineId,
+    author: handleOf(author),
+    body: body.trim().slice(0, 240),
+    createdAt: Date.now(),
+  }
+  const all = readJson<Record<string, Review[]>>(REVIEW_KEY, {})
+  const rest = (all[zineId] ?? []).filter((row) => row.author !== review.author)
+  all[zineId] = [review, ...rest].slice(0, 40)
+  writeJson(REVIEW_KEY, all)
+  return review
+}
+
+function demoLetters(): Letter[] {
+  const now = Date.now()
+  return [
+    {
+      id: 'mail-1',
+      from: '@yuzu',
+      to: 'you',
+      body: 'booth 12 still has bows if you mail first.',
+      read: false,
+      createdAt: now - 2 * 3600_000,
+    },
+    {
+      id: 'mail-2',
+      from: 'you',
+      to: '@yuzu',
+      body: 'sending sunday stickers. save me a bow.',
+      read: true,
+      createdAt: now - 90 * 60_000,
+    },
+  ]
+}
+
+export function loadLetters(): Letter[] {
+  const stored = readJson<Letter[] | null>(MAIL_KEY, null)
+  if (stored) return stored
+  const seeded = demoLetters()
+  writeJson(MAIL_KEY, seeded)
+  return seeded
+}
+
+export function sendLetter(from: string, to: string, body: string): Letter {
+  const letter: Letter = {
+    id: uid(),
+    from: handleOf(from),
+    to: handleOf(to),
+    body: body.trim().slice(0, 400),
+    read: false,
+    createdAt: Date.now(),
+  }
+  writeJson(MAIL_KEY, [letter, ...loadLetters()].slice(0, 120))
+  return letter
+}
+
+function samePerson(a: string, b: string): boolean {
+  return a.replace(/^@/, '').toLowerCase() === b.replace(/^@/, '').toLowerCase()
+}
+
+export function threadWith(me: string, other: string): Letter[] {
+  return loadLetters()
+    .filter(
+      (row) =>
+        (samePerson(row.from, me) && samePerson(row.to, other)) ||
+        (samePerson(row.from, other) && samePerson(row.to, me)),
+    )
+    .sort((a, b) => a.createdAt - b.createdAt)
+}
+
+export function listThreads(me: string): MailThread[] {
+  const mine = loadLetters().filter((row) => samePerson(row.from, me) || samePerson(row.to, me))
+  const map = new Map<string, Letter[]>()
+  for (const letter of mine) {
+    const other = samePerson(letter.from, me) ? letter.to : letter.from
+    const key = other.replace(/^@/, '').toLowerCase()
+    map.set(key, [...(map.get(key) ?? []), letter])
+  }
+  return [...map.entries()]
+    .map(([handle, rows]) => {
+      const last = rows.reduce((a, b) => (a.createdAt > b.createdAt ? a : b))
+      return {
+        handle,
+        last,
+        unread: rows.filter((row) => samePerson(row.to, me) && !row.read).length,
+      }
+    })
+    .sort((a, b) => b.last.createdAt - a.last.createdAt)
+}
+
+export function markThreadRead(me: string, other: string): Letter[] {
+  const next = loadLetters().map((row) =>
+    samePerson(row.to, me) && samePerson(row.from, other) ? { ...row, read: true } : row,
+  )
+  writeJson(MAIL_KEY, next)
+  return next
 }

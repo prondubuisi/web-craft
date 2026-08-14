@@ -64,6 +64,25 @@ export function profilePath(owner: string): string {
   return `/u/${encodeURIComponent(ownerHandle(owner))}`
 }
 
+export function normalizeSeries(value: string | undefined | null): string | undefined {
+  const next = (value ?? '').trim().slice(0, 48)
+  return next || undefined
+}
+
+export function normalizeIssueNo(value: number | string | undefined | null): number | undefined {
+  const n = typeof value === 'string' ? Number(value) : value
+  if (n == null || !Number.isFinite(n)) return undefined
+  const i = Math.round(n)
+  if (i < 1 || i > 999) return undefined
+  return i
+}
+
+export function seriesLabel(zine: Pick<Zine, 'series' | 'issueNo'>): string | null {
+  const series = normalizeSeries(zine.series)
+  if (!series) return null
+  return zine.issueNo ? `${series} #${zine.issueNo}` : series
+}
+
 export function filterStream(
   zines: Zine[],
   opts: {
@@ -87,7 +106,7 @@ export function filterStream(
       if (!watching.includes(ownerHandle(z.owner).toLowerCase())) return false
     }
     if (!q) return true
-    const hay = `${z.title} ${z.owner} ${z.vibe} ${(z.tags ?? []).join(' ')}`.toLowerCase()
+    const hay = `${z.title} ${z.owner} ${z.vibe} ${z.series ?? ''} ${(z.tags ?? []).join(' ')}`.toLowerCase()
     return hay.includes(q)
   })
   next.sort((a, b) => {

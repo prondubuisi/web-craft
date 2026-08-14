@@ -41,10 +41,16 @@ A survey of real-world zine culture and other digital zine/collage tools (ZINECO
 - **Community tags** — 0.7.0 (editor tags + stream `#chips`)
 - **QR on fold sheet** — 0.7.0 (page 8 of the print sheet)
 - **Riso/print-texture pass** — 0.7.0 (clean / riso / grain in the editor)
+- **In my bag** — 0.8.0 (personal reading pile, distinct from the public distro shelf)
+- **Series / issue numbers** — 0.8.0 (a run name + # on the editor, stream, and profile)
+- **Blurbs** — 0.8.0 (one review per reader, separate from letters to the editor)
+- **Pen pal mail** — 0.8.0 (`/mail`, write a letter from a profile)
+- **Mini-comic strip** — 0.8.0 (`/strip`)
+- **Colophon** — 0.8.0 (`/colophon`)
 
 ## Suggested starting point
 
-Everything on this list shipped by 0.7.0.
+The 0.7.0 list shipped. 0.8.0 added the bag, series, blurbs, pen-pal mail, and two print-culture widgets.
 
 ## More ideas, tied to the project's actual identity
 
