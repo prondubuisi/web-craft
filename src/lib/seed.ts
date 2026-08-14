@@ -1,5 +1,6 @@
 import type { AppState, BadgeId, Zine } from './types'
 import { uid } from './id'
+import { isMine } from './zine'
 
 const now = Date.now()
 
@@ -23,8 +24,8 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   multiverse: { label: 'MULTIVERSE', blurb: 'Built in all five vibes' },
 }
 
-export function computeBadges(zines: Zine[], remixPoints: number): BadgeId[] {
-  const owned = zines.filter((z) => z.owner === 'you')
+export function computeBadges(zines: Zine[], remixPoints: number, handle?: string | null): BadgeId[] {
+  const owned = zines.filter((z) => isMine(z, handle))
   const badges: BadgeId[] = []
   if (owned.some((z) => z.blocks.some((b) => b.type === 'sticker'))) badges.push('sticker-fiend')
   const types = new Set(owned.flatMap((z) => z.blocks.map((b) => b.type)))

@@ -5,17 +5,28 @@ import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
 import { useCountdown } from '../lib/useCountdown'
-import { coverSrc } from '../lib/zine'
+import { api } from '../lib/api'
+import { coverSrc, isMine } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Preview() {
   const { id } = useParams()
-  const { zineById, likeZine, remixZine, recordView, profile } = useZines()
-  const zine = id ? zineById(id) : undefined
+  const { zineById, likeZine, remixZine, recordView, profile, session, online } = useZines()
+  const local = id ? zineById(id) : undefined
+  const [remote, setRemote] = useState<typeof local>()
+  const zine = local ?? remote
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
-  const locked = Boolean(zine && zine.published && !drop.live && zine.owner !== 'you')
+  const locked = Boolean(zine && zine.published && !drop.live && !isMine(zine, session?.name))
+
+  useEffect(() => {
+    if (!id || local || !online) return
+    void api
+      .get(id)
+      .then((res) => setRemote(res.zine))
+      .catch(() => undefined)
+  }, [id, local, online])
 
   useEffect(() => {
     if (id && zine && !locked) recordView(id)
@@ -53,7 +64,7 @@ export function Preview() {
             <div className="next-issue">
               <span className="kicker">NEXT ISSUE</span>
               <strong className="display">{drop.label}</strong>
-              {zine.owner === 'you' ? (
+              {isMine(zine, session?.name) ? (
                 <p className="hand">you can still read your own drop.</p>
               ) : (
                 <p className="hand">come back when the clock hits.</p>
@@ -95,8 +106,9 @@ export function Preview() {
             <ComicButton
               className="cyan"
               onClick={() => {
-                const next = remixZine(zine.id)
-                if (next) navigate(`/edit/${next}`)
+                void remixZine(zine.id).then((next) => {
+                  if (next) navigate(`/edit/${next}`)
+                })
               }}
             >
               Remix · {zine.remixes}
@@ -109,7 +121,7 @@ export function Preview() {
                 Print issue
               </ComicButton>
             ) : null}
-            {zine.owner === 'you' ? (
+            {isMine(zine, session?.name) ? (
               <Link to={`/edit/${zine.id}`} className="comic-btn ghost">
                 Edit
               </Link>

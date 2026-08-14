@@ -3,16 +3,32 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import type { BadgeId, VibeId, Zine } from '../lib/types'
-import { coverSrc, isDropLive } from '../lib/zine'
+import { coverSrc, isDropLive, isMine } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
 
 export function Studio() {
-  const { zines, badges, profile, createZine, resetStudio, importZine } = useZines()
-  const mine = zines.filter((z) => z.owner === 'you')
-  const stream = zines.filter((z) => z.owner !== 'you').slice(0, 5)
+  const {
+    zines,
+    badges,
+    profile,
+    createZine,
+    resetStudio,
+    importZine,
+    session,
+    online,
+    signIn,
+    signOut,
+  } = useZines()
+  const mine = zines.filter((z) => isMine(z, session?.name))
+  const stream = zines.filter((z) => !isMine(z, session?.name)).slice(0, 6)
   const [open, setOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
+  const [handle, setHandle] = useState('')
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState('')
   const [title, setTitle] = useState('')
   const [vibe, setVibe] = useState<VibeId>('miles')
   const navigate = useNavigate()
@@ -29,7 +45,13 @@ export function Studio() {
       <main className="studio">
         <div className="studio-head">
           <div>
-            <div className="issue-chip">PERSONAL STUDIO · NO ANALYTICS</div>
+            <div className="issue-chip">
+              {session
+                ? `SIGNED IN · @${session.name}`
+                : online
+                  ? 'API LIVE · LOCAL STUDIO'
+                  : 'PERSONAL STUDIO · OFFLINE'}
+            </div>
             <h1 className="display chroma">your zines</h1>
             <div className="badge-row">
               {ALL_BADGES.map((id) => (
@@ -65,9 +87,20 @@ export function Studio() {
                 }}
               />
             </label>
-            <ComicButton className="ghost" onClick={() => resetStudio()}>
-              Reset demo
-            </ComicButton>
+            {session ? (
+              <ComicButton className="ghost" onClick={() => void signOut()}>
+                Sign out
+              </ComicButton>
+            ) : (
+              <ComicButton className="cyan" disabled={!online} onClick={() => setAuthOpen(true)}>
+                {online ? 'Claim studio' : 'API offline'}
+              </ComicButton>
+            )}
+            {!session ? (
+              <ComicButton className="ghost" onClick={() => resetStudio()}>
+                Reset demo
+              </ComicButton>
+            ) : null}
           </div>
         </div>
 
@@ -123,6 +156,50 @@ export function Studio() {
           </aside>
         </div>
       </main>
+
+      {authOpen ? (
+        <Modal title={authMode === 'register' ? 'claim a handle' : 'open your studio'} onClose={() => setAuthOpen(false)}>
+          <p className="serif">
+            A handle is how other issues credit you. Password stays on the API. Local drafts upload when you sign in.
+          </p>
+          <input
+            type="text"
+            value={handle}
+            autoComplete="username"
+            placeholder="handle (rio.bytes)"
+            onChange={(e) => setHandle(e.target.value)}
+          />
+          <input
+            type="password"
+            value={password}
+            autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
+            placeholder="password (8+)"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {authError ? <p className="hand">{authError}</p> : null}
+          <div className="cta-row" style={{ marginTop: 10 }}>
+            <ComicButton
+              className="pink"
+              onClick={() => {
+                setAuthError('')
+                void signIn(handle, password, authMode)
+                  .then(() => setAuthOpen(false))
+                  .catch((err: unknown) =>
+                    setAuthError(err instanceof Error ? err.message : 'Could not sign in'),
+                  )
+              }}
+            >
+              {authMode === 'register' ? 'Claim it' : 'Enter'}
+            </ComicButton>
+            <ComicButton
+              className="ghost"
+              onClick={() => setAuthMode(authMode === 'register' ? 'login' : 'register')}
+            >
+              {authMode === 'register' ? 'I already have one' : 'Need a handle'}
+            </ComicButton>
+          </div>
+        </Modal>
+      ) : null}
 
       {open ? (
         <Modal title="new issue" onClose={() => setOpen(false)}>

@@ -1104,7 +1104,8 @@ p {
   font-size: 2.4rem;
 }
 
-.modal input[type='text'] {
+.modal input[type='text'],
+.modal input[type='password'] {
   width: 100%;
   margin: 0.8rem 0;
   padding: 0.7rem;

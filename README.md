@@ -13,7 +13,12 @@ npm install
 npm run dev
 ```
 
-Then open the local URL Vite prints (usually `http://localhost:5173`).
+That starts the Vite app **and** the SQLite API (`http://127.0.0.1:8787`). Open the local URL Vite prints (usually `http://localhost:5173`). Claim a handle in the studio to sync drafts across browsers. Without the API, the site still runs locally from `localStorage`.
+
+```bash
+npm run dev:web   # frontend only
+npm run dev:api   # API only
+```
 
 ```bash
 npm test          # unit tests
@@ -42,4 +47,4 @@ Miles · Gwen · Peni · Ham · Noir — palettes, not templates. Halftone densi
 
 ## How state flows
 
-`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. Publish is a timestamp on the zine (`dropsAt`). A snapshot link is `encodeShare()` in the URL hash (`/s#…`), not a permissioned server object. Import/export JSON is the portable file format.
+`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. If the Hono API is up and you are signed in, drafts also upsert to SQLite (`server/data/zineverse.sqlite`). Publish, likes, remixes, and the sealed-drop clock are enforced on the server. A snapshot link (`/s#…`) still works without an account. The GitHub Pages demo has no API, so it stays local-only unless `VITE_API_URL` is set at build time.

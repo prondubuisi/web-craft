@@ -1,4 +1,5 @@
 import { NavLink, Link } from 'react-router-dom'
+import { useZines } from '../store/ZineContext'
 import type { BadgeId, VibeId } from '../lib/types'
 import { BADGE_META } from '../lib/seed'
 import { VIBES } from '../lib/vibes'
@@ -6,11 +7,12 @@ import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
+  const { session, online } = useZines()
   return (
     <header className="topbar">
       <Link to="/" className="brand chroma">
         ZINEVERSE
-        <small>issue #001</small>
+        <small>{session ? `@${session.name}` : online ? 'api live' : 'local'}</small>
       </Link>
       <nav className="nav-links">
         <NavLink to="/" end>

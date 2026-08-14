@@ -1,6 +1,12 @@
 import type { HeroBlock, Zine } from './types'
 import { artForVibe } from './vibes'
 
+export function isMine(zine: Zine, handle?: string | null): boolean {
+  if (zine.owner === 'you') return true
+  if (!handle) return false
+  return zine.owner === handle || zine.owner === `@${handle}`
+}
+
 export function coverSrc(zine: Zine): string {
   const hero = zine.blocks.find((b): b is HeroBlock => b.type === 'hero')
   return hero?.src ?? artForVibe(zine.vibe)

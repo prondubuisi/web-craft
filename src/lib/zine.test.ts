@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Zine } from './types'
-import { coverSrc, formatCountdown, isDropLive, slugify } from './zine'
+import { coverSrc, formatCountdown, isDropLive, isMine, slugify } from './zine'
 
 function zine(partial: Partial<Zine> = {}): Zine {
   return {
@@ -19,6 +19,17 @@ function zine(partial: Partial<Zine> = {}): Zine {
     ...partial,
   }
 }
+
+describe('isMine', () => {
+  it('treats local you-owned zines as mine', () => {
+    expect(isMine(zine({ owner: 'you' }), null)).toBe(true)
+  })
+
+  it('matches a signed-in handle', () => {
+    expect(isMine(zine({ owner: '@rio' }), 'rio')).toBe(true)
+    expect(isMine(zine({ owner: '@yuzu' }), 'rio')).toBe(false)
+  })
+})
 
 describe('coverSrc', () => {
   it('uses the first hero image when present', () => {
