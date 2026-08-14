@@ -5,13 +5,16 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   type ReactNode,
 } from 'react'
-import type { AppState, Block, Profile, VibeId, Zine } from '../lib/types'
-import { loadState, resetState, saveState } from '../lib/storage'
+import { api, apiHealth, type Session } from '../lib/api'
 import { uid } from '../lib/id'
-import { createBlock } from '../lib/widgets'
 import { computeBadges } from '../lib/seed'
+import { loadState, resetState, saveState } from '../lib/storage'
+import type { AppState, Block, Profile, VibeId, Zine } from '../lib/types'
+import { createBlock } from '../lib/widgets'
+import { isMine } from '../lib/zine'
 
 type Action =
   | { type: 'insert'; zine: Zine }
@@ -25,29 +28,39 @@ type Action =
   | { type: 'view'; id: string }
   | { type: 'renameProfile'; name: string }
   | { type: 'reset' }
+  | { type: 'setOnline'; online: boolean }
+  | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[] }
+  | { type: 'replaceZines'; zines: Zine[] }
+  | { type: 'mergeZines'; zines: Zine[] }
 
 type Store = AppState & {
+  online: boolean
+  session: Session | null
   badges: ReturnType<typeof computeBadges>
   createZine: (title: string, vibe: VibeId) => string
   patchZine: (id: string, patch: Partial<Zine>) => void
   setBlocks: (id: string, blocks: Block[]) => void
   deleteZine: (id: string) => void
   likeZine: (id: string) => void
-  remixZine: (id: string) => string | null
+  remixZine: (id: string) => Promise<string | null>
   importZine: (source: Zine) => string
   publishZine: (id: string, dropsAt?: number) => void
   recordView: (id: string) => void
   renameProfile: (name: string) => void
   resetStudio: () => void
   zineById: (id: string) => Zine | undefined
+  signIn: (name: string, password: string, mode: 'login' | 'register') => Promise<void>
+  signOut: () => Promise<void>
 }
 
 const Ctx = createContext<Store | null>(null)
 
-function apply(state: AppState, action: Action): AppState {
+type FullState = AppState & { online: boolean; session: Session | null }
+
+function apply(state: FullState, action: Action): FullState {
   switch (action.type) {
     case 'insert':
-      return { ...state, zines: [action.zine, ...state.zines] }
+      return { ...state, zines: [action.zine, ...state.zines.filter((z) => z.id !== action.zine.id)] }
     case 'patch':
       return {
         ...state,
@@ -106,107 +119,262 @@ function apply(state: AppState, action: Action): AppState {
     case 'renameProfile':
       return { ...state, profile: { ...state.profile, name: action.name } }
     case 'reset':
-      return resetState()
+      return { ...resetState(), online: state.online, session: state.session }
+    case 'setOnline':
+      return { ...state, online: action.online }
+    case 'setSession':
+      return {
+        ...state,
+        session: action.session,
+        profile: {
+          ...state.profile,
+          name: action.session?.name ?? state.profile.name,
+          remixPoints: action.remixPoints ?? state.profile.remixPoints,
+          likedIds: action.likedIds ?? state.profile.likedIds,
+        },
+      }
+    case 'replaceZines':
+      return { ...state, zines: action.zines }
+    case 'mergeZines': {
+      const map = new Map(state.zines.map((z) => [z.id, z]))
+      for (const zine of action.zines) map.set(zine.id, zine)
+      return { ...state, zines: [...map.values()] }
+    }
   }
 }
 
 export function ZineProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(apply, undefined, loadState)
+  const [state, dispatch] = useReducer(apply, undefined, () => ({
+    ...loadState(),
+    online: false,
+    session: null,
+  }))
+  const stateRef = useRef(state)
+  stateRef.current = state
+  const timers = useRef<Record<string, number>>({})
 
   useEffect(() => {
     saveState({ profile: state.profile, zines: state.zines })
   }, [state.profile, state.zines])
 
-  const createZine = useCallback((title: string, vibe: VibeId) => {
-    const zine: Zine = {
-      id: uid(),
-      title,
-      vibe,
-      blocks: [
-        { id: uid(), type: 'heading', text: title, size: 'xl' },
-        createBlock('hero', vibe),
-        createBlock('sticker', vibe),
-      ],
-      owner: 'you',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      views: 0,
-      likes: 0,
-      remixes: 0,
-      published: false,
-      dropsAt: null,
-    }
-    dispatch({ type: 'insert', zine })
-    return zine.id
+  const queueUpsert = useCallback((id: string) => {
+    const { session } = stateRef.current
+    if (!session) return
+    window.clearTimeout(timers.current[id])
+    timers.current[id] = window.setTimeout(() => {
+      const zine = stateRef.current.zines.find((z) => z.id === id)
+      if (zine) void api.upsert(zine).catch(() => undefined)
+    }, 450)
   }, [])
 
-  const importZine = useCallback((source: Zine) => {
-    const zine: Zine = {
-      ...source,
-      id: uid(),
-      title: source.owner === 'you' ? source.title : `${source.title} (remix)`,
-      owner: 'you',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      views: 0,
-      likes: 0,
-      remixes: 0,
-      published: false,
-      dropsAt: null,
-      remixedFrom: source.id,
-      blocks: source.blocks.map((b) => ({ ...b, id: uid() })),
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const up = await apiHealth()
+      if (cancelled) return
+      dispatch({ type: 'setOnline', online: up })
+      if (!up) return
+      try {
+        const me = await api.me()
+        if (cancelled) return
+        if (me.session) {
+          dispatch({
+            type: 'setSession',
+            session: me.session,
+            remixPoints: me.remixPoints,
+            likedIds: me.likedIds,
+          })
+          const [mine, stream] = await Promise.all([api.mine(), api.stream()])
+          if (!cancelled) dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+        } else {
+          const stream = await api.stream()
+          if (cancelled) return
+          const localMine = stateRef.current.zines.filter((z) => isMine(z, null))
+          dispatch({ type: 'replaceZines', zines: [...localMine, ...stream.zines] })
+        }
+      } catch {
+        dispatch({ type: 'setOnline', online: false })
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    dispatch({ type: 'insert', zine })
-    return zine.id
   }, [])
 
-  const remixZine = useCallback(
-    (id: string) => {
-      const source = state.zines.find((z) => z.id === id)
-      if (!source) return null
-      const copy: Zine = {
-        ...source,
+  const createZine = useCallback(
+    (title: string, vibe: VibeId) => {
+      const handle = stateRef.current.session?.name
+      const zine: Zine = {
         id: uid(),
-        title: `${source.title} (remix)`,
-        owner: 'you',
+        title,
+        vibe,
+        blocks: [
+          { id: uid(), type: 'heading', text: title, size: 'xl' },
+          createBlock('hero', vibe),
+          createBlock('sticker', vibe),
+        ],
+        owner: handle ? `@${handle}` : 'you',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         views: 0,
         likes: 0,
         remixes: 0,
         published: false,
-        remixedFrom: source.id,
         dropsAt: null,
-        blocks: source.blocks.map((b) => ({ ...b, id: uid() })),
       }
-      dispatch({ type: 'insert', zine: copy })
-      dispatch({ type: 'bumpRemix', id: source.id })
-      dispatch({ type: 'awardRemixPoint' })
-      return copy.id
+      dispatch({ type: 'insert', zine })
+      queueUpsert(zine.id)
+      return zine.id
     },
-    [state.zines],
+    [queueUpsert],
   )
 
+  const importZine = useCallback(
+    (source: Zine) => {
+      const handle = stateRef.current.session?.name
+      const zine: Zine = {
+        ...source,
+        id: uid(),
+        title: isMine(source, handle) ? source.title : `${source.title} (remix)`,
+        owner: handle ? `@${handle}` : 'you',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        views: 0,
+        likes: 0,
+        remixes: 0,
+        published: false,
+        dropsAt: null,
+        remixedFrom: source.id,
+        blocks: source.blocks.map((b) => ({ ...b, id: uid() })),
+      }
+      dispatch({ type: 'insert', zine })
+      queueUpsert(zine.id)
+      return zine.id
+    },
+    [queueUpsert],
+  )
+
+  const remixZine = useCallback(async (id: string) => {
+    const source = stateRef.current.zines.find((z) => z.id === id)
+    if (!source) return null
+    if (stateRef.current.session) {
+      try {
+        const res = await api.remix(id)
+        dispatch({ type: 'insert', zine: res.zine })
+        dispatch({ type: 'bumpRemix', id })
+        dispatch({ type: 'awardRemixPoint' })
+        return res.zine.id
+      } catch {
+        return null
+      }
+    }
+    const copy: Zine = {
+      ...source,
+      id: uid(),
+      title: `${source.title} (remix)`,
+      owner: 'you',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      views: 0,
+      likes: 0,
+      remixes: 0,
+      published: false,
+      remixedFrom: source.id,
+      dropsAt: null,
+      blocks: source.blocks.map((b) => ({ ...b, id: uid() })),
+    }
+    dispatch({ type: 'insert', zine: copy })
+    dispatch({ type: 'bumpRemix', id: source.id })
+    dispatch({ type: 'awardRemixPoint' })
+    return copy.id
+  }, [])
+
+  const signIn = useCallback(
+    async (name: string, password: string, mode: 'login' | 'register') => {
+      if (mode === 'register') await api.register(name, password)
+      else await api.login(name, password)
+      const me = await api.me()
+      if (!me.session) throw new Error('Session did not stick')
+      const locals = stateRef.current.zines.filter((z) => isMine(z, null))
+      for (const zine of locals) {
+        await api.upsert({ ...zine, owner: `@${me.session.name}` })
+      }
+      const [mine, stream] = await Promise.all([api.mine(), api.stream()])
+      dispatch({
+        type: 'setSession',
+        session: me.session,
+        remixPoints: me.remixPoints,
+        likedIds: me.likedIds,
+      })
+      dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+    },
+    [],
+  )
+
+  const signOut = useCallback(async () => {
+    await api.logout().catch(() => undefined)
+    dispatch({ type: 'setSession', session: null })
+  }, [])
+
   const value = useMemo<Store>(() => {
-    const badges = computeBadges(state.zines, state.profile.remixPoints)
+    const badges = computeBadges(state.zines, state.profile.remixPoints, state.session?.name)
     return {
       ...state,
       badges,
       createZine,
-      patchZine: (id, patch) => dispatch({ type: 'patch', id, patch }),
-      setBlocks: (id, blocks) => dispatch({ type: 'setBlocks', id, blocks }),
-      deleteZine: (id) => dispatch({ type: 'delete', id }),
-      likeZine: (id) => dispatch({ type: 'like', id }),
+      patchZine: (id, patch) => {
+        dispatch({ type: 'patch', id, patch })
+        queueUpsert(id)
+      },
+      setBlocks: (id, blocks) => {
+        dispatch({ type: 'setBlocks', id, blocks })
+        queueUpsert(id)
+      },
+      deleteZine: (id) => {
+        dispatch({ type: 'delete', id })
+        if (state.session) void api.remove(id).catch(() => undefined)
+      },
+      likeZine: (id) => {
+        if (state.session) {
+          void api
+            .like(id)
+            .then((res) => {
+              const likedIds = res.liked
+                ? [...new Set([...stateRef.current.profile.likedIds, id])]
+                : stateRef.current.profile.likedIds.filter((x) => x !== id)
+              dispatch({ type: 'patch', id, patch: { likes: res.likes } })
+              dispatch({
+                type: 'setSession',
+                session: stateRef.current.session,
+                likedIds,
+              })
+            })
+            .catch(() => undefined)
+          return
+        }
+        dispatch({ type: 'like', id })
+      },
       remixZine,
       importZine,
-      publishZine: (id, dropsAt) =>
-        dispatch({ type: 'publish', id, dropsAt: dropsAt ?? Date.now() }),
-      recordView: (id) => dispatch({ type: 'view', id }),
+      publishZine: (id, dropsAt) => {
+        const when = dropsAt ?? Date.now()
+        dispatch({ type: 'publish', id, dropsAt: when })
+        if (state.session) void api.publish(id, when).catch(() => undefined)
+      },
+      recordView: (id) => {
+        dispatch({ type: 'view', id })
+        if (state.online) void api.view(id).catch(() => undefined)
+      },
       renameProfile: (name) => dispatch({ type: 'renameProfile', name }),
-      resetStudio: () => dispatch({ type: 'reset' }),
+      resetStudio: () => {
+        if (state.session) return
+        dispatch({ type: 'reset' })
+      },
       zineById: (id) => state.zines.find((z) => z.id === id),
+      signIn,
+      signOut,
     }
-  }, [state, createZine, remixZine, importZine])
+  }, [state, createZine, remixZine, importZine, queueUpsert, signIn, signOut])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
