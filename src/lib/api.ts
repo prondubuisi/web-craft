@@ -1,4 +1,16 @@
-import type { Comment, Listing, ListingKind, Notice, PollTally, StreamSort, VibeId, Zine } from './types'
+import type {
+  Comment,
+  GuestNote,
+  Listing,
+  ListingKind,
+  Notice,
+  PageStat,
+  PollTally,
+  ShelfItem,
+  StreamSort,
+  VibeId,
+  Zine,
+} from './types'
 
 export type Session = { name: string }
 
@@ -77,15 +89,17 @@ export const api = {
     setToken(null)
     return result
   },
-  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort; following?: boolean }) => {
+  stream: (opts?: { q?: string; vibe?: VibeId; sort?: StreamSort; following?: boolean; tag?: string }) => {
     const params = new URLSearchParams()
     if (opts?.q) params.set('q', opts.q)
     if (opts?.vibe) params.set('vibe', opts.vibe)
     if (opts?.sort && opts.sort !== 'new') params.set('sort', opts.sort)
     if (opts?.following) params.set('following', '1')
+    if (opts?.tag) params.set('tag', opts.tag)
     const qs = params.toString()
     return req<{ zines: Zine[] }>(`/api/stream${qs ? `?${qs}` : ''}`)
   },
+  pile: () => req<{ zine: Zine }>('/api/pile'),
   user: (name: string) =>
     req<{
       name: string
@@ -96,7 +110,37 @@ export const api = {
       following?: number
       followedByMe?: boolean
       zines: Zine[]
+      guestbook?: GuestNote[]
+      shelf?: ShelfItem[]
     }>(`/api/users/${encodeURIComponent(name)}`),
+  guestbook: (name: string) =>
+    req<{ notes: GuestNote[] }>(`/api/users/${encodeURIComponent(name)}/guestbook`),
+  signGuestbook: (name: string, body: string) =>
+    req<{ note: GuestNote }>(`/api/users/${encodeURIComponent(name)}/guestbook`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  stock: (zineId: string, note?: string) =>
+    req<{ shelf: ShelfItem[] }>('/api/shelf', {
+      method: 'POST',
+      body: JSON.stringify({ zineId, note }),
+    }),
+  unstock: (zineId: string) => req<{ ok: boolean }>(`/api/shelf/${zineId}`, { method: 'DELETE' }),
+  pageStats: (id: string) => req<{ pages: PageStat[] }>(`/api/zines/${id}/pages`),
+  pageHit: (id: string, page: number, dwellMs: number) =>
+    req<{ ok: boolean }>(`/api/zines/${id}/pages`, {
+      method: 'POST',
+      body: JSON.stringify({ page, dwellMs }),
+    }),
+  chainPeek: (id: string, invite: string) =>
+    req<{ previous: Zine['blocks']; turn: number }>(
+      `/api/zines/${id}/chain?invite=${encodeURIComponent(invite)}`,
+    ),
+  chainAdd: (id: string, invite: string, blocks: Zine['blocks']) =>
+    req<{ invite: string; turn: number }>(`/api/zines/${id}/chain`, {
+      method: 'POST',
+      body: JSON.stringify({ invite, blocks }),
+    }),
   follow: (name: string) =>
     req<{ following: boolean }>(`/api/users/${encodeURIComponent(name)}/follow`, { method: 'POST' }),
   notices: () => req<{ notices: Notice[] }>('/api/notices'),
@@ -142,7 +186,11 @@ export const api = {
       body: JSON.stringify(zine),
     }),
   remove: (id: string) => req<{ ok: boolean }>(`/api/zines/${id}`, { method: 'DELETE' }),
-  publish: (id: string, dropsAt: number, opts?: { visibility?: 'public' | 'unlisted'; password?: string }) =>
+  publish: (
+    id: string,
+    dropsAt: number,
+    opts?: { visibility?: 'public' | 'unlisted'; password?: string; chain?: boolean },
+  ) =>
     req<{ zine: Zine }>(`/api/zines/${id}/publish`, {
       method: 'POST',
       body: JSON.stringify({ dropsAt, ...opts }),

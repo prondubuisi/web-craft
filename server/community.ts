@@ -19,6 +19,7 @@ export function seedCommunity(db: Db): void {
     refreshDemoDrop(db)
     seedFollows(db)
     seedBoard(db)
+    seedTags(db)
     return
   }
 
@@ -71,8 +72,24 @@ export function seedCommunity(db: Db): void {
     refreshDemoDrop(db)
     seedFollows(db)
     seedBoard(db)
+    seedTags(db)
   })
   tx()
+}
+
+function seedTags(db: Db): void {
+  const map: Record<string, string[]> = {
+    'sunday market': ['diary', 'market'],
+    'issue 13': ['protest'],
+    LOUDER: ['music'],
+    'dimension hop': ['fan-art'],
+  }
+  const update = db.prepare(
+    `UPDATE zines SET tags_json = ? WHERE title = ? AND (tags_json IS NULL OR tags_json = '[]')`,
+  )
+  for (const [title, tags] of Object.entries(map)) {
+    update.run(JSON.stringify(tags), title)
+  }
 }
 
 function seedBoard(db: Db): void {

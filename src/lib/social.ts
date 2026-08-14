@@ -1,10 +1,13 @@
-import type { Comment, Listing, ListingKind, Notice, PollTally } from './types'
+import type { Comment, GuestNote, Listing, ListingKind, Notice, PageStat, PollTally, ShelfItem } from './types'
 import { uid } from './id'
 
 const COMMENTS_KEY = 'zineverse.comments.v1'
 const POLLS_KEY = 'zineverse.polls.v1'
 const NOTICES_KEY = 'zineverse.notices.v1'
 const BOARD_KEY = 'zineverse.board.v1'
+const GUEST_KEY = 'zineverse.guestbook.v1'
+const SHELF_KEY = 'zineverse.shelf.v1'
+const PAGES_KEY = 'zineverse.pages.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -217,4 +220,70 @@ export function removeLocalListing(id: string): Listing[] {
   const next = loadLocalListings().filter((item) => item.id !== id)
   writeJson(BOARD_KEY, next)
   return next
+}
+
+function handleOf(name: string): string {
+  return name.startsWith('@') || name === 'you' ? name : `@${name}`
+}
+
+export function loadGuestNotes(profile: string): GuestNote[] {
+  const all = readJson<Record<string, GuestNote[]>>(GUEST_KEY, {})
+  return all[profile.replace(/^@/, '')] ?? []
+}
+
+export function addGuestNote(profile: string, author: string, body: string): GuestNote {
+  const note: GuestNote = {
+    id: uid(),
+    author: handleOf(author),
+    body: body.trim().slice(0, 200),
+    createdAt: Date.now(),
+  }
+  const key = profile.replace(/^@/, '')
+  const all = readJson<Record<string, GuestNote[]>>(GUEST_KEY, {})
+  all[key] = [note, ...(all[key] ?? [])].slice(0, 40)
+  writeJson(GUEST_KEY, all)
+  return note
+}
+
+export function loadShelf(owner: string): ShelfItem[] {
+  const all = readJson<Record<string, ShelfItem[]>>(SHELF_KEY, {})
+  return all[owner.replace(/^@/, '')] ?? []
+}
+
+export function stockShelf(owner: string, item: ShelfItem): ShelfItem[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, ShelfItem[]>>(SHELF_KEY, {})
+  const next = [item, ...(all[key] ?? []).filter((row) => row.zineId !== item.zineId)].slice(0, 24)
+  all[key] = next
+  writeJson(SHELF_KEY, all)
+  return next
+}
+
+export function unstockShelf(owner: string, zineId: string): ShelfItem[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, ShelfItem[]>>(SHELF_KEY, {})
+  const next = (all[key] ?? []).filter((row) => row.zineId !== zineId)
+  all[key] = next
+  writeJson(SHELF_KEY, all)
+  return next
+}
+
+export function loadPageStats(zineId: string): PageStat[] {
+  const all = readJson<Record<string, PageStat[]>>(PAGES_KEY, {})
+  return all[zineId] ?? []
+}
+
+export function bumpPageStat(zineId: string, page: number, dwellMs: number): PageStat[] {
+  const all = readJson<Record<string, PageStat[]>>(PAGES_KEY, {})
+  const rows = all[zineId] ?? []
+  const found = rows.find((row) => row.page === page)
+  if (found) {
+    found.views += 1
+    found.dwellMs += Math.max(0, dwellMs)
+  } else {
+    rows.push({ page, views: 1, dwellMs: Math.max(0, dwellMs) })
+  }
+  all[zineId] = rows.sort((a, b) => a.page - b.page)
+  writeJson(PAGES_KEY, all)
+  return all[zineId]
 }

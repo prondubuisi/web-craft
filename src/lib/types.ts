@@ -113,6 +113,28 @@ export type Block =
   | AudioBlock
 
 export type Visibility = 'public' | 'unlisted'
+export type FinishId = 'clean' | 'riso' | 'grain'
+
+export type GuestNote = {
+  id: string
+  author: string
+  body: string
+  createdAt: number
+}
+
+export type ShelfItem = {
+  zineId: string
+  title: string
+  owner: string
+  note: string
+  vibe?: VibeId
+}
+
+export type PageStat = {
+  page: number
+  views: number
+  dwellMs: number
+}
 
 export type StreamSort = 'new' | 'likes' | 'remixes'
 
@@ -166,6 +188,10 @@ export type Zine = {
   shareKey?: string
   hasPass?: boolean
   passHash?: string
+  tags?: string[]
+  finish?: FinishId
+  chainKey?: string
+  chainOpen?: boolean
 }
 
 export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop'

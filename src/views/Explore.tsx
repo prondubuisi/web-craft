@@ -15,6 +15,7 @@ export function Explore() {
   const [vibe, setVibe] = useState<VibeId | 'all'>('all')
   const [sort, setSort] = useState<StreamSort>('new')
   const [lane, setLane] = useState<'all' | 'following'>('all')
+  const [tag, setTag] = useState('')
   const [remote, setRemote] = useState<Zine[] | null>(null)
 
   useEffect(() => {
@@ -29,12 +30,13 @@ export function Explore() {
           vibe: vibe === 'all' ? undefined : vibe,
           sort,
           following: lane === 'following',
+          tag: tag || undefined,
         })
         .then((res) => setRemote(res.zines))
         .catch(() => setRemote(null))
     }, 180)
     return () => window.clearTimeout(handle)
-  }, [online, q, vibe, sort, lane, session])
+  }, [online, q, vibe, sort, lane, session, tag])
 
   const published = useMemo(
     () =>
@@ -42,10 +44,16 @@ export function Explore() {
         q,
         vibe,
         sort,
+        tag: tag || undefined,
         following: lane === 'following' ? profile.following : null,
       }),
-    [remote, zines, q, vibe, sort, lane, profile.following],
+    [remote, zines, q, vibe, sort, lane, profile.following, tag],
   )
+  const tags = useMemo(() => {
+    const set = new Set<string>()
+    for (const z of remote ?? zines) for (const t of z.tags ?? []) set.add(t)
+    return [...set].slice(0, 12)
+  }, [remote, zines])
 
   return (
     <div data-vibe="miles">
@@ -59,6 +67,29 @@ export function Explore() {
               A website is a gathering place, not a billboard. Fork anything you like.{' '}
               <Link to="/board">Need a trade or a second pair of eyes? The board is up.</Link>
             </p>
+            <div className="cta-row" style={{ marginTop: 12 }}>
+              <ComicButton
+                className="cyan"
+                onClick={() => {
+                  if (online) {
+                    void api
+                      .pile()
+                      .then((res) => navigate(`/z/${res.zine.id}`))
+                      .catch(() => {
+                        const pile = published.filter((z) => isDropLive(z))
+                        const hit = pile[Math.floor(Math.random() * pile.length)]
+                        if (hit) navigate(`/z/${hit.id}`)
+                      })
+                    return
+                  }
+                  const pile = published.filter((z) => isDropLive(z))
+                  const hit = pile[Math.floor(Math.random() * pile.length)]
+                  if (hit) navigate(`/z/${hit.id}`)
+                }}
+              >
+                Pull from the pile
+              </ComicButton>
+            </div>
           </div>
         </div>
         <div className="filter-bar">
@@ -100,6 +131,15 @@ export function Explore() {
               onClick={() => setSort(key)}
             >
               {key}
+            </button>
+          ))}
+          {tags.map((name) => (
+            <button
+              key={name}
+              className={`tray-item ${tag === name ? 'on' : ''}`}
+              onClick={() => setTag(tag === name ? '' : name)}
+            >
+              #{name}
             </button>
           ))}
         </div>

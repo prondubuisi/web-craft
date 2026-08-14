@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 
 import { cors } from 'hono/cors'
 import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
+import { normalizeTags } from '../src/lib/tags.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
 import {
@@ -138,6 +139,11 @@ export function createApp(db: Db) {
       }
       where.push('z.owner_id IN (SELECT followee_id FROM follows WHERE follower_id = ?)')
       params.push(user.id)
+    }
+    const tag = (c.req.query('tag') ?? '').replace(/^#/, '').toLowerCase()
+    if (tag) {
+      where.push(`z.tags_json LIKE ?`)
+      params.push(`%"${tag}"%`)
     }
     if (q) {
       where.push('(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ?)')
@@ -281,8 +287,17 @@ export function createApp(db: Db) {
       created_at: existing?.created_at ?? now,
       updated_at: now,
     })
+    const tags = normalizeTags(Array.isArray(body.tags) ? body.tags : [])
+    const finish = ['clean', 'riso', 'grain'].includes(String(body.finish ?? ''))
+      ? String(body.finish)
+      : (existing?.finish ?? 'clean')
+    db.prepare('UPDATE zines SET tags_json = ?, finish = ? WHERE id = ?').run(
+      JSON.stringify(tags),
+      finish,
+      id,
+    )
     const row = getZineRow(db, id)
-    return c.json({ zine: row ? rowToZine(row) : null })
+    return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
   })
 
   app.delete('/api/zines/:id', (c) => {
@@ -294,6 +309,8 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM likes WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM comments WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM poll_votes WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM page_stats WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM shelves WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -319,10 +336,21 @@ export function createApp(db: Db) {
       passHash = null
       passSalt = null
     }
+    const chain = Boolean(body?.chain)
     db.prepare(
-      `UPDATE zines SET published = 1, drops_at = ?, visibility = ?, share_key = ?, pass_hash = ?, pass_salt = ?, updated_at = ?
+      `UPDATE zines SET published = 1, drops_at = ?, visibility = ?, share_key = ?, pass_hash = ?, pass_salt = ?, chain_open = ?, chain_key = ?, updated_at = ?
        WHERE id = ?`,
-    ).run(dropsAt, visibility, shareKey, passHash, passSalt, Date.now(), row.id)
+    ).run(
+      dropsAt,
+      chain ? 'unlisted' : visibility,
+      shareKey,
+      passHash,
+      passSalt,
+      chain ? 1 : row.chain_open,
+      chain ? shareKey : row.chain_key,
+      Date.now(),
+      row.id,
+    )
     const followers =
       visibility === 'public'
         ? (db.prepare('SELECT follower_id FROM follows WHERE followee_id = ?').all(user.id) as {
@@ -462,6 +490,40 @@ export function createApp(db: Db) {
       zines: rows.map((row) =>
         rowToZine(row, { hideBlocks: !dropIsLive(row) && row.owner_id !== viewer?.id }),
       ),
+      guestbook: (
+        db
+          .prepare(
+            `SELECT g.*, a.name AS author_name FROM guestbook g JOIN users a ON a.id = g.author_id
+             WHERE g.profile_id = ? ORDER BY g.created_at DESC LIMIT 40`,
+          )
+          .all(user.id) as { id: string; body: string; created_at: number; author_name: string }[]
+      ).map((row) => ({
+        id: row.id,
+        author: `@${row.author_name}`,
+        body: row.body,
+        createdAt: row.created_at,
+      })),
+      shelf: (
+        db
+          .prepare(
+            `SELECT s.zine_id, s.note, z.title, z.vibe, u.name AS owner_name
+             FROM shelves s JOIN zines z ON z.id = s.zine_id JOIN users u ON u.id = z.owner_id
+             WHERE s.user_id = ? ORDER BY s.created_at DESC`,
+          )
+          .all(user.id) as {
+          zine_id: string
+          note: string
+          title: string
+          vibe: string
+          owner_name: string
+        }[]
+      ).map((row) => ({
+        zineId: row.zine_id,
+        title: row.title,
+        owner: `@${row.owner_name}`,
+        note: row.note,
+        vibe: row.vibe,
+      })),
     })
   })
 
@@ -714,6 +776,138 @@ export function createApp(db: Db) {
     if (row.user_id !== user.id) return c.json({ error: 'Not your pin' }, 403)
     db.prepare('DELETE FROM listings WHERE id = ?').run(c.req.param('id'))
     return c.json({ ok: true })
+  })
+
+  app.get('/api/pile', (c) => {
+    const row = db
+      .prepare(
+        `SELECT z.*, u.name AS owner_name
+         FROM zines z JOIN users u ON u.id = z.owner_id
+         WHERE z.published = 1 AND COALESCE(z.visibility, 'public') = 'public'
+           AND (z.drops_at IS NULL OR z.drops_at <= ?)
+         ORDER BY RANDOM() LIMIT 1`,
+      )
+      .get(Date.now()) as import('./db.ts').ZineRow | undefined
+    if (!row) return c.json({ error: 'empty pile' }, 404)
+    return c.json({ zine: rowToZine(row) })
+  })
+
+  app.get('/api/users/:name/guestbook', (c) => {
+    const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
+    const user = db.prepare('SELECT id FROM users WHERE name = ?').get(name) as { id: string } | undefined
+    if (!user) return c.json({ error: 'Nobody with that handle' }, 404)
+    const rows = db
+      .prepare(
+        `SELECT g.*, a.name AS author_name FROM guestbook g JOIN users a ON a.id = g.author_id
+         WHERE g.profile_id = ? ORDER BY g.created_at DESC LIMIT 40`,
+      )
+      .all(user.id) as { id: string; body: string; created_at: number; author_name: string }[]
+    return c.json({
+      notes: rows.map((row) => ({
+        id: row.id,
+        author: `@${row.author_name}`,
+        body: row.body,
+        createdAt: row.created_at,
+      })),
+    })
+  })
+
+  app.post('/api/users/:name/guestbook', async (c) => {
+    const author = currentUser(c)
+    if (!author) return c.json({ error: 'Sign in first' }, 401)
+    const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
+    const host = db.prepare('SELECT id FROM users WHERE name = ?').get(name) as { id: string } | undefined
+    if (!host) return c.json({ error: 'Nobody with that handle' }, 404)
+    const body = await c.req.json().catch(() => null)
+    const text = String(body?.body ?? '').trim().slice(0, 200)
+    if (!text) return c.json({ error: 'Write something' }, 400)
+    const id = randomUUID()
+    const now = Date.now()
+    db.prepare(
+      'INSERT INTO guestbook (id, profile_id, author_id, body, created_at) VALUES (?, ?, ?, ?, ?)',
+    ).run(id, host.id, author.id, text, now)
+    return c.json({ note: { id, author: `@${author.name}`, body: text, createdAt: now } })
+  })
+
+  app.post('/api/shelf', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const zineId = String(body?.zineId ?? '')
+    const note = String(body?.note ?? 'stocked from the pile').slice(0, 80)
+    const zine = getZineRow(db, zineId)
+    if (!zine || !zine.published) return c.json({ error: 'Cannot stock that' }, 404)
+    db.prepare(
+      `INSERT INTO shelves (user_id, zine_id, note, created_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id, zine_id) DO UPDATE SET note = excluded.note`,
+    ).run(user.id, zineId, note, Date.now())
+    return c.json({ shelf: [{ zineId, title: zine.title, owner: `@${zine.owner_name}`, note, vibe: zine.vibe }] })
+  })
+
+  app.delete('/api/shelf/:id', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    db.prepare('DELETE FROM shelves WHERE user_id = ? AND zine_id = ?').run(user.id, c.req.param('id'))
+    return c.json({ ok: true })
+  })
+
+  app.get('/api/zines/:id/pages', (c) => {
+    const user = currentUser(c)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row) return c.json({ error: 'missing issue' }, 404)
+    if (row.owner_id !== user?.id) return c.json({ pages: [] })
+    const pages = db
+      .prepare('SELECT page, views, dwell_ms FROM page_stats WHERE zine_id = ? ORDER BY page')
+      .all(row.id) as { page: number; views: number; dwell_ms: number }[]
+    return c.json({
+      pages: pages.map((p) => ({ page: p.page, views: p.views, dwellMs: p.dwell_ms })),
+    })
+  })
+
+  app.post('/api/zines/:id/pages', async (c) => {
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !dropIsLive(row)) return c.json({ ok: true })
+    const body = await c.req.json().catch(() => null)
+    const page = Number(body?.page)
+    const dwell = Math.max(0, Math.min(120000, Number(body?.dwellMs ?? 0)))
+    if (!Number.isInteger(page) || page < 1 || page > 12) return c.json({ ok: true })
+    db.prepare(
+      `INSERT INTO page_stats (zine_id, page, views, dwell_ms) VALUES (?, ?, 1, ?)
+       ON CONFLICT(zine_id, page) DO UPDATE SET views = views + 1, dwell_ms = dwell_ms + excluded.dwell_ms`,
+    ).run(row.id, page, dwell)
+    return c.json({ ok: true })
+  })
+
+  app.get('/api/zines/:id/chain', (c) => {
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.chain_open || row.chain_key !== c.req.query('invite')) {
+      return c.json({ error: 'that corpse is closed' }, 404)
+    }
+    const blocks = JSON.parse(row.blocks_json) as Block[]
+    const previous = blocks.slice(-2)
+    return c.json({ previous, turn: blocks.length })
+  })
+
+  app.post('/api/zines/:id/chain', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    const body = await c.req.json().catch(() => null)
+    const invite = String(body?.invite ?? '')
+    if (!row || !row.chain_open || row.chain_key !== invite) {
+      return c.json({ error: 'that corpse is closed' }, 404)
+    }
+    const extra = Array.isArray(body?.blocks) ? (body.blocks as Block[]) : []
+    if (!extra.length) return c.json({ error: 'Add a page' }, 400)
+    const blocks = [...(JSON.parse(row.blocks_json) as Block[]), ...extra.map((b) => ({ ...b, id: randomUUID() }))]
+    const nextInvite = randomUUID().replace(/-/g, '').slice(0, 16)
+    db.prepare('UPDATE zines SET blocks_json = ?, chain_key = ?, updated_at = ? WHERE id = ?').run(
+      JSON.stringify(blocks),
+      nextInvite,
+      Date.now(),
+      row.id,
+    )
+    return c.json({ invite: nextInvite, turn: blocks.length })
   })
 
   return app
