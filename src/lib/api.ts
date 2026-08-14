@@ -15,6 +15,7 @@ import type {
   Review,
   ShelfItem,
   Stamp,
+  CorkPin,
   StreamSort,
   VibeId,
   Zine,
@@ -236,10 +237,10 @@ export const api = {
   mail: () => req<{ threads: MailThread[] }>('/api/mail'),
   thread: (name: string) =>
     req<{ handle: string; letters: Letter[] }>(`/api/mail/${encodeURIComponent(name)}`),
-  sendMail: (to: string, body: string) =>
+  sendMail: (to: string, body: string, extra?: { postcard?: boolean; vibe?: string }) =>
     req<{ letter: Letter }>('/api/mail', {
       method: 'POST',
-      body: JSON.stringify({ to, body }),
+      body: JSON.stringify({ to, body, ...extra }),
     }),
   jams: () => req<{ jams: Jam[]; live: Jam | null }>('/api/jams'),
   jam: (id: string) =>
@@ -266,5 +267,13 @@ export const api = {
     req<{ stamps: Stamp[] }>('/api/stamps', {
       method: 'POST',
       body: JSON.stringify({ zineId }),
+    }),
+  claim: (id: string) =>
+    req<{ claimed: number; mine: boolean; out: boolean }>(`/api/zines/${id}/claim`, { method: 'POST' }),
+  cork: () => req<{ pins: CorkPin[] }>('/api/cork'),
+  saveCork: (pins: CorkPin[]) =>
+    req<{ ok: boolean }>('/api/cork', {
+      method: 'PUT',
+      body: JSON.stringify({ pins }),
     }),
 }

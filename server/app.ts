@@ -29,9 +29,17 @@ function nomCount(db: Db, zineId: string): number {
   return (db.prepare('SELECT COUNT(*) AS n FROM nominations WHERE zine_id = ?').get(zineId) as { n: number }).n
 }
 
-function decorate(db: Db, zine: Zine): Zine {
+function claimCount(db: Db, zineId: string): number {
+  return (db.prepare('SELECT COUNT(*) AS n FROM claims WHERE zine_id = ?').get(zineId) as { n: number }).n
+}
+
+function decorate(db: Db, zine: Zine, viewerId?: string): Zine {
   const noms = nomCount(db, zine.id)
-  return { ...zine, noms, archived: noms >= ARCHIVE_THRESHOLD }
+  const claimed = claimCount(db, zine.id)
+  const claimedByMe = Boolean(
+    viewerId && db.prepare('SELECT 1 FROM claims WHERE user_id = ? AND zine_id = ?').get(viewerId, zine.id),
+  )
+  return { ...zine, noms, archived: noms >= ARCHIVE_THRESHOLD, claimed, claimedByMe }
 }
 
 function jamForLive(db: Db, visibility: string, blockCount: number): Jam | undefined {
@@ -384,9 +392,10 @@ export function createApp(db: Db) {
     const issueNo = normalizeIssueNo(body.issueNo ?? existing?.issue_no) ?? null
     const penName = String(body.penName ?? existing?.pen_name ?? '').trim().slice(0, 48)
     const bSide = String(body.bSide ?? existing?.b_side ?? '').trim().slice(0, 280)
+    const editionSize = Math.max(0, Math.min(999, Number(body.editionSize ?? existing?.edition_size ?? 0) || 0))
     db.prepare(
-      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ? WHERE id = ?',
-    ).run(JSON.stringify(tags), finish, series, issueNo, penName, bSide, id)
+      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ? WHERE id = ?',
+    ).run(JSON.stringify(tags), finish, series, issueNo, penName, bSide, editionSize, id)
     const row = getZineRow(db, id)
     return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
   })
@@ -407,6 +416,7 @@ export function createApp(db: Db) {
     db.prepare('DELETE FROM nominations WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM margins WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM stamps WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM claims WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -1193,6 +1203,8 @@ export function createApp(db: Db) {
         body: row.body,
         read: Boolean(row.read),
         createdAt: row.created_at,
+        postcard: Boolean((row as { postcard?: number }).postcard),
+        vibe: (row as { vibe?: string | null }).vibe ?? undefined,
       })),
     })
   })
@@ -1205,7 +1217,13 @@ export function createApp(db: Db) {
       .trim()
       .toLowerCase()
       .replace(/^@/, '')
-    const text = String(body?.body ?? '').trim().slice(0, 400)
+    const postcard = Boolean(body?.postcard)
+    const vibe = ['miles', 'gwen', 'peni', 'ham', 'noir'].includes(String(body?.vibe ?? ''))
+      ? String(body.vibe)
+      : null
+    const text = String(body?.body ?? '')
+      .trim()
+      .slice(0, postcard ? 140 : 400)
     if (!text) return c.json({ error: 'Write a letter' }, 400)
     const other = db.prepare('SELECT id, name FROM users WHERE name = ?').get(name) as
       | { id: string; name: string }
@@ -1215,13 +1233,13 @@ export function createApp(db: Db) {
     const id = randomUUID()
     const now = Date.now()
     db.prepare(
-      'INSERT INTO letters (id, from_id, to_id, body, read, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-    ).run(id, user.id, other.id, text, now)
+      'INSERT INTO letters (id, from_id, to_id, body, read, created_at, postcard, vibe) VALUES (?, ?, ?, ?, 0, ?, ?, ?)',
+    ).run(id, user.id, other.id, text, now, postcard ? 1 : 0, vibe)
     notify(db, {
       recipientId: other.id,
       actorId: user.id,
       kind: 'mail',
-      body: text.slice(0, 80),
+      body: postcard ? `postcard:${text.slice(0, 60)}` : text.slice(0, 80),
     })
     return c.json({
       letter: {
@@ -1231,6 +1249,8 @@ export function createApp(db: Db) {
         body: text,
         read: false,
         createdAt: now,
+        postcard,
+        vibe,
       },
     })
   })
@@ -1414,6 +1434,66 @@ export function createApp(db: Db) {
        ON CONFLICT(user_id, zine_id) DO NOTHING`,
     ).run(user.id, zineId, Date.now())
     return c.json({ stamps: listStamps(db, user.id) })
+  })
+
+  app.post('/api/zines/:id/claim', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !row.published || !row.edition_size) return c.json({ error: 'Not a numbered run' }, 404)
+    const existing = db.prepare('SELECT 1 FROM claims WHERE user_id = ? AND zine_id = ?').get(user.id, row.id)
+    if (existing) {
+      const claimed = claimCount(db, row.id)
+      return c.json({ claimed, mine: true, out: claimed >= row.edition_size })
+    }
+    const claimed = claimCount(db, row.id)
+    if (claimed >= row.edition_size) return c.json({ claimed, mine: false, out: true })
+    db.prepare('INSERT INTO claims (user_id, zine_id, created_at) VALUES (?, ?, ?)').run(user.id, row.id, Date.now())
+    const next = claimed + 1
+    return c.json({ claimed: next, mine: true, out: next >= row.edition_size })
+  })
+
+  app.get('/api/cork', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const rows = db
+      .prepare('SELECT id, text, x, y, rotation, src FROM cork_pins WHERE user_id = ? ORDER BY created_at')
+      .all(user.id) as { id: string; text: string; x: number; y: number; rotation: number; src: string | null }[]
+    return c.json({
+      pins: rows.map((row) => ({
+        id: row.id,
+        text: row.text,
+        x: row.x,
+        y: row.y,
+        rotation: row.rotation,
+        src: row.src ?? undefined,
+      })),
+    })
+  })
+
+  app.put('/api/cork', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const pins = Array.isArray(body?.pins) ? body.pins : []
+    db.prepare('DELETE FROM cork_pins WHERE user_id = ?').run(user.id)
+    const insert = db.prepare(
+      'INSERT INTO cork_pins (id, user_id, text, x, y, rotation, src, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    )
+    const now = Date.now()
+    for (const pin of pins.slice(0, 40)) {
+      insert.run(
+        String(pin.id || randomUUID()),
+        user.id,
+        String(pin.text ?? '').slice(0, 160),
+        Math.max(0, Math.min(100, Number(pin.x) || 0)),
+        Math.max(0, Math.min(100, Number(pin.y) || 0)),
+        Number(pin.rotation) || 0,
+        pin.src ? String(pin.src).slice(0, 2000) : null,
+        now,
+      )
+    }
+    return c.json({ ok: true })
   })
 
   return app

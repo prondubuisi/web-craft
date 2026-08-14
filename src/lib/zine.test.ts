@@ -14,8 +14,11 @@ import {
   ownerHandle,
   profilePath,
   byline,
+  isCapsule,
+  runLabel,
   seriesLabel,
   slugify,
+  wearLevel,
 } from './zine'
 
 function zine(partial: Partial<Zine> = {}): Zine {
@@ -103,6 +106,10 @@ describe('formatCountdown', () => {
     expect(formatCountdown(90_000_000)).toBe('1d 1h 0m')
   })
 
+  it('formats years for a time capsule', () => {
+    expect(formatCountdown(400 * 86400_000)).toBe('1y 35d')
+  })
+
   it('clamps negatives to zero', () => {
     expect(formatCountdown(-50)).toBe('0m 00s')
   })
@@ -138,6 +145,21 @@ describe('series', () => {
   it('prefers a pen name as the byline', () => {
     expect(byline({ owner: '@inkstain', penName: 'the gutter' })).toBe('the gutter')
     expect(byline({ owner: '@inkstain' })).toBe('@inkstain')
+  })
+})
+
+describe('wear and editions', () => {
+  it('grades wear from circulation', () => {
+    expect(wearLevel({ remixes: 0, views: 0 })).toBe(0)
+    expect(wearLevel({ remixes: 1, views: 20 })).toBe(1)
+    expect(wearLevel({ remixes: 4, views: 0 })).toBe(2)
+  })
+
+  it('labels a limited run and a capsule', () => {
+    expect(runLabel({ editionSize: 40, claimed: 3 })).toBe('3/40')
+    expect(runLabel({ editionSize: 40, claimed: 40 })).toContain('out of print')
+    expect(isCapsule({ published: true, dropsAt: Date.now() + 40 * 86400_000 })).toBe(true)
+    expect(isCapsule({ published: true, dropsAt: Date.now() + 60_000 })).toBe(false)
   })
 })
 

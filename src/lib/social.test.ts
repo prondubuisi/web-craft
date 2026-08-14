@@ -26,6 +26,9 @@ import {
   upsertTable,
   loadStamps,
   stampIssue,
+  claimLocal,
+  loadCork,
+  saveCork,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -154,10 +157,27 @@ describe('fest and passport', () => {
   })
 })
 
+describe('limited run', () => {
+  it('sells out at the cap', () => {
+    expect(claimLocal('a', 'z9', 2).claimed).toBe(1)
+    expect(claimLocal('b', 'z9', 2).out).toBe(true)
+    expect(claimLocal('c', 'z9', 2).mine).toBe(false)
+  })
+})
+
+describe('corkboard', () => {
+  it('saves pins', () => {
+    saveCork('you', [{ id: 'p1', text: 'clip', x: 20, y: 30, rotation: -4 }])
+    expect(loadCork('you')[0]?.text).toBe('clip')
+  })
+})
+
 describe('pen pal mail', () => {
   it('threads letters between two handles', () => {
     sendLetter('you', '@yuzu', 'save me a bow')
     sendLetter('@yuzu', 'you', 'already packed')
+    const card = sendLetter('you', '@yuzu', 'wish you were here', { postcard: true, vibe: 'peni' })
+    expect(card.postcard).toBe(true)
     const thread = threadWith('you', 'yuzu')
     expect(thread.map((row) => row.body)).toContain('already packed')
     expect(listThreads('you')[0]?.handle).toBe('yuzu')

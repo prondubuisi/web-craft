@@ -43,6 +43,10 @@ export function formatCountdown(ms: number): string {
   const h = Math.floor((total % 86400) / 3600)
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
+  if (d >= 365) {
+    const y = Math.floor(d / 365)
+    return `${y}y ${d % 365}d`
+  }
   if (d > 0) return `${d}d ${h}h ${m}m`
   if (h > 0) return `${h}h ${m}m ${String(s).padStart(2, '0')}s`
   return `${m}m ${String(s).padStart(2, '0')}s`
@@ -81,6 +85,25 @@ export function seriesLabel(zine: Pick<Zine, 'series' | 'issueNo'>): string | nu
   const series = normalizeSeries(zine.series)
   if (!series) return null
   return zine.issueNo ? `${series} #${zine.issueNo}` : series
+}
+
+export function isCapsule(zine: Pick<Zine, 'dropsAt' | 'published'>, now = Date.now()): boolean {
+  if (!zine.published || !zine.dropsAt) return false
+  return zine.dropsAt - now > 30 * 86400_000
+}
+
+export function wearLevel(zine: Pick<Zine, 'remixes' | 'views' | 'claimed'>): 0 | 1 | 2 {
+  const score = (zine.remixes ?? 0) * 8 + Math.floor((zine.views ?? 0) / 20) + (zine.claimed ?? 0)
+  if (score >= 24) return 2
+  if (score >= 8) return 1
+  return 0
+}
+
+export function runLabel(zine: Pick<Zine, 'editionSize' | 'claimed'>): string | null {
+  if (!zine.editionSize) return null
+  const taken = zine.claimed ?? 0
+  if (taken >= zine.editionSize) return `out of print · ${zine.editionSize}`
+  return `${taken}/${zine.editionSize}`
 }
 
 export function byline(zine: Pick<Zine, 'owner' | 'penName'>): string {
