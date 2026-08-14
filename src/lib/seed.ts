@@ -66,6 +66,12 @@ export function createSeed(): AppState {
         },
         {
           id: uid(),
+          type: 'quote',
+          text: 'the city prints itself wrong on purpose.',
+          cite: 'a stranger on the L',
+        },
+        {
+          id: uid(),
           type: 'grid',
           layout: 'asymmetric',
           panels: [
@@ -138,6 +144,12 @@ export function createSeed(): AppState {
             { title: 'booth 12', body: 'free bows. limited dignity.' },
           ],
         },
+        {
+          id: uid(),
+          type: 'poll',
+          question: 'what are you buying first?',
+          options: ['strawberry milk', 'apology robot', 'free bow', 'a sticker that beeps'],
+        },
       ],
     }),
     zine({
@@ -164,6 +176,12 @@ export function createSeed(): AppState {
           type: 'sticker',
           text: 'nobody asked for a clean layout. good.',
           rotation: -1.2,
+        },
+        {
+          id: uid(),
+          type: 'quote',
+          text: 'it rained like a confession and the gutter took notes.',
+          cite: 'issue zero',
         },
         { id: uid(), type: 'glitch', text: 'REDACC TED' },
       ],

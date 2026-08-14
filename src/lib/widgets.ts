@@ -19,6 +19,8 @@ export const WIDGETS: WidgetDef[] = [
   { type: 'sfx', slash: 'sfx', label: 'Sound FX', hint: 'THWIP / POW / ZAP', glyph: '!' },
   { type: 'glitch', slash: 'glitch', label: 'Glitch layer', hint: 'Misregistered emphasis', glyph: '≠' },
   { type: 'stack', slash: 'stack', label: 'Zine stack', hint: 'Overlapping scrapbook cards', glyph: '▤' },
+  { type: 'quote', slash: 'quote', label: 'Pull quote', hint: 'Hand-lettered citation', glyph: '“' },
+  { type: 'poll', slash: 'poll', label: 'Street poll', hint: 'Ask the stream a question', glyph: '?' },
 ]
 
 export function createBlock(type: BlockType, vibe: VibeId): Block {
@@ -67,6 +69,20 @@ export function createBlock(type: BlockType, vibe: VibeId): Block {
           { title: 'misregister', body: 'if it lines up perfectly, tilt it.' },
           { title: 'print it wrong', body: 'the error is the style.' },
         ],
+      }
+    case 'quote':
+      return {
+        id: uid(),
+        type,
+        text: 'if it lines up perfectly, you printed it wrong.',
+        cite: 'the margin',
+      }
+    case 'poll':
+      return {
+        id: uid(),
+        type,
+        question: 'what should the next issue smell like?',
+        options: ['toner and rain', 'strawberry milk', 'wet newsprint', 'ozone'],
       }
   }
 }
