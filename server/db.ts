@@ -15,6 +15,7 @@ export type UserRow = {
   kind: 'human' | 'system'
   created_at: number
   bio: string
+  scene: string
 }
 
 export type CommentRow = {
@@ -65,7 +66,8 @@ CREATE TABLE IF NOT EXISTS users (
   remix_points INTEGER NOT NULL DEFAULT 0,
   kind TEXT NOT NULL DEFAULT 'human',
   created_at INTEGER NOT NULL,
-  bio TEXT NOT NULL DEFAULT ''
+  bio TEXT NOT NULL DEFAULT '',
+  scene TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
@@ -226,6 +228,23 @@ CREATE TABLE IF NOT EXISTS nominations (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
 );
+CREATE TABLE IF NOT EXISTS fest_tables (
+  user_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  scene TEXT NOT NULL DEFAULT '',
+  blurb TEXT NOT NULL DEFAULT '',
+  zine_ids_json TEXT NOT NULL DEFAULT '[]',
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS stamps (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
 CREATE TABLE IF NOT EXISTS margins (
   id TEXT PRIMARY KEY,
   zine_id TEXT NOT NULL,
@@ -247,6 +266,9 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   const userCols = db.prepare(`PRAGMA table_info(users)`).all() as { name: string }[]
   if (!userCols.some((col) => col.name === 'bio')) {
     db.exec(`ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''`)
+  }
+  if (!userCols.some((col) => col.name === 'scene')) {
+    db.exec(`ALTER TABLE users ADD COLUMN scene TEXT NOT NULL DEFAULT ''`)
   }
   const zineCols = db.prepare(`PRAGMA table_info(zines)`).all() as { name: string }[]
   const zineNames = new Set(zineCols.map((col) => col.name))

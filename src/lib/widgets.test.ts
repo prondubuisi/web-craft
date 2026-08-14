@@ -36,6 +36,21 @@ describe('widgets', () => {
     if (block.type === 'strip') expect(block.panels).toHaveLength(4)
   })
 
+  it('creates a blackout poem with redactions', () => {
+    const block = createBlock('blackout', 'noir')
+    expect(block.type).toBe('blackout')
+    if (block.type === 'blackout') {
+      expect(block.text.split(/\s+/).length).toBeGreaterThan(4)
+      expect(block.hidden.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('creates a contents list', () => {
+    const block = createBlock('contents', 'miles')
+    expect(block.type).toBe('contents')
+    if (block.type === 'contents') expect(block.lines.length).toBeGreaterThan(1)
+  })
+
   it('creates a colophon with press and thanks', () => {
     const block = createBlock('colophon', 'noir')
     expect(block.type).toBe('colophon')

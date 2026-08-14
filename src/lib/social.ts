@@ -12,7 +12,10 @@ import type {
   PollTally,
   Review,
   ShelfItem,
+  FestTable,
+  Stamp,
 } from './types'
+import { demoTables } from './fest'
 import { ARCHIVE_THRESHOLD } from './jam'
 import { uid } from './id'
 
@@ -28,6 +31,8 @@ const REVIEW_KEY = 'zineverse.reviews.v1'
 const MAIL_KEY = 'zineverse.mail.v1'
 const MARGIN_KEY = 'zineverse.margins.v1'
 const NOM_KEY = 'zineverse.noms.v1'
+const FEST_KEY = 'zineverse.fest.v1'
+const STAMP_KEY = 'zineverse.stamps.v1'
 
 type PollStore = Record<string, Record<string, { votes: number[]; mine: number | null }>>
 
@@ -482,4 +487,34 @@ export function nomState(owner: string, zineId: string): { noms: number; archive
   const voters = loadNoms()[zineId] ?? []
   const who = handleOf(owner)
   return { noms: voters.length, archived: voters.length >= ARCHIVE_THRESHOLD, mine: voters.includes(who) }
+}
+
+export function loadTables(): FestTable[] {
+  const stored = readJson<FestTable[] | null>(FEST_KEY, null)
+  if (stored) return stored
+  const seeded = demoTables()
+  writeJson(FEST_KEY, seeded)
+  return seeded
+}
+
+export function upsertTable(table: FestTable): FestTable[] {
+  const next = [table, ...loadTables().filter((row) => row.owner !== table.owner && row.id !== table.id)]
+  writeJson(FEST_KEY, next)
+  return next
+}
+
+export function loadStamps(owner: string): Stamp[] {
+  const all = readJson<Record<string, Stamp[]>>(STAMP_KEY, {})
+  return all[owner.replace(/^@/, '')] ?? []
+}
+
+export function stampIssue(owner: string, stamp: Stamp): Stamp[] {
+  const key = owner.replace(/^@/, '')
+  const all = readJson<Record<string, Stamp[]>>(STAMP_KEY, {})
+  const prev = all[key] ?? []
+  if (prev.some((row) => row.zineId === stamp.zineId)) return prev
+  const next = [stamp, ...prev].slice(0, 48)
+  all[key] = next
+  writeJson(STAMP_KEY, all)
+  return next
 }

@@ -7,7 +7,7 @@ import { appHref } from '../lib/paths'
 import { copyText, downloadJson, encodeShare } from '../lib/share'
 import type { Block, BlockType, FinishId, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
 import { formatTags, parseTagField } from '../lib/tags'
-import { WIDGETS, createBlock } from '../lib/widgets'
+import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
 import { demoJams, formatHint, jamForPublish, liveJam } from '../lib/jam'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
@@ -97,7 +97,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   }
 
   function insert(type: BlockType) {
-    const block = createBlock(type, zine.vibe)
+    const block = type === 'contents' ? contentsFrom(zine.blocks) : createBlock(type, zine.vibe)
     const idx = zine.blocks.findIndex((b) => b.id === selected)
     const next =
       idx >= 0
