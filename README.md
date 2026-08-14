@@ -4,12 +4,20 @@ A playful, Spider-Verse-inspired zine builder. Pages are digital collage — blo
 
 ## Run
 
+Live demo: https://prondubuisi.github.io/web-craft/
+
 ```bash
 npm install
 npm run dev
 ```
 
 Then open the local URL Vite prints (usually `http://localhost:5173`).
+
+```bash
+npm test          # unit tests
+npm run lint      # oxlint
+npm run build     # typecheck + production bundle
+```
 
 ## What you can do
 

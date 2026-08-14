@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { BottomSheet, ComicButton, Modal, VibePicks } from '../components/Chrome'
 import { Inspector } from '../components/Inspector'
+import { appHref } from '../lib/paths'
 import { copyText, downloadJson, encodeShare } from '../lib/share'
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { WIDGETS, createBlock } from '../lib/widgets'
@@ -162,9 +163,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
 
   async function share(kind: 'local' | 'snapshot') {
     const url =
-      kind === 'local'
-        ? `${window.location.origin}/z/${zine.id}`
-        : `${window.location.origin}/s#${encodeShare(zine)}`
+      kind === 'local' ? appHref(`/z/${zine.id}`) : `${appHref('/s')}#${encodeShare(zine)}`
     const ok = await copyText(url)
     setCopied(ok ? (kind === 'local' ? 'Studio link copied' : 'Snapshot link copied') : url)
     window.setTimeout(() => setCopied(null), 2400)
