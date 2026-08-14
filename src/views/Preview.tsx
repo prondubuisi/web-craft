@@ -16,6 +16,9 @@ import {
   claimState,
   dumpBag,
   loadLoans,
+  loadSeriesWatch,
+  sendLetter,
+  toggleSeriesWatch,
   inBag,
   loadLocalPolls,
   loadMargins,
@@ -73,6 +76,8 @@ export function Preview() {
   const [bOpen, setBOpen] = useState(false)
   const [run, setRun] = useState({ claimed: 0, mine: false, out: false })
   const [loaned, setLoaned] = useState(false)
+  const [watchingRun, setWatchingRun] = useState(false)
+  const [mailNote, setMailNote] = useState('')
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
@@ -150,6 +155,9 @@ export function Preview() {
       mine: local.mine,
     })
     setLoaned(loadLoans(bagOwner).some((row) => row.zineId === id))
+    setWatchingRun(
+      Boolean(zine?.series && loadSeriesWatch(bagOwner).includes(zine.series.trim().toLowerCase())),
+    )
     if (zine?.editionSize) {
       const claim = claimState(bagOwner, id, zine.editionSize)
       setRun({
@@ -278,6 +286,9 @@ export function Preview() {
             </div>
           ) : (
             <>
+              {zine.dedication ? (
+                <p className="dedication serif">for {zine.dedication}</p>
+              ) : null}
               {zine.errata ? (
                 <aside className="errata-slip">
                   <div className="issue-chip">ERRATA</div>
@@ -377,6 +388,29 @@ export function Preview() {
                     <BlockView
                       block={block}
                       poll={polls[block.id]}
+                      onMail={
+                        block.type === 'reply' && !mine
+                          ? (text) => {
+                              const dest = zine.owner.replace(/^@/, '')
+                              if (dest === 'you') {
+                                sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
+                                setMailNote('postcard folded.')
+                                return
+                              }
+                              if (online && session) {
+                                void api
+                                  .sendMail(dest, text, { postcard: true, vibe: zine.vibe })
+                                  .then(() => setMailNote('postcard mailed.'))
+                                  .catch(() =>
+                                    sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe }),
+                                  )
+                                return
+                              }
+                              sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
+                              setMailNote('postcard folded.')
+                            }
+                          : undefined
+                      }
                       onVote={
                         block.type === 'poll'
                           ? (option) => {
@@ -517,6 +551,18 @@ export function Preview() {
                 {archive.mine ? 'Nominated' : 'Nominate'} · {archive.noms}
               </ComicButton>
             ) : null}
+            {!locked && !needsPass && zine.series ? (
+              <ComicButton
+                className={`small no-print ${watchingRun ? 'pink' : 'ghost'}`}
+                onClick={() => {
+                  const next = toggleSeriesWatch(bagOwner, zine.series ?? '')
+                  setWatchingRun(next.includes((zine.series ?? '').trim().toLowerCase()))
+                  if (session && online) void api.watchSeries(zine.series ?? '').catch(() => undefined)
+                }}
+              >
+                {watchingRun ? 'Watching run' : 'Watch this run'}
+              </ComicButton>
+            ) : null}
             {!locked && !needsPass && archive.archived && !mine ? (
               <ComicButton
                 className={`small no-print ${loaned ? 'pink' : 'ghost'}`}
@@ -574,6 +620,7 @@ export function Preview() {
               </Link>
             ) : null}
           </div>
+          {mailNote ? <p className="hand">{mailNote}</p> : null}
           {bOpen && zine.bSide ? (
             <aside className="bside-reveal">
               <div className="issue-chip">B-SIDE</div>

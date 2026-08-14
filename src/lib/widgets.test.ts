@@ -45,6 +45,12 @@ describe('widgets', () => {
     }
   })
 
+  it('creates a tear-out reply', () => {
+    const block = createBlock('reply', 'gwen')
+    expect(block.type).toBe('reply')
+    if (block.type === 'reply') expect(block.prompt.length).toBeGreaterThan(4)
+  })
+
   it('creates a flyer insert', () => {
     const block = createBlock('insert', 'ham')
     expect(block.type).toBe('insert')

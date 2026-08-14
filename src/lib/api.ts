@@ -280,4 +280,12 @@ export const api = {
   loans: () => req<{ loans: Loan[] }>('/api/loans'),
   checkout: (id: string) =>
     req<{ loan: Loan }>(`/api/zines/${id}/checkout`, { method: 'POST' }),
+  watchSeries: (series: string) =>
+    req<{ watching: boolean }>('/api/series/watch', {
+      method: 'POST',
+      body: JSON.stringify({ series }),
+    }),
+  sit: (id: string) => req<{ sitters: string[] }>(`/api/fest/${encodeURIComponent(id)}/sit`, { method: 'POST' }),
+  swapListing: (id: string) =>
+    req<{ swapped: boolean }>(`/api/board/${id}/swap`, { method: 'POST' }),
 }
