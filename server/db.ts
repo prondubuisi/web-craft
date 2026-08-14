@@ -55,6 +55,7 @@ export type ZineRow = {
   pen_name: string
   jam_id: string | null
   b_side: string
+  edition_size: number
 }
 
 const SCHEMA = `
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS zines (
   pen_name TEXT NOT NULL DEFAULT '',
   jam_id TEXT,
   b_side TEXT NOT NULL DEFAULT '',
+  edition_size INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -209,8 +211,29 @@ CREATE TABLE IF NOT EXISTS letters (
   body TEXT NOT NULL,
   read INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
+  postcard INTEGER NOT NULL DEFAULT 0,
+  vibe TEXT,
   FOREIGN KEY (from_id) REFERENCES users(id),
   FOREIGN KEY (to_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS claims (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
+CREATE TABLE IF NOT EXISTS cork_pins (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  text TEXT NOT NULL,
+  x REAL NOT NULL,
+  y REAL NOT NULL,
+  rotation REAL NOT NULL DEFAULT 0,
+  src TEXT,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS jams (
   id TEXT PRIMARY KEY,
@@ -285,6 +308,11 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('pen_name')) db.exec(`ALTER TABLE zines ADD COLUMN pen_name TEXT NOT NULL DEFAULT ''`)
   if (!zineNames.has('jam_id')) db.exec(`ALTER TABLE zines ADD COLUMN jam_id TEXT`)
   if (!zineNames.has('b_side')) db.exec(`ALTER TABLE zines ADD COLUMN b_side TEXT NOT NULL DEFAULT ''`)
+  if (!zineNames.has('edition_size')) db.exec(`ALTER TABLE zines ADD COLUMN edition_size INTEGER NOT NULL DEFAULT 0`)
+  const letterCols = db.prepare(`PRAGMA table_info(letters)`).all() as { name: string }[]
+  const letterNames = new Set(letterCols.map((col) => col.name))
+  if (!letterNames.has('postcard')) db.exec(`ALTER TABLE letters ADD COLUMN postcard INTEGER NOT NULL DEFAULT 0`)
+  if (!letterNames.has('vibe')) db.exec(`ALTER TABLE letters ADD COLUMN vibe TEXT`)
   return db
 }
 
@@ -331,6 +359,7 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     penName: row.pen_name || undefined,
     jamId: row.jam_id ?? undefined,
     bSide: row.b_side || undefined,
+    editionSize: row.edition_size || undefined,
   }
 }
 

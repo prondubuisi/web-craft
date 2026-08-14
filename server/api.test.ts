@@ -473,4 +473,43 @@ describe('social', () => {
     const wall = await json(await client.request('/api/users/reader0'))
     expect(wall.scene).toBe('bushwick')
   })
+
+  it('numbers a run, mails a postcard, and pins the corkboard', async () => {
+    const client = app()
+    const author = await register(client, 'printer1', 'strawberry1')
+    await client.request('/api/zines/ltd', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, editionSize: 2 }),
+    })
+    await client.request('/api/zines/ltd/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const a = await register(client, 'claimera', 'cartoon99')
+    const first = await json(
+      await client.request('/api/zines/ltd/claim', { method: 'POST', headers: { authorization: a.cookie } }),
+    )
+    expect(first.claimed).toBe(1)
+    const b = await register(client, 'claimerb', 'cartoon99')
+    const second = await json(
+      await client.request('/api/zines/ltd/claim', { method: 'POST', headers: { authorization: b.cookie } }),
+    )
+    expect(second.out).toBe(true)
+    const card = await client.request('/api/mail', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: a.cookie },
+      body: JSON.stringify({ to: 'printer1', body: 'wish you were here', postcard: true, vibe: 'noir' }),
+    })
+    expect(card.status).toBe(200)
+    const cork = await client.request('/api/cork', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: a.cookie },
+      body: JSON.stringify({ pins: [{ id: 'p1', text: 'clip this', x: 20, y: 30, rotation: -3 }] }),
+    })
+    expect(cork.status).toBe(200)
+    const desk = await json(await client.request('/api/cork', { headers: { authorization: a.cookie } }))
+    expect((desk.pins as { text: string }[])[0]?.text).toBe('clip this')
+  })
 })

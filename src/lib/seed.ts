@@ -24,6 +24,7 @@ export const BADGE_META: Record<BadgeId, { label: string; blurb: string }> = {
   multiverse: { label: 'MULTIVERSE', blurb: 'Built in all five vibes' },
   jammer: { label: 'JAMMER', blurb: 'Dropped into a live jam' },
   'fest-goer': { label: 'FEST GOER', blurb: 'Collected three passport stamps' },
+  collector: { label: 'COLLECTOR', blurb: 'Claimed three numbered copies' },
 }
 
 export function computeBadges(
@@ -31,6 +32,7 @@ export function computeBadges(
   remixPoints: number,
   handle?: string | null,
   stamps = 0,
+  claims = 0,
 ): BadgeId[] {
   const owned = zines.filter((z) => isMine(z, handle))
   const badges: BadgeId[] = []
@@ -42,6 +44,7 @@ export function computeBadges(
   if (new Set(owned.map((z) => z.vibe)).size >= 5) badges.push('multiverse')
   if (owned.some((z) => z.jamId)) badges.push('jammer')
   if (stamps >= 3) badges.push('fest-goer')
+  if (claims >= 3) badges.push('collector')
   return badges
 }
 
@@ -142,6 +145,8 @@ export function createSeed(): AppState {
       issueNo: 1,
       jamId: 'toner-week',
       bSide: 'booth 12 keeps the extra bows under the table.',
+      editionSize: 40,
+      claimed: 12,
       blocks: [
         { id: uid(), type: 'heading', text: 'sunday market', size: 'xl' },
         { id: uid(), type: 'sfx', word: 'PING!' },
@@ -195,6 +200,8 @@ export function createSeed(): AppState {
       penName: 'the gutter',
       noms: 3,
       archived: true,
+      editionSize: 13,
+      claimed: 13,
       blocks: [
         { id: uid(), type: 'heading', text: 'issue 13', size: 'xl' },
         {

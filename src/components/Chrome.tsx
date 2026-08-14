@@ -21,6 +21,7 @@ export function Topbar() {
           Cover
         </NavLink>
         <NavLink to="/studio">Studio</NavLink>
+        <NavLink to="/cork">Desk</NavLink>
         <NavLink to="/explore">Stream</NavLink>
         <NavLink to="/board">Board</NavLink>
         <NavLink to="/fest">Fest</NavLink>
