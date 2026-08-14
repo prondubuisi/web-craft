@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.2.1 ship-everything pass)_
+_Last reviewed: 2026-08-14 (0.3.0 social layer)_
 
 ## Overview
 
@@ -10,8 +10,9 @@ Routes (from `src/App.tsx` / `src/views/`):
 - `/` — Landing (vibe picker / cover)
 - `/studio` — Studio (issue list / create)
 - `/edit/:id` — Editor (block-based page editor)
-- `/explore` — Stream (public-feeling feed of drops)
-- `/z/:id` — Preview (issue reader)
+- `/explore` — Stream (search, vibe filter, sort)
+- `/u/:handle` — Public creator wall
+- `/z/:id` — Preview (issue reader, polls, letters)
 - `/s#…` — Snapshot (portable, base64-encoded state in the URL fragment)
 
 ## Development Status
@@ -67,4 +68,5 @@ Done: git + GitHub, CI, Vitest, README state-flow note, live Pages demo, optiona
 
 Still open:
 
-1. **Create the Fly app once** (`flyctl auth login && flyctl launch --copy-config`) and set GitHub `VITE_API_URL` + `FLY_API_TOKEN`. Dockerfile and `fly.toml` are in the repo; CI deploys when the token exists.
+1. Follows / notifications if the stream needs a second social beat.
+2. Re-seed production poll blocks on older community issues (new widgets land on new issues + local demo seed).

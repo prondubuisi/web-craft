@@ -85,6 +85,16 @@ await page.keyboard.down('Meta')
 await page.keyboard.press('KeyZ')
 await page.keyboard.up('Meta')
 await page.waitForFunction(() => document.querySelectorAll('.hero-shot').length === 1)
+await page.keyboard.press('/')
+await page.waitForSelector('.slash input')
+await page.type('.slash input', 'quote')
+await page.keyboard.press('Enter')
+await page.waitForSelector('.quote-block')
+await page.keyboard.press('/')
+await page.waitForSelector('.slash input')
+await page.type('.slash input', 'poll')
+await page.keyboard.press('Enter')
+await page.waitForSelector('.poll-block')
 await shot('05-editor-widgets')
 
 await page.select('select[aria-label="Vibe"]', 'noir')
@@ -113,19 +123,49 @@ assert(cards.length >= 3, `explore cards ${cards.length}`)
 const streamText = await page.$eval('main', (el) => el.textContent ?? '')
 assert(streamText.includes('NEXT ISSUE'), 'explore missing NEXT ISSUE banner')
 assert(streamText.toLowerCase().includes('midnight run'), 'explore missing midnight run')
+const search = await page.$('input[type="search"]')
+assert(Boolean(search), 'explore missing search')
+await search.type('sunday')
+await page.waitForFunction(() => {
+  const titles = [...document.querySelectorAll('.zine-card h3')].map((el) => el.textContent ?? '')
+  return titles.length > 0 && titles.every((t) => /sunday/i.test(t))
+})
 await shot('08-explore')
+await clickText('@yuzu')
+await page.waitForSelector('h1')
+const profileH = await page.$eval('h1', (el) => el.textContent ?? '')
+assert(/yuzu/i.test(profileH), `profile title ${profileH}`)
+await shot('08c-profile')
+await page.click('a.zine-card')
+await page.waitForSelector('.preview-page')
+await page.waitForSelector('.poll-block')
+await page.waitForSelector('.comments')
+const letters = await page.$eval('.comments', (el) => el.textContent ?? '')
+assert(/letters to the editor/i.test(letters), `comments missing: ${letters}`)
+await shot('08d-issue-social')
+await page.goto('http://127.0.0.1:5173/explore', { waitUntil: 'networkidle0' })
+await page.waitForSelector('.zine-card')
 
-await page.evaluate(() => {
+const sealedReady = await page.evaluate(() => {
   const card = [...document.querySelectorAll('.zine-card')].find((el) =>
     /midnight run/i.test(el.textContent ?? ''),
   )
-  const link = card?.querySelector('a.comic-btn')
-  link?.click()
+  return Boolean(card && /NEXT ISSUE/i.test(card.textContent ?? ''))
 })
-await page.waitForSelector('.drop-lock')
-const locked = await page.$('.drop-lock')
-assert(Boolean(locked), 'scheduled drop did not seal pages')
-await shot('08b-sealed-drop')
+if (sealedReady) {
+  await page.evaluate(() => {
+    const card = [...document.querySelectorAll('.zine-card')].find((el) =>
+      /midnight run/i.test(el.textContent ?? ''),
+    )
+    card?.querySelector('a.comic-btn')?.click()
+  })
+  await page.waitForSelector('.drop-lock')
+  const locked = await page.$('.drop-lock')
+  assert(Boolean(locked), 'scheduled drop did not seal pages')
+  await shot('08b-sealed-drop')
+} else {
+  errors.push('assert: midnight run was not sealed')
+}
 await page.goto('http://127.0.0.1:5173/explore', { waitUntil: 'networkidle0' })
 await page.waitForSelector('.zine-card')
 

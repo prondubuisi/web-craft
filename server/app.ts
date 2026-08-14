@@ -2,10 +2,10 @@ import { randomUUID } from 'node:crypto'
 import { Hono } from 'hono'
 
 import { cors } from 'hono/cors'
-import type { Block, VibeId, Zine } from '../src/lib/types.ts'
+import type { Block, PollBlock, VibeId, Zine } from '../src/lib/types.ts'
 import { createSession, destroySession, hashPassword, userFromToken, validName, verifyPassword } from './auth.ts'
 import { seedCommunity } from './community.ts'
-import { dropIsLive, getZineRow, rowToZine, type Db } from './db.ts'
+import { dropIsLive, getZineRow, rowToComment, rowToZine, type Db } from './db.ts'
 
 const COOKIE = 'zv_session'
 const VIBES = new Set(['miles', 'gwen', 'peni', 'ham', 'noir'])
@@ -23,7 +23,7 @@ export function createApp(db: Db) {
         'https://prondubuisi.github.io',
       ],
       allowHeaders: ['Content-Type', 'Authorization'],
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       credentials: true,
     }),
   )
@@ -61,7 +61,7 @@ export function createApp(db: Db) {
     const body = await c.req.json().catch(() => null)
     const name = String(body?.name ?? '').trim().toLowerCase()
     const password = String(body?.password ?? '')
-    if (!validName(name)) return c.json({ error: 'Handle must be 2–20 chars: a-z, 0-9, . _' }, 400)
+    if (!validName(name) || name === 'me') return c.json({ error: 'Handle must be 2–20 chars: a-z, 0-9, . _' }, 400)
     if (password.length < 8) return c.json({ error: 'Password needs 8+ characters' }, 400)
     if (db.prepare('SELECT id FROM users WHERE name = ?').get(name)) {
       return c.json({ error: 'That handle is taken' }, 409)
@@ -112,14 +112,34 @@ export function createApp(db: Db) {
 
   app.get('/api/stream', (c) => {
     const user = currentUser(c)
+    const q = (c.req.query('q') ?? '').trim().toLowerCase()
+    const vibe = c.req.query('vibe') ?? ''
+    const sort = c.req.query('sort') ?? 'new'
+    const where = ['z.published = 1']
+    const params: unknown[] = []
+    if (VIBES.has(vibe)) {
+      where.push('z.vibe = ?')
+      params.push(vibe)
+    }
+    if (q) {
+      where.push('(LOWER(z.title) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(z.vibe) LIKE ?)')
+      const like = `%${q.replace(/[%_]/g, '')}%`
+      params.push(like, like, like)
+    }
+    const order =
+      sort === 'likes'
+        ? 'z.likes DESC, z.updated_at DESC'
+        : sort === 'remixes'
+          ? 'z.remixes DESC, z.updated_at DESC'
+          : 'COALESCE(z.drops_at, z.updated_at) DESC'
     const rows = db
       .prepare(
         `SELECT z.*, u.name AS owner_name
          FROM zines z JOIN users u ON u.id = z.owner_id
-         WHERE z.published = 1
-         ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
+         WHERE ${where.join(' AND ')}
+         ORDER BY ${order}`,
       )
-      .all() as import('./db.ts').ZineRow[]
+      .all(...params) as import('./db.ts').ZineRow[]
     return c.json({
       zines: rows.map((row) =>
         rowToZine(row, {
@@ -202,6 +222,8 @@ export function createApp(db: Db) {
     if (!row) return c.json({ error: 'missing issue' }, 404)
     if (row.owner_id !== user.id) return c.json({ error: 'Not your issue' }, 403)
     db.prepare('DELETE FROM likes WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM comments WHERE zine_id = ?').run(row.id)
+    db.prepare('DELETE FROM poll_votes WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
     return c.json({ ok: true })
   })
@@ -273,6 +295,153 @@ export function createApp(db: Db) {
     db.prepare('UPDATE users SET remix_points = remix_points + 1 WHERE id = ?').run(user.id)
     const copy = getZineRow(db, copyId)!
     return c.json({ zine: rowToZine(copy) })
+  })
+
+  app.get('/api/users/me', (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    return c.json({ name: user.name, bio: user.bio ?? '', remixPoints: user.remix_points })
+  })
+
+  app.patch('/api/users/me', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const body = await c.req.json().catch(() => null)
+    const bio = String(body?.bio ?? '').slice(0, 200)
+    db.prepare('UPDATE users SET bio = ? WHERE id = ?').run(bio, user.id)
+    return c.json({ name: user.name, bio })
+  })
+
+  app.get('/api/users/:name', (c) => {
+    const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
+    const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name) as
+      | import('./db.ts').UserRow
+      | undefined
+    if (!user) return c.json({ error: 'Nobody with that handle' }, 404)
+    const viewer = currentUser(c)
+    const rows = db
+      .prepare(
+        `SELECT z.*, u.name AS owner_name
+         FROM zines z JOIN users u ON u.id = z.owner_id
+         WHERE z.owner_id = ? AND z.published = 1
+         ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
+      )
+      .all(user.id) as import('./db.ts').ZineRow[]
+    return c.json({
+      name: user.name,
+      bio: user.bio ?? '',
+      remixPoints: user.remix_points,
+      createdAt: user.created_at,
+      zines: rows.map((row) =>
+        rowToZine(row, { hideBlocks: !dropIsLive(row) && row.owner_id !== viewer?.id }),
+      ),
+    })
+  })
+
+  app.get('/api/zines/:id/comments', (c) => {
+    const user = currentUser(c)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || (!row.published && row.owner_id !== user?.id)) {
+      return c.json({ error: 'missing issue' }, 404)
+    }
+    if (row.published && !dropIsLive(row) && row.owner_id !== user?.id) {
+      return c.json({ comments: [] })
+    }
+    const rows = db
+      .prepare(
+        `SELECT c.*, u.name AS author_name
+         FROM comments c JOIN users u ON u.id = c.user_id
+         WHERE c.zine_id = ?
+         ORDER BY c.created_at ASC`,
+      )
+      .all(row.id) as import('./db.ts').CommentRow[]
+    return c.json({ comments: rows.map(rowToComment) })
+  })
+
+  app.post('/api/zines/:id/comments', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !dropIsLive(row)) return c.json({ error: 'Cannot write on that issue' }, 404)
+    const body = await c.req.json().catch(() => null)
+    const text = String(body?.body ?? '').trim().slice(0, 280)
+    if (text.length < 1) return c.json({ error: 'Write something first' }, 400)
+    const id = randomUUID()
+    const now = Date.now()
+    db.prepare('INSERT INTO comments (id, zine_id, user_id, body, created_at) VALUES (?, ?, ?, ?, ?)').run(
+      id,
+      row.id,
+      user.id,
+      text,
+      now,
+    )
+    return c.json({
+      comment: {
+        id,
+        zineId: row.id,
+        author: `@${user.name}`,
+        body: text,
+        createdAt: now,
+      },
+    })
+  })
+
+  function pollBlock(row: import('./db.ts').ZineRow, blockId: string): PollBlock | undefined {
+    const blocks = JSON.parse(row.blocks_json) as Block[]
+    const block = blocks.find((item) => item.id === blockId)
+    return block?.type === 'poll' ? block : undefined
+  }
+
+  function pollTallies(row: import('./db.ts').ZineRow, userId?: string) {
+    const blocks = JSON.parse(row.blocks_json) as Block[]
+    const votes = db
+      .prepare('SELECT user_id, block_id, option_idx FROM poll_votes WHERE zine_id = ?')
+      .all(row.id) as { user_id: string; block_id: string; option_idx: number }[]
+    const polls: Record<string, { counts: number[]; mine: number | null }> = {}
+    for (const block of blocks) {
+      if (block.type !== 'poll') continue
+      const counts = block.options.map(() => 0)
+      let mine: number | null = null
+      for (const vote of votes) {
+        if (vote.block_id !== block.id) continue
+        if (vote.option_idx >= 0 && vote.option_idx < counts.length) counts[vote.option_idx] += 1
+        if (userId && vote.user_id === userId) mine = vote.option_idx
+      }
+      polls[block.id] = { counts, mine }
+    }
+    return polls
+  }
+
+  app.get('/api/zines/:id/polls', (c) => {
+    const user = currentUser(c)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || (!row.published && row.owner_id !== user?.id)) {
+      return c.json({ error: 'missing issue' }, 404)
+    }
+    if (row.published && !dropIsLive(row) && row.owner_id !== user?.id) {
+      return c.json({ polls: {} })
+    }
+    return c.json({ polls: pollTallies(row, user?.id) })
+  })
+
+  app.post('/api/zines/:id/polls/:blockId', async (c) => {
+    const user = currentUser(c)
+    if (!user) return c.json({ error: 'Sign in first' }, 401)
+    const row = getZineRow(db, c.req.param('id'))
+    if (!row || !dropIsLive(row)) return c.json({ error: 'Cannot vote on that' }, 404)
+    const block = pollBlock(row, c.req.param('blockId'))
+    if (!block) return c.json({ error: 'No poll there' }, 404)
+    const body = await c.req.json().catch(() => null)
+    const option = Number(body?.option)
+    if (!Number.isInteger(option) || option < 0 || option >= block.options.length) {
+      return c.json({ error: 'Pick a real option' }, 400)
+    }
+    db.prepare(
+      `INSERT INTO poll_votes (user_id, zine_id, block_id, option_idx)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id, zine_id, block_id) DO UPDATE SET option_idx = excluded.option_idx`,
+    ).run(user.id, row.id, block.id, option)
+    return c.json(pollTallies(row, user.id)[block.id])
   })
 
   return app

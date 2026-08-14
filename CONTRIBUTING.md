@@ -47,4 +47,4 @@ CI runs those on `main` and `develop`.
 
 ## API
 
-Hono + SQLite in `server/`. Auth is handle + password (`scrypt`). Publish/likes/remix/drop-seal are server-enforced. Deploy with `Dockerfile` + `fly.toml` (`flyctl deploy`) after `flyctl auth login`.
+Hono + SQLite in `server/`. Auth is handle + password (`scrypt`). Publish, likes, remix, comments, poll votes, profiles, and the drop-seal are server-enforced. Deploy with `Dockerfile` + `fly.toml` (`flyctl deploy`) after `flyctl auth login`.

@@ -9,6 +9,8 @@ export type BlockType =
   | 'sfx'
   | 'glitch'
   | 'stack'
+  | 'quote'
+  | 'poll'
 
 export type HeadingBlock = {
   id: string
@@ -75,6 +77,20 @@ export type StackBlock = {
   cards: StackCard[]
 }
 
+export type QuoteBlock = {
+  id: string
+  type: 'quote'
+  text: string
+  cite: string
+}
+
+export type PollBlock = {
+  id: string
+  type: 'poll'
+  question: string
+  options: string[]
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -84,6 +100,23 @@ export type Block =
   | SfxBlock
   | GlitchBlock
   | StackBlock
+  | QuoteBlock
+  | PollBlock
+
+export type StreamSort = 'new' | 'likes' | 'remixes'
+
+export type Comment = {
+  id: string
+  zineId: string
+  author: string
+  body: string
+  createdAt: number
+}
+
+export type PollTally = {
+  counts: number[]
+  mine: number | null
+}
 
 export type BadgeId =
   | 'sticker-fiend'

@@ -31,8 +31,9 @@ npm run build     # typecheck + production bundle
 - **Cover** (`/`) — vibe switcher, widget zoo, start an issue
 - **Studio** (`/studio`) — your zines, comic badges, community stream
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
-- **Stream** (`/explore`) — published zines, scheduled **NEXT ISSUE** drops, one-click remix
-- **Issue** (`/z/:id`) — reader view with like, remix, snapshot link
+- **Stream** (`/explore`) — published zines, search, vibe filters, sort by new/likes/remixes, scheduled **NEXT ISSUE** drops, one-click remix
+- **Issue** (`/z/:id`) — reader view with like, remix, street polls, letters to the editor, snapshot link
+- **Profile** (`/u/:handle`) — public wall of dropped issues, bio, remix badges
 - **Snapshot** (`/s#…`) — portable copy of an issue that works without the original studio
 
 **Drop issue** publishes now or on a timer. A future drop shows a comic countdown and keeps pages sealed for everyone except the author.
@@ -47,7 +48,7 @@ Miles · Gwen · Peni · Ham · Noir — palettes, not templates. Halftone densi
 
 ## How state flows
 
-`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. If the Hono API is up and you are signed in, drafts also upsert to SQLite (`server/data/zineverse.sqlite`). Publish, likes, remixes, and the sealed-drop clock are enforced on the server. A snapshot link (`/s#…`) still works without an account. The Pages build reads `VITE_API_URL` (repo Actions variable). Sessions use a Bearer token in `localStorage` so the static site can call a hosted API on another origin.
+`ZineProvider` holds the studio in React context. Every change writes `zineverse.v1` to `localStorage`. If the Hono API is up and you are signed in, drafts also upsert to SQLite (`server/data/zineverse.sqlite`). Publish, likes, remixes, comments, poll votes, and the sealed-drop clock are enforced on the server. A snapshot link (`/s#…`) still works without an account. The Pages build reads `VITE_API_URL` (repo Actions variable). Sessions use a Bearer token in `localStorage` so the static site can call a hosted API on another origin.
 
 ## Host the API
 

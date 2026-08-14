@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import type { BadgeId, VibeId, Zine } from '../lib/types'
-import { coverSrc, isDropLive, isMine } from '../lib/zine'
+import { coverSrc, isDropLive, isMine, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -140,17 +140,25 @@ export function Studio() {
             </h2>
             <div className="stream">
               {stream.map((z) => (
-                <Link key={z.id} to={`/z/${z.id}`} className="stream-item">
-                  <Halftone src={coverSrc(z)} alt="" className="mini" />
+                <article key={z.id} className="stream-item">
+                  <Link to={`/z/${z.id}`}>
+                    <Halftone src={coverSrc(z)} alt="" className="mini" />
+                  </Link>
                   <div>
-                    <strong className="hand">{z.title}</strong>
+                    <Link to={`/z/${z.id}`}>
+                      <strong className="hand">{z.title}</strong>
+                    </Link>
                     <div className="meta-line">
-                      <span>{z.owner}</span>
+                      <Link className="owner-link" to={profilePath(z.owner)}>
+                        {z.owner}
+                      </Link>
                       <span>{z.vibe}</span>
                     </div>
                   </div>
-                  <span className="comic-btn small">open</span>
-                </Link>
+                  <Link to={`/z/${z.id}`} className="comic-btn small">
+                    open
+                  </Link>
+                </article>
               ))}
             </div>
           </aside>

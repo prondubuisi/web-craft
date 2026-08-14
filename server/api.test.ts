@@ -101,3 +101,106 @@ describe('zines', () => {
     expect((remix.zine as { owner: string }).owner).toBe('@reader1')
   })
 })
+
+describe('stream filters', () => {
+  it('filters by vibe and query', async () => {
+    const client = app()
+    const author = await register(client, 'author2', 'strawberry1')
+    await client.request('/api/zines/ham-one', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, title: 'LOUDER STREET', vibe: 'ham' }),
+    })
+    await client.request('/api/zines/ham-one/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const vibe = await json(await client.request('/api/stream?vibe=ham'))
+    expect((vibe.zines as { vibe: string }[]).length).toBeGreaterThan(0)
+    expect((vibe.zines as { vibe: string }[]).every((z) => z.vibe === 'ham')).toBe(true)
+    const search = await json(await client.request('/api/stream?q=louder'))
+    expect((search.zines as { title: string }[]).some((z) => z.title.toLowerCase().includes('louder'))).toBe(true)
+  })
+})
+
+describe('social', () => {
+  it('serves a public profile and accepts comments', async () => {
+    const client = app()
+    const author = await register(client, 'author3', 'strawberry1')
+    await client.request('/api/zines/talk', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(sample),
+    })
+    await client.request('/api/zines/talk/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    await client.request('/api/users/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ bio: 'rooftop hours only' }),
+    })
+    const profile = await json(await client.request('/api/users/author3'))
+    expect(profile.bio).toBe('rooftop hours only')
+    expect((profile.zines as unknown[]).length).toBe(1)
+
+    const reader = await register(client, 'reader3', 'cartoon99')
+    const posted = await client.request('/api/zines/talk/comments', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: reader.cookie },
+      body: JSON.stringify({ body: 'the gutter took notes.' }),
+    })
+    expect(posted.status).toBe(200)
+    const wall = await json(await client.request('/api/zines/talk/comments'))
+    expect((wall.comments as { body: string }[])[0]?.body).toBe('the gutter took notes.')
+  })
+
+  it('counts poll votes and lets a reader change theirs', async () => {
+    const client = app()
+    const author = await register(client, 'author4', 'strawberry1')
+    const poll = {
+      title: 'vote issue',
+      vibe: 'peni',
+      blocks: [
+        {
+          id: 'p1',
+          type: 'poll',
+          question: 'milk or toner?',
+          options: ['milk', 'toner'],
+        },
+      ],
+    }
+    await client.request('/api/zines/vote-me', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify(poll),
+    })
+    await client.request('/api/zines/vote-me/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const reader = await register(client, 'reader4', 'cartoon99')
+    const first = await json(
+      await client.request('/api/zines/vote-me/polls/p1', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: reader.cookie },
+        body: JSON.stringify({ option: 0 }),
+      }),
+    )
+    expect(first.counts).toEqual([1, 0])
+    expect(first.mine).toBe(0)
+    const second = await json(
+      await client.request('/api/zines/vote-me/polls/p1', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: reader.cookie },
+        body: JSON.stringify({ option: 1 }),
+      }),
+    )
+    expect(second.counts).toEqual([0, 1])
+    expect(second.mine).toBe(1)
+  })
+})

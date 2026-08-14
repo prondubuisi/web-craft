@@ -1,4 +1,4 @@
-import type { HeroBlock, Zine } from './types'
+import type { HeroBlock, StreamSort, VibeId, Zine } from './types'
 import { artForVibe } from './vibes'
 
 export function isMine(zine: Zine, handle?: string | null): boolean {
@@ -34,4 +34,34 @@ export function slugify(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
   return slug || 'issue'
+}
+
+export function ownerHandle(owner: string): string {
+  return owner.replace(/^@/, '') || 'you'
+}
+
+export function profilePath(owner: string): string {
+  return `/u/${encodeURIComponent(ownerHandle(owner))}`
+}
+
+export function filterStream(
+  zines: Zine[],
+  opts: { q?: string; vibe?: VibeId | 'all'; sort?: StreamSort } = {},
+): Zine[] {
+  const q = (opts.q ?? '').trim().toLowerCase()
+  const vibe = opts.vibe && opts.vibe !== 'all' ? opts.vibe : null
+  const sort = opts.sort ?? 'new'
+  const next = zines.filter((z) => {
+    if (!z.published) return false
+    if (vibe && z.vibe !== vibe) return false
+    if (!q) return true
+    const hay = `${z.title} ${z.owner} ${z.vibe}`.toLowerCase()
+    return hay.includes(q)
+  })
+  next.sort((a, b) => {
+    if (sort === 'likes') return b.likes - a.likes
+    if (sort === 'remixes') return b.remixes - a.remixes
+    return (b.dropsAt ?? b.updatedAt) - (a.dropsAt ?? a.updatedAt)
+  })
+  return next
 }

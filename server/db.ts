@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import Database from 'better-sqlite3'
-import type { Block, VibeId, Zine } from '../src/lib/types.ts'
+import type { Block, Comment, VibeId, Zine } from '../src/lib/types.ts'
 
 export type Db = Database.Database
 
@@ -13,6 +13,16 @@ export type UserRow = {
   remix_points: number
   kind: 'human' | 'system'
   created_at: number
+  bio: string
+}
+
+export type CommentRow = {
+  id: string
+  zine_id: string
+  user_id: string
+  body: string
+  created_at: number
+  author_name: string
 }
 
 export type ZineRow = {
@@ -40,7 +50,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_salt TEXT,
   remix_points INTEGER NOT NULL DEFAULT 0,
   kind TEXT NOT NULL DEFAULT 'human',
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  bio TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
@@ -71,6 +82,24 @@ CREATE TABLE IF NOT EXISTS likes (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (zine_id) REFERENCES zines(id)
 );
+CREATE TABLE IF NOT EXISTS comments (
+  id TEXT PRIMARY KEY,
+  zine_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (zine_id) REFERENCES zines(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS poll_votes (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  block_id TEXT NOT NULL,
+  option_idx INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id, block_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -79,7 +108,21 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   db.exec(SCHEMA)
+  const userCols = db.prepare(`PRAGMA table_info(users)`).all() as { name: string }[]
+  if (!userCols.some((col) => col.name === 'bio')) {
+    db.exec(`ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''`)
+  }
   return db
+}
+
+export function rowToComment(row: CommentRow): Comment {
+  return {
+    id: row.id,
+    zineId: row.zine_id,
+    author: row.author_name.startsWith('@') ? row.author_name : `@${row.author_name}`,
+    body: row.body,
+    createdAt: row.created_at,
+  }
 }
 
 export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean }): Zine {
