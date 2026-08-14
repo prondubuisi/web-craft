@@ -9,6 +9,7 @@ import { Explore } from './views/Explore'
 import { Board } from './views/Board'
 import { Profile } from './views/Profile'
 import { Share } from './views/Share'
+import { Mail } from './views/Mail'
 import { NotFound } from './views/NotFound'
 
 export default function App() {
@@ -25,6 +26,8 @@ export default function App() {
               <Route path="/studio" element={<Studio />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/board" element={<Board />} />
+              <Route path="/mail/:handle" element={<Mail />} />
+              <Route path="/mail" element={<Mail />} />
               <Route path="/u/:handle" element={<Profile />} />
               <Route path="/edit/:id" element={<Editor />} />
               <Route path="/z/:id" element={<Preview />} />

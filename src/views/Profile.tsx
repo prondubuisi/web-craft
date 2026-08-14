@@ -5,10 +5,28 @@ import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
 import type { BadgeId, GuestNote, ShelfItem, Zine } from '../lib/types'
 import { addGuestNote, loadGuestNotes, loadShelf } from '../lib/social'
-import { coverSrc, isDropLive, isPublicDrop, ownerHandle } from '../lib/zine'
+import { coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
+
+function groupBySeries(issues: Zine[]): { name: string; issues: Zine[] }[] {
+  const map = new Map<string, Zine[]>()
+  for (const issue of issues) {
+    const name = issue.series?.trim() || 'singles'
+    map.set(name, [...(map.get(name) ?? []), issue])
+  }
+  return [...map.entries()]
+    .map(([name, rows]) => ({
+      name,
+      issues: [...rows].sort((a, b) => (a.issueNo ?? 0) - (b.issueNo ?? 0)),
+    }))
+    .sort((a, b) => {
+      if (a.name === 'singles') return 1
+      if (b.name === 'singles') return -1
+      return a.name.localeCompare(b.name)
+    })
+}
 
 export function Profile() {
   const { handle = '' } = useParams()
@@ -131,6 +149,9 @@ export function Profile() {
                 >
                   {watching ? 'Watching' : 'Watch wall'}
                 </ComicButton>
+                <Link to={`/mail/${encodeURIComponent(name)}`} className="comic-btn cyan">
+                  Write a letter
+                </Link>
               </div>
             ) : null}
             {mine && session ? (
@@ -153,21 +174,31 @@ export function Profile() {
           </div>
         </div>
 
-        <div className="zine-wall">
-          {issues.map((z) => (
-            <Link key={z.id} to={`/z/${z.id}`} className="zine-card">
-              <Halftone src={coverSrc(z)} alt="" className="cover" />
-              <div className="body">
-                <h3>{z.title}</h3>
-                <div className="meta-line">
-                  <span>{z.vibe}</span>
-                  <span>{isDropLive(z) ? `${z.likes} likes` : 'sealed'}</span>
-                  <span>{z.remixes} remixes</span>
-                </div>
+        {groupBySeries(issues).map((group) => (
+          <section key={group.name} className="series-group">
+            {group.name !== 'singles' ? (
+              <div className="issue-chip" style={{ margin: '0.4rem 0 0.7rem' }}>
+                {group.name}
               </div>
-            </Link>
-          ))}
-        </div>
+            ) : null}
+            <div className="zine-wall">
+              {group.issues.map((z) => (
+                <Link key={z.id} to={`/z/${z.id}`} className="zine-card">
+                  <Halftone src={coverSrc(z)} alt="" className="cover" />
+                  <div className="body">
+                    <h3>{z.title}</h3>
+                    <div className="meta-line">
+                      {seriesLabel(z) ? <span>{seriesLabel(z)}</span> : null}
+                      <span>{z.vibe}</span>
+                      <span>{isDropLive(z) ? `${z.likes} likes` : 'sealed'}</span>
+                      <span>{z.remixes} remixes</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))}
         {!issues.length ? (
           <p className="serif">
             No dropped issues yet.{' '}

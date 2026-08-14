@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
-import type { BadgeId, VibeId, Zine } from '../lib/types'
-import { coverSrc, isDropLive, isMine, profilePath } from '../lib/zine'
+import { api } from '../lib/api'
+import { loadBag } from '../lib/social'
+import type { BadgeId, BagItem, VibeId, Zine } from '../lib/types'
+import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -31,7 +33,19 @@ export function Studio() {
   const [authError, setAuthError] = useState('')
   const [title, setTitle] = useState('')
   const [vibe, setVibe] = useState<VibeId>('miles')
+  const [bag, setBag] = useState<BagItem[]>(() => loadBag(session?.name ?? profile.name))
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (online && session) {
+      void api
+        .bag()
+        .then((res) => setBag(res.bag))
+        .catch(() => setBag(loadBag(session.name)))
+      return
+    }
+    setBag(loadBag(session?.name ?? profile.name))
+  }, [online, session, profile.name])
 
   function drop() {
     const id = createZine(title.trim() || 'untitled issue', vibe)
@@ -116,6 +130,7 @@ export function Studio() {
                   <div className="body">
                     <h3>{z.title}</h3>
                     <div className="meta-line">
+                      {seriesLabel(z) ? <span>{seriesLabel(z)}</span> : null}
                       <span>{z.vibe}</span>
                       <span>
                         {!z.published
@@ -137,6 +152,33 @@ export function Studio() {
           </div>
 
           <aside>
+            {bag.length ? (
+              <section className="bag-shelf">
+                <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
+                  in my bag
+                </h2>
+                <div className="stream">
+                  {bag.map((item) => (
+                    <article key={item.zineId} className="stream-item">
+                      <div>
+                        <Link to={`/z/${item.zineId}`}>
+                          <strong className="hand">{item.title}</strong>
+                        </Link>
+                        <div className="meta-line">
+                          <Link className="owner-link" to={profilePath(item.owner)}>
+                            {item.owner}
+                          </Link>
+                          {item.vibe ? <span>{item.vibe}</span> : null}
+                        </div>
+                      </div>
+                      <Link to={`/z/${item.zineId}`} className="comic-btn small">
+                        read
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
             <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
               community stream
             </h2>

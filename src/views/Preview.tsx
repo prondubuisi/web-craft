@@ -5,14 +5,24 @@ import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { FoldSheet } from '../components/FoldSheet'
 import { FlipReader } from '../components/FlipReader'
 import { Comments } from '../components/Comments'
+import { Reviews } from '../components/Reviews'
 import { appHref } from '../lib/paths'
 import { copyText, encodeShare } from '../lib/share'
-import { bumpPageStat, loadLocalPolls, loadPageStats, stockShelf, voteLocalPoll } from '../lib/social'
+import {
+  bumpPageStat,
+  dumpBag,
+  inBag,
+  loadLocalPolls,
+  loadPageStats,
+  stockShelf,
+  tuckBag,
+  voteLocalPoll,
+} from '../lib/social'
 import { createBlock } from '../lib/widgets'
 import { useCountdown } from '../lib/useCountdown'
 import { api } from '../lib/api'
 import type { Block, PageStat, PollTally } from '../lib/types'
-import { canOpenSecret, coverSrc, fingerprint, isMine, issuePath, profilePath } from '../lib/zine'
+import { canOpenSecret, coverSrc, fingerprint, isMine, issuePath, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Preview() {
@@ -36,6 +46,7 @@ export function Preview() {
   const [chainPrev, setChainPrev] = useState<Block[] | null>(null)
   const [chainText, setChainText] = useState('the next fold.')
   const [chainMsg, setChainMsg] = useState('')
+  const [bagged, setBagged] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
@@ -71,6 +82,37 @@ export function Preview() {
       setPolls(id ? loadLocalPolls(id) : {})
     }
   }, [id, remoteSocial, locked])
+
+  const bagOwner = session?.name ?? profile.name
+
+  useEffect(() => {
+    if (!zine) return
+    if (online && session) {
+      void api
+        .bag()
+        .then((res) => setBagged(res.bag.some((item) => item.zineId === zine.id)))
+        .catch(() => setBagged(inBag(bagOwner, zine.id)))
+      return
+    }
+    setBagged(inBag(bagOwner, zine.id))
+  }, [zine?.id, online, session, bagOwner])
+
+  useEffect(() => {
+    if (!id || locked || needsPass) return
+    if (online && mine) {
+      void api.pageStats(id).then((res) => setStats(res.pages)).catch(() => setStats(loadPageStats(id)))
+    } else if (id) {
+      setStats(loadPageStats(id))
+    }
+  }, [id, online, mine, locked, needsPass])
+
+  useEffect(() => {
+    if (!id || !chainInvite || !online) return
+    void api
+      .chainPeek(id, chainInvite)
+      .then((res) => setChainPrev(res.previous))
+      .catch(() => setChainPrev(null))
+  }, [id, chainInvite, online])
 
   if (!zine || hiddenUnlisted) {
     return (
@@ -120,23 +162,6 @@ export function Preview() {
     }
     setUnlocked(true)
   }
-
-  useEffect(() => {
-    if (!id || locked || needsPass) return
-    if (online && mine) {
-      void api.pageStats(id).then((res) => setStats(res.pages)).catch(() => setStats(loadPageStats(id)))
-    } else {
-      setStats(loadPageStats(id))
-    }
-  }, [id, online, mine, locked, needsPass])
-
-  useEffect(() => {
-    if (!id || !chainInvite || !online) return
-    void api
-      .chainPeek(id, chainInvite)
-      .then((res) => setChainPrev(res.previous))
-      .catch(() => setChainPrev(null))
-  }, [id, chainInvite, online])
 
   return (
     <div className={`finish-${zine.finish ?? 'clean'}`} data-vibe={zine.vibe}>
@@ -190,6 +215,7 @@ export function Preview() {
             <>
               <div className="meta-line" style={{ marginBottom: '0.8rem' }}>
                 <span className="issue-chip">{zine.vibe}</span>
+                {seriesLabel(zine) ? <span className="issue-chip">{seriesLabel(zine)}</span> : null}
                 <Link className="owner-link" to={profilePath(zine.owner)}>
                   {zine.owner}
                 </Link>
@@ -357,6 +383,29 @@ export function Preview() {
                 Stock in distro
               </ComicButton>
             ) : null}
+            {!locked && !needsPass ? (
+              <ComicButton
+                className={`small no-print ${bagged ? 'pink' : 'ghost'}`}
+                onClick={() => {
+                  if (bagged) {
+                    dumpBag(bagOwner, zine.id)
+                    if (session && online) void api.dump(zine.id).catch(() => undefined)
+                    setBagged(false)
+                    return
+                  }
+                  tuckBag(bagOwner, {
+                    zineId: zine.id,
+                    title: zine.title,
+                    owner: zine.owner,
+                    vibe: zine.vibe,
+                  })
+                  if (session && online) void api.tuck(zine.id).catch(() => undefined)
+                  setBagged(true)
+                }}
+              >
+                {bagged ? 'In the bag' : 'Stuff in bag'}
+              </ComicButton>
+            ) : null}
             {mine && zine.chainOpen && zine.chainKey ? (
               <ComicButton
                 className="small no-print"
@@ -375,6 +424,7 @@ export function Preview() {
               </Link>
             ) : null}
           </div>
+          <Reviews zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
           <Comments zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
         </article>
         {!locked ? (

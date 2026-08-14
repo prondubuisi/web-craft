@@ -20,6 +20,7 @@ export function seedCommunity(db: Db): void {
     seedFollows(db)
     seedBoard(db)
     seedTags(db)
+    seedSeries(db)
     return
   }
 
@@ -73,8 +74,25 @@ export function seedCommunity(db: Db): void {
     seedFollows(db)
     seedBoard(db)
     seedTags(db)
+    seedSeries(db)
   })
   tx()
+}
+
+function seedSeries(db: Db): void {
+  const map: Record<string, { series: string; issueNo: number }> = {
+    'sunday market': { series: 'booth notes', issueNo: 1 },
+    'issue 13': { series: 'confession', issueNo: 13 },
+    'midnight run': { series: 'confession', issueNo: 14 },
+    LOUDER: { series: 'volume', issueNo: 1 },
+    'dimension hop': { series: 'offset', issueNo: 1 },
+  }
+  const update = db.prepare(
+    `UPDATE zines SET series = ?, issue_no = ? WHERE title = ? AND (series IS NULL OR series = '')`,
+  )
+  for (const [title, row] of Object.entries(map)) {
+    update.run(row.series, row.issueNo, title)
+  }
 }
 
 function seedTags(db: Db): void {
@@ -175,6 +193,22 @@ function enrichWidgets(db: Db): void {
     blocks_json: string
   }[]
   const extras: Record<string, Block[]> = {
+    'issue 13': [
+      {
+        id: 'seed-quote-13',
+        type: 'quote',
+        text: 'it rained like a confession and the gutter took notes.',
+        cite: 'issue zero',
+      },
+      {
+        id: 'seed-colo-13',
+        type: 'colophon',
+        edition: 'thirteenth printing · still wet',
+        press: 'gutter press',
+        place: 'under the tracks',
+        thanks: 'to whoever left the umbrella',
+      },
+    ],
     'sunday market': [
       {
         id: 'seed-poll-sunday',
@@ -182,13 +216,15 @@ function enrichWidgets(db: Db): void {
         question: 'what are you buying first?',
         options: ['strawberry milk', 'apology robot', 'free bow', 'a sticker that beeps'],
       },
-    ],
-    'issue 13': [
       {
-        id: 'seed-quote-13',
-        type: 'quote',
-        text: 'it rained like a confession and the gutter took notes.',
-        cite: 'issue zero',
+        id: 'seed-strip-sunday',
+        type: 'strip',
+        panels: [
+          { text: 'line forms' },
+          { text: 'bow acquired' },
+          { text: 'milk spilled' },
+          { text: 'come back next week' },
+        ],
       },
     ],
   }

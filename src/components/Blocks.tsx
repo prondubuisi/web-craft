@@ -266,5 +266,74 @@ export function BlockView({
           </figcaption>
         </figure>
       )
+    case 'strip':
+      return (
+        <div className="strip-block" aria-label="Mini comic">
+          {block.panels.map((panel, i) => (
+            <div key={i} className="strip-cell">
+              {panel.src ? <img src={assetUrl(panel.src)} alt="" /> : null}
+              <Field
+                value={panel.text}
+                multiline={false}
+                onChange={
+                  onChange
+                    ? (text) => {
+                        const panels = block.panels.map((p, idx) => (idx === i ? { ...p, text } : p))
+                        onChange({ ...block, panels })
+                      }
+                    : undefined
+                }
+              />
+            </div>
+          ))}
+        </div>
+      )
+    case 'colophon':
+      return (
+        <aside className="colophon-block">
+          <div className="issue-chip">COLOPHON</div>
+          <dl>
+            <div>
+              <dt className="hand">edition</dt>
+              <dd>
+                <Field
+                  value={block.edition}
+                  multiline={false}
+                  onChange={onChange ? (edition) => onChange({ ...block, edition }) : undefined}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="hand">press</dt>
+              <dd>
+                <Field
+                  value={block.press}
+                  multiline={false}
+                  onChange={onChange ? (press) => onChange({ ...block, press }) : undefined}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="hand">place</dt>
+              <dd>
+                <Field
+                  value={block.place}
+                  multiline={false}
+                  onChange={onChange ? (place) => onChange({ ...block, place }) : undefined}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt className="hand">thanks</dt>
+              <dd>
+                <Field
+                  value={block.thanks}
+                  onChange={onChange ? (thanks) => onChange({ ...block, thanks }) : undefined}
+                />
+              </dd>
+            </div>
+          </dl>
+        </aside>
+      )
   }
 }

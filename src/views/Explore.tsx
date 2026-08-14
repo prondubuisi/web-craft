@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { useCountdown } from '../lib/useCountdown'
 import type { StreamSort, VibeId, Zine } from '../lib/types'
 import { VIBES } from '../lib/vibes'
-import { coverSrc, filterStream, isDropLive, profilePath } from '../lib/zine'
+import { coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Explore() {
@@ -176,6 +176,7 @@ function ExploreCard({ zine, onRemix }: { zine: Zine; onRemix: () => void }) {
           <Link className="owner-link" to={profilePath(zine.owner)}>
             {zine.owner}
           </Link>
+          {seriesLabel(zine) ? <span>{seriesLabel(zine)}</span> : null}
           <span>{zine.vibe}</span>
           {live ? (
             <>

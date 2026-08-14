@@ -29,4 +29,19 @@ describe('widgets', () => {
     expect(block.type).toBe('audio')
     if (block.type === 'audio') expect(block.src).toBe('')
   })
+
+  it('creates a four-panel strip', () => {
+    const block = createBlock('strip', 'ham')
+    expect(block.type).toBe('strip')
+    if (block.type === 'strip') expect(block.panels).toHaveLength(4)
+  })
+
+  it('creates a colophon with press and thanks', () => {
+    const block = createBlock('colophon', 'noir')
+    expect(block.type).toBe('colophon')
+    if (block.type === 'colophon') {
+      expect(block.press.length).toBeGreaterThan(2)
+      expect(block.thanks.length).toBeGreaterThan(2)
+    }
+  })
 })

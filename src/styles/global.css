@@ -1405,6 +1405,110 @@ p {
   padding: 0.8rem;
 }
 
+.strip-block {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 4px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 6px 7px 0 var(--ink);
+}
+
+.strip-cell {
+  min-height: 140px;
+  border-right: 3px solid var(--ink);
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+}
+
+.strip-cell:last-child {
+  border-right: none;
+}
+
+.strip-cell img {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+}
+
+.colophon-block {
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  box-shadow: 5px 6px 0 var(--ink);
+  padding: 0.85rem 1rem;
+  transform: rotate(-0.4deg);
+}
+
+.colophon-block dl {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+}
+
+.colophon-block dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.colophon-block dd {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-serif);
+}
+
+.mail-layout {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.mail-threads {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.mail-thread {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.comment.mine {
+  background: var(--accent-3);
+}
+
+.bag-shelf {
+  margin-bottom: 1.6rem;
+}
+
+.series-group + .series-group {
+  margin-top: 1.2rem;
+}
+
+.board-card.on {
+  outline: 3px solid var(--accent);
+}
+
+@media (max-width: 700px) {
+  .strip-block {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .strip-cell:nth-child(2n) {
+    border-right: none;
+  }
+
+  .strip-cell:nth-child(-n + 2) {
+    border-bottom: 3px solid var(--ink);
+  }
+}
+
 .caption {
   font-family: var(--font-script);
   font-size: 1.15rem;
@@ -1695,6 +1799,11 @@ p {
     display: grid;
     grid-template-columns: 1.6fr 0.9fr;
     gap: 1.4rem;
+    align-items: start;
+  }
+
+  .mail-layout {
+    grid-template-columns: 0.85fr 1.4fr;
     align-items: start;
   }
 

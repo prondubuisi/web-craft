@@ -2,12 +2,21 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   addLocalComment,
   addLocalListing,
+  dumpBag,
+  inBag,
+  listThreads,
+  loadBag,
   loadLocalComments,
   loadLocalListings,
   loadLocalNotices,
   loadLocalPolls,
+  loadReviews,
   markLocalNoticesRead,
   noticeCopy,
+  sendLetter,
+  threadWith,
+  tuckBag,
+  upsertReview,
   voteLocalPoll,
 } from './social'
 
@@ -74,5 +83,34 @@ describe('local board', () => {
     const pin = addLocalListing('rio', 'trade', 'toner for rain')
     expect(pin.kind).toBe('trade')
     expect(loadLocalListings()[0]?.body).toBe('toner for rain')
+  })
+})
+
+describe('bag', () => {
+  it('tucks and dumps an issue', () => {
+    tuckBag('you', { zineId: 'z1', title: 'sunday market', owner: '@yuzu', vibe: 'peni' })
+    expect(inBag('you', 'z1')).toBe(true)
+    expect(loadBag('you')).toHaveLength(1)
+    dumpBag('you', 'z1')
+    expect(inBag('you', 'z1')).toBe(false)
+  })
+})
+
+describe('reviews', () => {
+  it('replaces a previous blurb from the same author', () => {
+    upsertReview('z1', 'rio', 'too much rain')
+    const next = upsertReview('z1', 'rio', 'exactly enough rain')
+    expect(next.body).toBe('exactly enough rain')
+    expect(loadReviews('z1')).toHaveLength(1)
+  })
+})
+
+describe('pen pal mail', () => {
+  it('threads letters between two handles', () => {
+    sendLetter('you', '@yuzu', 'save me a bow')
+    sendLetter('@yuzu', 'you', 'already packed')
+    const thread = threadWith('you', 'yuzu')
+    expect(thread.map((row) => row.body)).toContain('already packed')
+    expect(listThreads('you')[0]?.handle).toBe('yuzu')
   })
 })
