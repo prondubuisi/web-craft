@@ -33,7 +33,7 @@ type Store = AppState & {
   publishZine: (
     id: string,
     dropsAt?: number,
-    opts?: { visibility?: 'public' | 'unlisted'; password?: string; shareKey?: string },
+    opts?: { visibility?: 'public' | 'unlisted'; password?: string; shareKey?: string; chain?: boolean },
   ) => void
   recordView: (id: string) => void
   renameProfile: (name: string) => void
@@ -143,6 +143,8 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         remixes: 0,
         published: false,
         dropsAt: null,
+        tags: [],
+        finish: 'clean',
       }
       dispatch({ type: 'insert', zine })
       queueUpsert(zine.id)
@@ -297,14 +299,36 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             passHash = undefined
             hasPass = false
           }
-          dispatch({ type: 'publish', id, dropsAt: when, visibility, shareKey, hasPass, passHash })
+          dispatch({
+            type: 'publish',
+            id,
+            dropsAt: when,
+            visibility,
+            shareKey,
+            hasPass,
+            passHash,
+          })
+          if (opts?.chain) {
+            dispatch({
+              type: 'patch',
+              id,
+              patch: { chainOpen: true, chainKey: shareKey, visibility: 'unlisted' },
+            })
+          }
           if (state.session) {
             void api
-              .publish(id, when, { visibility, password: opts?.password })
+              .publish(id, when, { visibility, password: opts?.password, chain: opts?.chain })
               .then((res) => {
-                if (res.zine.shareKey) {
-                  dispatch({ type: 'patch', id, patch: { shareKey: res.zine.shareKey, visibility } })
-                }
+                dispatch({
+                  type: 'patch',
+                  id,
+                  patch: {
+                    shareKey: res.zine.shareKey ?? shareKey,
+                    visibility: res.zine.visibility ?? visibility,
+                    chainKey: res.zine.chainKey,
+                    chainOpen: res.zine.chainOpen,
+                  },
+                })
               })
               .catch(() => undefined)
           }

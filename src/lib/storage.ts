@@ -17,6 +17,8 @@ export function normalizeState(parsed: unknown): AppState | null {
       ...z,
       dropsAt: z.dropsAt ?? (z.published ? z.updatedAt : null),
       visibility: z.visibility ?? 'public',
+      tags: z.tags ?? [],
+      finish: z.finish ?? 'clean',
     })),
   }
 }

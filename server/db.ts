@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import Database from 'better-sqlite3'
 import { randomUUID } from 'node:crypto'
-import type { Block, Comment, Listing, ListingKind, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
+import type { Block, Comment, FinishId, Listing, ListingKind, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
 
 export type Db = Database.Database
 
@@ -45,6 +45,10 @@ export type ZineRow = {
   share_key: string | null
   pass_hash: string | null
   pass_salt: string | null
+  tags_json: string
+  finish: string
+  chain_key: string | null
+  chain_open: number
 }
 
 const SCHEMA = `
@@ -82,6 +86,10 @@ CREATE TABLE IF NOT EXISTS zines (
   share_key TEXT,
   pass_hash TEXT,
   pass_salt TEXT,
+  tags_json TEXT NOT NULL DEFAULT '[]',
+  finish TEXT NOT NULL DEFAULT 'clean',
+  chain_key TEXT,
+  chain_open INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS likes (
@@ -138,6 +146,32 @@ CREATE TABLE IF NOT EXISTS listings (
   created_at INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS guestbook (
+  id TEXT PRIMARY KEY,
+  profile_id TEXT NOT NULL,
+  author_id TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (profile_id) REFERENCES users(id),
+  FOREIGN KEY (author_id) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS shelves (
+  user_id TEXT NOT NULL,
+  zine_id TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, zine_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
+CREATE TABLE IF NOT EXISTS page_stats (
+  zine_id TEXT NOT NULL,
+  page INTEGER NOT NULL,
+  views INTEGER NOT NULL DEFAULT 0,
+  dwell_ms INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (zine_id, page),
+  FOREIGN KEY (zine_id) REFERENCES zines(id)
+);
 `
 
 export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zineverse.sqlite'): Db {
@@ -156,6 +190,10 @@ export function openDb(path = process.env.DATABASE_PATH ?? 'server/data/zinevers
   if (!zineNames.has('share_key')) db.exec(`ALTER TABLE zines ADD COLUMN share_key TEXT`)
   if (!zineNames.has('pass_hash')) db.exec(`ALTER TABLE zines ADD COLUMN pass_hash TEXT`)
   if (!zineNames.has('pass_salt')) db.exec(`ALTER TABLE zines ADD COLUMN pass_salt TEXT`)
+  if (!zineNames.has('tags_json')) db.exec(`ALTER TABLE zines ADD COLUMN tags_json TEXT NOT NULL DEFAULT '[]'`)
+  if (!zineNames.has('finish')) db.exec(`ALTER TABLE zines ADD COLUMN finish TEXT NOT NULL DEFAULT 'clean'`)
+  if (!zineNames.has('chain_key')) db.exec(`ALTER TABLE zines ADD COLUMN chain_key TEXT`)
+  if (!zineNames.has('chain_open')) db.exec(`ALTER TABLE zines ADD COLUMN chain_open INTEGER NOT NULL DEFAULT 0`)
   return db
 }
 
@@ -187,6 +225,16 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     visibility: row.visibility === 'unlisted' ? 'unlisted' : 'public',
     hasPass: Boolean(row.pass_hash),
     shareKey: opts?.includeSecret ? (row.share_key ?? undefined) : undefined,
+    tags: (() => {
+      try {
+        return JSON.parse(row.tags_json || '[]') as string[]
+      } catch {
+        return []
+      }
+    })(),
+    finish: (['clean', 'riso', 'grain'].includes(row.finish) ? row.finish : 'clean') as FinishId,
+    chainOpen: Boolean(row.chain_open),
+    chainKey: opts?.includeSecret ? (row.chain_key ?? undefined) : undefined,
   }
 }
 

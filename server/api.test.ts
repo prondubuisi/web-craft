@@ -299,4 +299,30 @@ describe('social', () => {
     expect((open.zine as { title: string }).title).toBe('rooftop')
     expect(((open.zine as { blocks: unknown[] }).blocks ?? []).length).toBeGreaterThan(0)
   })
+
+  it('pulls from the pile and signs a guestbook', async () => {
+    const client = app()
+    const author = await register(client, 'piler1', 'strawberry1')
+    await client.request('/api/zines/live-pile', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ ...sample, title: 'pile bait', tags: ['diary'] }),
+    })
+    await client.request('/api/zines/live-pile/publish', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: author.cookie },
+      body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+    })
+    const pile = await json(await client.request('/api/pile'))
+    expect((pile.zine as { title: string }).title).toBeTruthy()
+    const tagged = await json(await client.request('/api/stream?tag=diary'))
+    expect((tagged.zines as { title: string }[]).some((z) => z.title === 'pile bait')).toBe(true)
+    const guest = await register(client, 'guest99', 'cartoon99')
+    const signed = await client.request('/api/users/piler1/guestbook', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: guest.cookie },
+      body: JSON.stringify({ body: 'write me back' }),
+    })
+    expect(signed.status).toBe(200)
+  })
 })

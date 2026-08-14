@@ -1,5 +1,8 @@
-import { assetUrl } from '../lib/paths'
+import { useEffect, useState } from 'react'
+import QRCode from 'qrcode'
+import { appHref, assetUrl } from '../lib/paths'
 import { imposeSheet, paginateZine } from '../lib/fold'
+import { issuePath } from '../lib/zine'
 import type { Block, Zine } from '../lib/types'
 
 function Mini({ block }: { block: Block }) {
@@ -29,16 +32,28 @@ function Mini({ block }: { block: Block }) {
 
 export function FoldSheet({ zine }: { zine: Zine }) {
   const cells = imposeSheet(paginateZine(zine))
+  const [qr, setQr] = useState('')
+  useEffect(() => {
+    const url = appHref(issuePath(zine))
+    void QRCode.toString(url, { type: 'svg', margin: 0, width: 96 })
+      .then(setQr)
+      .catch(() => setQr(''))
+  }, [zine.id, zine.shareKey, zine.visibility])
   return (
     <section className="fold-sheet" aria-label="Fold-and-staple sheet">
       {cells.map((cell) => (
         <article key={cell.page.n} className={`fold-cell ${cell.flip ? 'flip' : ''}`}>
           <span className="fold-n">{cell.page.n}</span>
           {cell.page.n === 1 ? <p className="fold-h">{zine.title}</p> : null}
+          {cell.page.n === 8 && qr ? (
+            <div className="fold-qr" dangerouslySetInnerHTML={{ __html: qr }} />
+          ) : null}
           {cell.page.blocks.map((block) => (
             <Mini key={block.id} block={block} />
           ))}
-          {!cell.page.blocks.length && cell.page.n !== 1 ? <p className="fold-blank">paste here</p> : null}
+          {!cell.page.blocks.length && cell.page.n !== 1 && cell.page.n !== 8 ? (
+            <p className="fold-blank">paste here</p>
+          ) : null}
         </article>
       ))}
     </section>

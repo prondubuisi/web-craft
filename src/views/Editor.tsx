@@ -5,7 +5,8 @@ import { BottomSheet, ComicButton, Modal, VibePicks } from '../components/Chrome
 import { Inspector } from '../components/Inspector'
 import { appHref } from '../lib/paths'
 import { copyText, downloadJson, encodeShare } from '../lib/share'
-import type { Block, BlockType, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
+import type { Block, BlockType, FinishId, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
+import { formatTags, parseTagField } from '../lib/tags'
 import { WIDGETS, createBlock } from '../lib/widgets'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
@@ -225,7 +226,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   )
 
   return (
-    <div className="editor" data-vibe={zine.vibe}>
+    <div className={`editor finish-${zine.finish ?? 'clean'}`} data-vibe={zine.vibe}>
       <header className="editor-bar">
         <Link to="/studio" className="comic-btn small ghost">
           ← studio
@@ -269,6 +270,25 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           ☰
         </button>
       </header>
+      <div className="editor-meta no-print">
+        <input
+          value={formatTags(zine.tags)}
+          placeholder="tags: diary, protest, music"
+          onChange={(e) => patchZine(zine.id, { tags: parseTagField(e.target.value) })}
+          aria-label="Tags"
+        />
+        <div className="vibe-picks">
+          {(['clean', 'riso', 'grain'] as FinishId[]).map((id) => (
+            <button
+              key={id}
+              className={`tray-item ${ (zine.finish ?? 'clean') === id ? 'on' : ''}`}
+              onClick={() => patchZine(zine.id, { finish: id })}
+            >
+              {id}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="editor-stage">
         {trayOpen ? (
@@ -455,10 +475,16 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           onClose={() => setDropOpen(false)}
           onDrop={(when, opts) => {
             const shareKey =
-              opts.visibility === 'unlisted' ? zine.shareKey || crypto.randomUUID().replace(/-/g, '').slice(0, 16) : zine.shareKey
+              opts.visibility === 'unlisted' || opts.chain
+                ? zine.shareKey || crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+                : zine.shareKey
             publishZine(zine.id, when, { ...opts, shareKey })
             setDropOpen(false)
-            if (opts.visibility === 'unlisted' && shareKey) {
+            if (opts.chain && shareKey) {
+              const url = `${appHref(`/z/${zine.id}?chain=${shareKey}`)}`
+              void copyText(url)
+              setCopied('Corpse link copied. They only see the last page.')
+            } else if (opts.visibility === 'unlisted' && shareKey) {
               const url = `${appHref(issuePath({ id: zine.id, shareKey, visibility: 'unlisted' }))}`
               void copyText(url)
               setCopied('Unlisted link copied. Not on the stream.')
@@ -486,12 +512,13 @@ function DropModal({
 }: {
   zine: Zine
   onClose: () => void
-  onDrop: (when: number, opts: { visibility: Visibility; password?: string }) => void
+  onDrop: (when: number, opts: { visibility: Visibility; password?: string; chain?: boolean }) => void
   onCopy: (kind: 'local' | 'snapshot') => void
   onExport: () => void
 }) {
   const [visibility, setVisibility] = useState<Visibility>(zine.visibility ?? 'public')
   const [password, setPassword] = useState('')
+  const [chain, setChain] = useState(Boolean(zine.chainOpen))
   const options = [
     { label: 'Drop now', at: Date.now() },
     { label: 'In a minute', at: Date.now() + 60_000 },
@@ -517,6 +544,9 @@ function DropModal({
         >
           unlisted
         </button>
+        <button className={`tray-item ${chain ? 'on' : ''}`} onClick={() => setChain((v) => !v)}>
+          exquisite corpse
+        </button>
       </div>
       <input
         type="password"
@@ -531,7 +561,11 @@ function DropModal({
             key={opt.label}
             className="tray-item"
             onClick={() =>
-              onDrop(opt.at, { visibility, password: password.length >= 4 ? password : undefined })
+              onDrop(opt.at, {
+                visibility: chain ? 'unlisted' : visibility,
+                password: password.length >= 4 ? password : undefined,
+                chain,
+              })
             }
           >
             {opt.label}
