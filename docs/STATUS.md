@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-14 (0.5.0 board + fold sheet)_
+_Last reviewed: 2026-08-14 (0.5.0)_
 
 ## Overview
 
