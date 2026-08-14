@@ -335,5 +335,68 @@ export function BlockView({
           </dl>
         </aside>
       )
+    case 'blackout': {
+      const words = block.text.split(/\s+/).filter(Boolean)
+      return (
+        <div className="blackout-block">
+          <div className="issue-chip">BLACKOUT</div>
+          {onChange ? (
+            <Field
+              value={block.text}
+              onChange={(text) => onChange({ ...block, text, hidden: block.hidden.filter((i) => i < text.split(/\s+/).length) })}
+            />
+          ) : null}
+          <p className="blackout-poem">
+            {words.map((word, i) => {
+              const hid = block.hidden.includes(i)
+              if (onChange) {
+                return (
+                  <button
+                    key={`${word}-${i}`}
+                    type="button"
+                    className={`blackout-word ${hid ? 'hid' : ''}`}
+                    onClick={() => {
+                      const hidden = hid ? block.hidden.filter((n) => n !== i) : [...block.hidden, i]
+                      onChange({ ...block, hidden })
+                    }}
+                  >
+                    {word}
+                  </button>
+                )
+              }
+              return (
+                <span key={`${word}-${i}`} className={`blackout-word ${hid ? 'hid' : ''}`}>
+                  {hid ? '████' : word}
+                </span>
+              )
+            })}
+          </p>
+        </div>
+      )
+    }
+    case 'contents':
+      return (
+        <nav className="contents-block" aria-label="Contents">
+          <div className="issue-chip">CONTENTS</div>
+          <ol>
+            {block.lines.map((line, i) => (
+              <li key={i}>
+                <Field
+                  value={line.label}
+                  multiline={false}
+                  onChange={
+                    onChange
+                      ? (label) => {
+                          const lines = block.lines.map((row, idx) => (idx === i ? { ...row, label } : row))
+                          onChange({ ...block, lines })
+                        }
+                      : undefined
+                  }
+                />
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
   }
 }

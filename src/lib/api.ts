@@ -1,6 +1,7 @@
 import type {
   BagItem,
   Comment,
+  FestTable,
   GuestNote,
   Jam,
   Letter,
@@ -13,6 +14,7 @@ import type {
   PollTally,
   Review,
   ShelfItem,
+  Stamp,
   StreamSort,
   VibeId,
   Zine,
@@ -120,6 +122,7 @@ export const api = {
     req<{
       name: string
       bio: string
+      scene?: string
       remixPoints: number
       createdAt: number
       followers?: number
@@ -128,6 +131,8 @@ export const api = {
       zines: Zine[]
       guestbook?: GuestNote[]
       shelf?: ShelfItem[]
+      stamps?: Stamp[]
+      table?: FestTable | null
     }>(`/api/users/${encodeURIComponent(name)}`),
   guestbook: (name: string) =>
     req<{ notes: GuestNote[] }>(`/api/users/${encodeURIComponent(name)}/guestbook`),
@@ -169,10 +174,10 @@ export const api = {
       body: JSON.stringify(body),
     }),
   removeListing: (id: string) => req<{ ok: boolean }>(`/api/board/${id}`, { method: 'DELETE' }),
-  updateMe: (bio: string) =>
-    req<{ name: string; bio: string }>('/api/users/me', {
+  updateMe: (bio: string, scene?: string) =>
+    req<{ name: string; bio: string; scene?: string }>('/api/users/me', {
       method: 'PATCH',
-      body: JSON.stringify({ bio }),
+      body: JSON.stringify({ bio, scene }),
     }),
   comments: (id: string) => req<{ comments: Comment[] }>(`/api/zines/${id}/comments`),
   comment: (id: string, body: string) =>
@@ -249,5 +254,17 @@ export const api = {
     req<{ note: MarginNote }>(`/api/zines/${id}/margins`, {
       method: 'POST',
       body: JSON.stringify({ blockId, body }),
+    }),
+  fest: () => req<{ tables: FestTable[] }>('/api/fest'),
+  setTable: (body: { name: string; scene?: string; blurb?: string; zineIds?: string[] }) =>
+    req<{ table: FestTable }>('/api/fest', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  stamps: () => req<{ stamps: Stamp[] }>('/api/stamps'),
+  stamp: (zineId: string) =>
+    req<{ stamps: Stamp[] }>('/api/stamps', {
+      method: 'POST',
+      body: JSON.stringify({ zineId }),
     }),
 }

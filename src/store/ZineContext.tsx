@@ -12,7 +12,7 @@ import {
 import { api, apiHealth, type Session } from '../lib/api'
 import { uid } from '../lib/id'
 import { computeBadges } from '../lib/seed'
-import { loadLocalNotices, markLocalNoticesRead, saveLocalNotices } from '../lib/social'
+import { loadLocalNotices, loadStamps, markLocalNoticesRead, saveLocalNotices } from '../lib/social'
 import { loadState, saveState } from '../lib/storage'
 import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
@@ -244,7 +244,12 @@ export function ZineProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<Store>(() => {
-    const badges = computeBadges(state.zines, state.profile.remixPoints, state.session?.name)
+    const badges = computeBadges(
+      state.zines,
+      state.profile.remixPoints,
+      state.session?.name,
+      loadStamps(state.session?.name ?? state.profile.name).length,
+    )
     return {
       ...state,
       badges,

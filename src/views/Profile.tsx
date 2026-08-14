@@ -3,8 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { BADGE_META, computeBadges } from '../lib/seed'
-import type { BadgeId, GuestNote, ShelfItem, Zine } from '../lib/types'
-import { addGuestNote, loadGuestNotes, loadShelf } from '../lib/social'
+import type { BadgeId, FestTable, GuestNote, ShelfItem, Stamp, Zine } from '../lib/types'
+import { addGuestNote, loadGuestNotes, loadShelf, loadStamps, loadTables } from '../lib/social'
 import { byline, coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
@@ -34,9 +34,15 @@ export function Profile() {
   const { zines, session, online, profile, toggleFollow } = useZines()
   const mine = session?.name.toLowerCase() === name || (!session && name === 'you')
   const [bio, setBio] = useState('')
+  const [scene, setScene] = useState(profile.scene ?? '')
+  const [stamps, setStamps] = useState<Stamp[]>(() => loadStamps(name))
+  const [table, setTable] = useState<FestTable | null>(
+    () => loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null,
+  )
   const [remote, setRemote] = useState<{
     name: string
     bio: string
+    scene?: string
     remixPoints: number
     createdAt: number
     followers?: number
@@ -45,6 +51,8 @@ export function Profile() {
     zines: Zine[]
     guestbook?: GuestNote[]
     shelf?: ShelfItem[]
+    stamps?: Stamp[]
+    table?: FestTable | null
   } | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -65,8 +73,11 @@ export function Profile() {
         if (!cancelled) {
           setRemote(res)
           setBio(res.bio)
+          setScene(res.scene ?? '')
           if (res.guestbook) setNotes(res.guestbook)
           if (res.shelf) setShelf(res.shelf)
+          if (res.stamps) setStamps(res.stamps)
+          if (res.table !== undefined) setTable(res.table ?? null)
         }
       })
       .catch(() => {
@@ -81,6 +92,8 @@ export function Profile() {
     if (online && name !== 'you') return
     setNotes(loadGuestNotes(name))
     setShelf(loadShelf(name))
+    setStamps(loadStamps(name))
+    setTable(loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null)
   }, [name, online])
 
   const localIssues = zines.filter(
@@ -90,7 +103,12 @@ export function Profile() {
   )
   const issues = remote?.zines ?? localIssues
   const remixPoints = remote?.remixPoints ?? (mine ? profile.remixPoints : 0)
-  const badges = computeBadges(remote?.zines ?? zines, remixPoints, name === 'you' ? null : name)
+  const badges = computeBadges(
+    remote?.zines ?? zines,
+    remixPoints,
+    name === 'you' ? null : name,
+    stamps.length,
+  )
   const display = name === 'you' ? 'you' : `@${name}`
   const watching = remote?.followedByMe ?? profile.following.includes(name)
   const followerN = remote?.followers
@@ -100,7 +118,7 @@ export function Profile() {
     if (!session || !mine) return
     setSaving(true)
     try {
-      await api.updateMe(bio)
+      await api.updateMe(bio, scene)
       setSaved(true)
       window.setTimeout(() => setSaved(false), 1600)
     } finally {
@@ -156,6 +174,12 @@ export function Profile() {
             ) : null}
             {mine && session ? (
               <div className="profile-bio">
+                <input
+                  value={scene}
+                  maxLength={48}
+                  placeholder="scene / city"
+                  onChange={(e) => setScene(e.target.value)}
+                />
                 <textarea
                   value={bio}
                   maxLength={200}
@@ -168,6 +192,7 @@ export function Profile() {
               </div>
             ) : (
               <p className="serif profile-bio">
+                {scene || remote?.scene ? <span className="issue-chip">{scene || remote?.scene}</span> : null}{' '}
                 {remote?.bio || (mine ? 'local studio — claim a handle to publish a wall.' : 'this handle left the pages blank.')}
               </p>
             )}
@@ -205,6 +230,35 @@ export function Profile() {
             No dropped issues yet.{' '}
             {mine ? <Link to="/studio">Open the studio.</Link> : null}
           </p>
+        ) : null}
+
+        {table ? (
+          <section className="comments">
+            <div className="issue-chip">FEST TABLE</div>
+            <h2 className="display" style={{ fontSize: '2rem', marginTop: 8 }}>
+              {table.name}
+            </h2>
+            <p className="serif">{table.blurb}</p>
+            <Link to="/fest" className="comic-btn small">
+              the floor
+            </Link>
+          </section>
+        ) : null}
+
+        {stamps.length ? (
+          <section className="comments" aria-label="Passport">
+            <div className="issue-chip">PASSPORT</div>
+            <h2 className="display" style={{ fontSize: '2rem', marginTop: 8 }}>
+              {stamps.length} stamp{stamps.length === 1 ? '' : 's'}
+            </h2>
+            <div className="badge-row">
+              {stamps.map((stamp) => (
+                <Link key={stamp.zineId} to={`/z/${stamp.zineId}`} className="comic-badge">
+                  {stamp.title}
+                </Link>
+              ))}
+            </div>
+          </section>
         ) : null}
 
         {shelf.length ? (

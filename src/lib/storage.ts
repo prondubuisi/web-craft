@@ -12,6 +12,7 @@ export function normalizeState(parsed: unknown): AppState | null {
       ...state.profile,
       likedIds: state.profile.likedIds ?? [],
       following: state.profile.following ?? [],
+      scene: state.profile.scene,
     },
     zines: state.zines.map((z) => ({
       ...z,

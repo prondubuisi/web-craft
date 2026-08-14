@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Block } from '../src/lib/types.ts'
+import { demoTables } from '../src/lib/fest.ts'
 import { demoJams } from '../src/lib/jam.ts'
 import { createSeed } from '../src/lib/seed.ts'
 import type { Db } from './db.ts'
@@ -24,6 +25,7 @@ export function seedCommunity(db: Db): void {
     seedSeries(db)
     seedJams(db)
     seedArchive(db)
+    seedFest(db)
     return
   }
 
@@ -80,8 +82,35 @@ export function seedCommunity(db: Db): void {
     seedSeries(db)
     seedJams(db)
     seedArchive(db)
+    seedFest(db)
   })
   tx()
+}
+
+function seedFest(db: Db): void {
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM fest_tables').get() as { n: number }).n
+  if (count > 0) return
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO fest_tables (user_id, name, scene, blurb, zine_ids_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  )
+  for (const table of demoTables()) {
+    const handle = table.owner.replace(/^@/, '')
+    const user = db.prepare('SELECT id FROM users WHERE name = ?').get(handle) as { id: string } | undefined
+    if (!user) continue
+    const issue = db.prepare('SELECT id FROM zines WHERE owner_id = ? ORDER BY created_at DESC').get(user.id) as
+      | { id: string }
+      | undefined
+    insert.run(
+      user.id,
+      table.name,
+      table.scene,
+      table.blurb,
+      JSON.stringify(issue ? [issue.id] : []),
+      table.createdAt,
+    )
+    db.prepare(`UPDATE users SET scene = ? WHERE id = ? AND (scene IS NULL OR scene = '')`).run(table.scene, user.id)
+  }
 }
 
 function seedJams(db: Db): void {
@@ -252,6 +281,12 @@ function enrichWidgets(db: Db): void {
         press: 'gutter press',
         place: 'under the tracks',
         thanks: 'to whoever left the umbrella',
+      },
+      {
+        id: 'seed-blackout-13',
+        type: 'blackout',
+        text: 'it rained like a confession and the gutter took notes',
+        hidden: [2, 5, 8],
       },
     ],
     'sunday market': [
