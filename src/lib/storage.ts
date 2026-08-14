@@ -16,6 +16,7 @@ export function normalizeState(parsed: unknown): AppState | null {
     zines: state.zines.map((z) => ({
       ...z,
       dropsAt: z.dropsAt ?? (z.published ? z.updatedAt : null),
+      visibility: z.visibility ?? 'public',
     })),
   }
 }

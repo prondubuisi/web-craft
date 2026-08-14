@@ -11,6 +11,7 @@ export type BlockType =
   | 'stack'
   | 'quote'
   | 'poll'
+  | 'audio'
 
 export type HeadingBlock = {
   id: string
@@ -91,6 +92,13 @@ export type PollBlock = {
   options: string[]
 }
 
+export type AudioBlock = {
+  id: string
+  type: 'audio'
+  src: string
+  caption: string
+}
+
 export type Block =
   | HeadingBlock
   | StickerBlock
@@ -102,6 +110,9 @@ export type Block =
   | StackBlock
   | QuoteBlock
   | PollBlock
+  | AudioBlock
+
+export type Visibility = 'public' | 'unlisted'
 
 export type StreamSort = 'new' | 'likes' | 'remixes'
 
@@ -151,6 +162,10 @@ export type Zine = {
   published: boolean
   dropsAt?: number | null
   remixedFrom?: string
+  visibility?: Visibility
+  shareKey?: string
+  hasPass?: boolean
+  passHash?: string
 }
 
 export type NoticeKind = 'like' | 'comment' | 'remix' | 'follow' | 'drop'

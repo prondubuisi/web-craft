@@ -23,4 +23,10 @@ describe('widgets', () => {
       expect(block.options.length).toBeGreaterThanOrEqual(2)
     }
   })
+
+  it('creates an empty mixtape block', () => {
+    const block = createBlock('audio', 'miles')
+    expect(block.type).toBe('audio')
+    if (block.type === 'audio') expect(block.src).toBe('')
+  })
 })

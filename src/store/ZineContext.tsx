@@ -16,7 +16,7 @@ import { loadLocalNotices, markLocalNoticesRead, saveLocalNotices } from '../lib
 import { loadState, saveState } from '../lib/storage'
 import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
-import { isMine } from '../lib/zine'
+import { fingerprint, isMine } from '../lib/zine'
 import { apply } from './reducer'
 
 type Store = AppState & {
@@ -30,7 +30,11 @@ type Store = AppState & {
   likeZine: (id: string) => void
   remixZine: (id: string) => Promise<string | null>
   importZine: (source: Zine) => string
-  publishZine: (id: string, dropsAt?: number) => void
+  publishZine: (
+    id: string,
+    dropsAt?: number,
+    opts?: { visibility?: 'public' | 'unlisted'; password?: string; shareKey?: string },
+  ) => void
   recordView: (id: string) => void
   renameProfile: (name: string) => void
   resetStudio: () => void
@@ -276,10 +280,35 @@ export function ZineProvider({ children }: { children: ReactNode }) {
       },
       remixZine,
       importZine,
-      publishZine: (id, dropsAt) => {
+      publishZine: (id, dropsAt, opts) => {
         const when = dropsAt ?? Date.now()
-        dispatch({ type: 'publish', id, dropsAt: when })
-        if (state.session) void api.publish(id, when).catch(() => undefined)
+        const current = stateRef.current.zines.find((z) => z.id === id)
+        const visibility = opts?.visibility ?? current?.visibility ?? 'public'
+        const shareKey =
+          opts?.shareKey ??
+          (visibility === 'unlisted' ? current?.shareKey || uid() : current?.shareKey)
+        void (async () => {
+          let passHash = current?.passHash
+          let hasPass = current?.hasPass
+          if (opts?.password && opts.password.length >= 4) {
+            passHash = await fingerprint(opts.password)
+            hasPass = true
+          } else if (opts?.password === '') {
+            passHash = undefined
+            hasPass = false
+          }
+          dispatch({ type: 'publish', id, dropsAt: when, visibility, shareKey, hasPass, passHash })
+          if (state.session) {
+            void api
+              .publish(id, when, { visibility, password: opts?.password })
+              .then((res) => {
+                if (res.zine.shareKey) {
+                  dispatch({ type: 'patch', id, patch: { shareKey: res.zine.shareKey, visibility } })
+                }
+              })
+              .catch(() => undefined)
+          }
+        })()
       },
       recordView: (id) => {
         dispatch({ type: 'view', id })

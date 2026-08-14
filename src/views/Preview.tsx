@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { FoldSheet } from '../components/FoldSheet'
@@ -10,29 +10,40 @@ import { loadLocalPolls, voteLocalPoll } from '../lib/social'
 import { useCountdown } from '../lib/useCountdown'
 import { api } from '../lib/api'
 import type { PollTally } from '../lib/types'
-import { coverSrc, isMine, profilePath } from '../lib/zine'
+import { canOpenSecret, coverSrc, fingerprint, isMine, issuePath, profilePath } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 export function Preview() {
   const { id } = useParams()
+  const key = new URLSearchParams(useLocation().search).get('k')
   const { zineById, likeZine, remixZine, recordView, profile, session, online } = useZines()
-  const local = id ? zineById(id) : undefined
-  const [remote, setRemote] = useState<typeof local>()
-  const zine = local ?? remote
+  const found = id ? zineById(id) : undefined
+  const [remote, setRemote] = useState<typeof found>()
+  const [unlocked, setUnlocked] = useState(false)
+  const [pass, setPass] = useState('')
+  const [passError, setPassError] = useState('')
+  const zine = found ?? remote
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
   const [fold, setFold] = useState(false)
   const [polls, setPolls] = useState<Record<string, PollTally>>({})
   const drop = useCountdown(zine?.dropsAt)
-  const locked = Boolean(zine && zine.published && !drop.live && !isMine(zine, session?.name))
+  const mine = Boolean(zine && isMine(zine, session?.name))
+  const secretOk = Boolean(zine && canOpenSecret(zine, key))
+  const hiddenUnlisted = Boolean(zine && zine.visibility === 'unlisted' && !mine && !secretOk)
+  const needsPass = Boolean(zine && zine.hasPass && !mine && !unlocked)
+  const locked = Boolean(zine && zine.published && !drop.live && !mine)
 
   useEffect(() => {
-    if (!id || local || !online) return
+    if (!id || found || !online) return
     void api
-      .get(id)
-      .then((res) => setRemote(res.zine))
+      .get(id, key)
+      .then((res) => {
+        setRemote(res.zine)
+        if (res.locked) setUnlocked(false)
+      })
       .catch(() => undefined)
-  }, [id, local, online])
+  }, [id, found, online, key])
 
   useEffect(() => {
     if (id && zine && !locked) recordView(id)
@@ -52,7 +63,7 @@ export function Preview() {
     }
   }, [id, remoteSocial, locked])
 
-  if (!zine) {
+  if (!zine || hiddenUnlisted) {
     return (
       <div data-vibe="miles">
         <Topbar />
@@ -69,10 +80,36 @@ export function Preview() {
   const liked = profile.likedIds.includes(zine.id)
 
   async function share() {
-    const url = `${appHref('/s')}#${encodeShare(zine as NonNullable<typeof zine>)}`
+    const target = zine as NonNullable<typeof zine>
+    const url =
+      target.visibility === 'unlisted'
+        ? appHref(issuePath(target))
+        : `${appHref('/s')}#${encodeShare(target)}`
     const ok = await copyText(url)
     setCopied(ok)
     window.setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function unlock() {
+    setPassError('')
+    if (online && !found) {
+      try {
+        const res = await api.unlock(zine!.id, pass, key)
+        setRemote(res.zine)
+        setUnlocked(true)
+      } catch (err) {
+        setPassError(err instanceof Error ? err.message : 'Wrong passphrase')
+      }
+      return
+    }
+    if (zine?.passHash) {
+      const next = await fingerprint(pass)
+      if (next !== zine.passHash) {
+        setPassError('Wrong passphrase')
+        return
+      }
+    }
+    setUnlocked(true)
   }
 
   return (
@@ -92,7 +129,28 @@ export function Preview() {
             </div>
           ) : null}
 
-          {locked ? (
+          {needsPass ? (
+            <div className="drop-lock">
+              <h1 className="display chroma">{zine.title}</h1>
+              <p className="serif">This issue is folded behind a passphrase.</p>
+              <form
+                className="board-form"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void unlock()
+                }}
+              >
+                <input
+                  type="password"
+                  value={pass}
+                  placeholder="passphrase"
+                  onChange={(e) => setPass(e.target.value)}
+                />
+                {passError ? <p className="hand">{passError}</p> : null}
+                <ComicButton className="pink">Unlock</ComicButton>
+              </form>
+            </div>
+          ) : locked ? (
             <div className="drop-lock">
               <Halftone src={coverSrc(zine)} alt="" className="hero-shot" />
               <h1 className="display chroma" style={{ marginTop: 12 }}>
@@ -189,7 +247,7 @@ export function Preview() {
               </Link>
             ) : null}
           </div>
-          <Comments zineId={zine.id} locked={locked} remote={remoteSocial} />
+          <Comments zineId={zine.id} locked={locked || needsPass} remote={remoteSocial} />
         </article>
         {!locked ? (
           <div className={`fold-wrap ${fold ? 'on' : ''}`}>

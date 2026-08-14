@@ -5,9 +5,9 @@ import { BottomSheet, ComicButton, Modal, VibePicks } from '../components/Chrome
 import { Inspector } from '../components/Inspector'
 import { appHref } from '../lib/paths'
 import { copyText, downloadJson, encodeShare } from '../lib/share'
-import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
+import type { Block, BlockType, PreviewMode, VibeId, Visibility, Zine } from '../lib/types'
 import { WIDGETS, createBlock } from '../lib/widgets'
-import { slugify } from '../lib/zine'
+import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/ZineContext'
 
 type Snap = { title: string; vibe: VibeId; blocks: Block[] }
@@ -453,10 +453,18 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         <DropModal
           zine={zine}
           onClose={() => setDropOpen(false)}
-          onDrop={(when) => {
-            publishZine(zine.id, when)
+          onDrop={(when, opts) => {
+            const shareKey =
+              opts.visibility === 'unlisted' ? zine.shareKey || crypto.randomUUID().replace(/-/g, '').slice(0, 16) : zine.shareKey
+            publishZine(zine.id, when, { ...opts, shareKey })
             setDropOpen(false)
-            setCopied(when > Date.now() ? 'Scheduled. NEXT ISSUE is live on the stream.' : 'Issue dropped.')
+            if (opts.visibility === 'unlisted' && shareKey) {
+              const url = `${appHref(issuePath({ id: zine.id, shareKey, visibility: 'unlisted' }))}`
+              void copyText(url)
+              setCopied('Unlisted link copied. Not on the stream.')
+            } else {
+              setCopied(when > Date.now() ? 'Scheduled. NEXT ISSUE is live on the stream.' : 'Issue dropped.')
+            }
             window.setTimeout(() => setCopied(null), 2600)
           }}
           onCopy={share}
@@ -478,10 +486,12 @@ function DropModal({
 }: {
   zine: Zine
   onClose: () => void
-  onDrop: (when: number) => void
+  onDrop: (when: number, opts: { visibility: Visibility; password?: string }) => void
   onCopy: (kind: 'local' | 'snapshot') => void
   onExport: () => void
 }) {
+  const [visibility, setVisibility] = useState<Visibility>(zine.visibility ?? 'public')
+  const [password, setPassword] = useState('')
   const options = [
     { label: 'Drop now', at: Date.now() },
     { label: 'In a minute', at: Date.now() + 60_000 },
@@ -491,19 +501,46 @@ function DropModal({
   return (
     <Modal title="drop this issue" onClose={onClose}>
       <p className="serif">
-        A drop is a publish. Schedule one and the stream shows a comic <em>NEXT ISSUE</em> banner
-        until the clock hits.
+        A public drop hits the stream. An unlisted drop is a secret link — share it before the
+        official issue, distinct from a snapshot blob.
       </p>
       <div className="vibe-picks" style={{ marginTop: 12 }}>
+        <button
+          className={`tray-item ${visibility === 'public' ? 'on' : ''}`}
+          onClick={() => setVisibility('public')}
+        >
+          public
+        </button>
+        <button
+          className={`tray-item ${visibility === 'unlisted' ? 'on' : ''}`}
+          onClick={() => setVisibility('unlisted')}
+        >
+          unlisted
+        </button>
+      </div>
+      <input
+        type="password"
+        value={password}
+        placeholder="optional passphrase (4+)"
+        onChange={(e) => setPassword(e.target.value)}
+        style={{ marginTop: 10 }}
+      />
+      <div className="vibe-picks" style={{ marginTop: 12 }}>
         {options.map((opt) => (
-          <button key={opt.label} className="tray-item" onClick={() => onDrop(opt.at)}>
+          <button
+            key={opt.label}
+            className="tray-item"
+            onClick={() =>
+              onDrop(opt.at, { visibility, password: password.length >= 4 ? password : undefined })
+            }
+          >
             {opt.label}
           </button>
         ))}
       </div>
       {zine.published ? (
         <p className="hand" style={{ margin: '0.8rem 0' }}>
-          already on the stream.
+          {zine.visibility === 'unlisted' ? 'already unlisted.' : 'already on the stream.'}
         </p>
       ) : null}
       <div className="cta-row" style={{ marginTop: 12 }}>

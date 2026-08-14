@@ -15,6 +15,9 @@ function portableBlock(block: Block, vibe: VibeId): Block {
   if (block.type === 'hero' && block.src.startsWith('data:')) {
     return { ...block, src: artForVibe(vibe) }
   }
+  if (block.type === 'audio' && block.src.startsWith('data:')) {
+    return { ...block, src: '' }
+  }
   if (block.type === 'grid') {
     return {
       ...block,
