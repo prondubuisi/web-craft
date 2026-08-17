@@ -15,7 +15,7 @@ import {
   loadTables,
 } from '../lib/social'
 import { byline, coverSrc, isDropLive, isPublicDrop, ownerHandle, seriesLabel } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
 

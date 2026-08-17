@@ -6,7 +6,7 @@ import { useRemote } from '../lib/useRemote'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
 import type { Letter, MailThread, VibeId } from '../lib/types'
 import { profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Mail() {
   const { handle = '' } = useParams()

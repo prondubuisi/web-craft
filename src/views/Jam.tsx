@@ -6,7 +6,7 @@ import { useRemote } from '../lib/useRemote'
 import { demoJams, formatHint, isJamLive } from '../lib/jam'
 import type { Jam, Zine } from '../lib/types'
 import { byline, coverSrc, filterStream, profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function JamPage() {
   const { id = '' } = useParams()

@@ -6,7 +6,7 @@ import { useRemote } from '../lib/useRemote'
 import { addLocalListing, loadLocalListings, removeLocalListing, swapLocalListing } from '../lib/social'
 import type { Listing, ListingKind } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 const KINDS: { id: ListingKind | 'all'; label: string }[] = [
   { id: 'all', label: 'all' },

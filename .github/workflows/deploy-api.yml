@@ -28,7 +28,7 @@ jobs:
           else
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: steps.fly.outputs.has_token == 'true'
       - uses: superfly/flyctl-actions/setup-flyctl@master
         if: steps.fly.outputs.has_token == 'true'
