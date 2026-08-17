@@ -495,9 +495,26 @@ button.blackout-word.hid {
   padding: 1.1rem;
 }
 
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .modal h2 {
   font-family: var(--font-display);
   font-size: 2.4rem;
+}
+
+.modal-close {
+  font-family: var(--font-hand);
+  font-size: 0.78rem;
+  border: 2px solid var(--ink);
+  background: var(--accent-3);
+  color: var(--ink);
+  padding: 0.15rem 0.5rem;
+  flex-shrink: 0;
 }
 
 .modal input[type='text'],
@@ -689,17 +706,23 @@ button.blackout-word.hid {
 }
 
 @media (max-width: 859px) {
+  .brand {
+    font-size: 1.25rem;
+  }
+
   .brand small {
     display: none;
   }
 
   .topbar {
-    flex-wrap: nowrap;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.6rem;
   }
 
   .nav-links {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
   }
 
   .nav-links a {

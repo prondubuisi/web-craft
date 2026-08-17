@@ -342,6 +342,22 @@ p {
   z-index: 40;
 }
 
+.inbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.inbox-close {
+  font-family: var(--font-hand);
+  font-size: 0.78rem;
+  border: 2px solid var(--ink);
+  background: var(--accent-3);
+  color: var(--ink);
+  padding: 0.1rem 0.45rem;
+}
+
 .inbox-panel ul {
   list-style: none;
   margin: 0.5rem 0 0;
