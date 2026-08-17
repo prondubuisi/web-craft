@@ -33,7 +33,7 @@ Routes (from `src/App.tsx`):
 
 - `src/views/` — 14 screens (Help added). Editor canvas + extracted DropModal/EditorMeta. Preview chrome; social state in `useIssueSocial`
 - `src/components/` — Blocks, Chrome, Inspector, Comments, Reviews, Margins, FlipReader, FoldSheet
-- `src/lib/` — types, widgets, storage, share, social, api, jam, fest, fold, cutout, tags
+- `src/lib/` — types, widgets, storage, share (`social/` bag mail archive run ink scene), api, jam, fest, fold, cutout, tags
 - `src/store/` — `ZineContext.tsx` + `reducer.ts`
 - `server/` — Hono app (`app.ts` mounts `routes/`), SQLite (`db.ts` + `migrations/`), services, auth (`scrypt`), community seed
 - `src/lib/contract.ts` — shared request/response types
@@ -71,6 +71,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at 
 
 Still open:
 
-1. Split `social.ts` by bag / mail / archive / run
-2. Merge overlapping mechanics (bag vs shelf vs archive; response verbs)
-3. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)
+1. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)
+
+Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.
