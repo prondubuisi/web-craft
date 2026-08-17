@@ -2,6 +2,10 @@
 
 _Compiled: 2026-08-14_
 
+**Won’t add (for now).** This file is history. Rounds 1–6 shipped. The readable slice shipped in 1.4.0. Do not start a seventh round of mechanics — no new block types, community routes, badges, or notice kinds. New ideas have to help someone finish a first issue, share it, or find one other person.
+
+---
+
 A survey of real-world zine culture and other digital zine/collage tools (ZINECORE, Flipsnack, Flipbooks AI, ZineMap), filtered down to ideas that fit Zineverse's existing block/social/server model and aren't already covered by current features (accounts, publish/drop, likes, remixes, comments, street polls, letters to the editor, badges, snapshot links, JSON export, PWA install, print issue, stream search/filter/sort).
 
 ## Reader experience
@@ -82,20 +86,22 @@ Round 6 shipped in 1.3.0.
 
 Zineverse's own positioning (README: "mail-swap culture, not a marketplace," DIY comic-maximalist collage, Board for trades/collabs/feedback, MAIL wire, Watch wall) points toward real zine-culture mechanics rather than generic content-platform features. These build on what's already shipped instead of converging toward flipbook-SaaS territory (analytics dashboards, monetization, algorithmic feeds).
 
+These bullets below were the original “more ideas” writeup. They shipped in 0.7.0 and are listed above. Kept for history, not as a backlog.
+
 **Collaboration & mail culture**
-- **Chain zine / exquisite corpse mode** — a zine type where each collaborator only sees the page(s) directly before theirs, adds one page, then passes it to the next person via a Board collab pin. This is a century-old, still-active zine-culture practice (mail art "exquisite corpse," round-robin chain tales) and would turn the existing Board from a matchmaking listing into an actual in-app co-creation flow — the natural next step for a "collab" pin that currently just connects two people who then have to coordinate elsewhere.
+- **Chain zine / exquisite corpse mode** — shipped 0.7.0.
 
 **Community curation**
-- **Distro shelf** — let a profile curate and recommend *other people's* issues (not their own), the way a real zine distro stocks zines it believes in. Non-monetary, fits the "not a marketplace" framing directly, and is a thin addition on top of the existing Profile/Watch wall.
-- **Guestbook** — a public, per-profile note board (distinct from per-issue letters/comments) — an old-web and zine-culture staple (guestbooks, addresses printed in the back of a zine inviting mail) that fits the personal, address-book feel of `/u/:handle` better than another comment thread.
+- **Distro shelf** — shipped 0.7.0.
+- **Guestbook** — shipped 0.7.0.
 
 **Discovery**
-- **"Pull from the pile"** — a random-issue button on `/explore` that simulates flipping through a stack at a zine fest, as a deliberate counterweight to the existing sort-by-new/likes/remixes — keeps discovery from tilting purely toward whatever's already popular.
-- **Community tags** — free-form theme tags (diary, protest, fan-art, music...) layered on top of the five fixed vibe palettes, so people can self-organize by *content* since vibes are currently palette-only, not genre.
+- **"Pull from the pile"** — shipped 0.7.0.
+- **Community tags** — shipped 0.7.0.
 
 **Physical/digital bridge**
-- **QR code on print/fold sheet** — stamp the printed fold-sheet output (`src/lib/fold.ts`) with a QR code back to the live `/z/:id` URL, mirroring how zine trades in the wild often include a link or address back to the maker.
-- **Riso/print-texture finishing pass** — extend the existing vibe engine (halftone density, chromatic split) with optional misregistration and paper-grain overlays as a selectable finishing pass, reinforcing the print-zine look without a new content model.
+- **QR code on print/fold sheet** — shipped 0.7.0.
+- **Riso/print-texture finishing pass** — shipped 0.7.0.
 
 ## Round 3 (post-0.8.0) — community events, archive, and authorship
 

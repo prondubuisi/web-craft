@@ -1,0 +1,81 @@
+@media print {
+  .topbar,
+  .nav-links,
+  .cta-row,
+  .fab,
+  .sheet-back,
+  .editor-bar,
+  .drop-toast,
+  .skip-link,
+  .no-print,
+  .footer-issue,
+  .comment-form,
+  .filter-bar,
+  .inbox,
+  .local-note,
+  .primer {
+    display: none !important;
+  }
+
+  html,
+  body,
+  #root {
+    background: #fff;
+  }
+
+  body::before {
+    display: none;
+  }
+
+  .preview-page {
+    padding: 0;
+    display: block;
+  }
+
+  .zine-page {
+    box-shadow: none;
+    width: 100%;
+    min-height: 0;
+    border: 2px solid #000;
+  }
+
+  .fold-wrap {
+    display: none !important;
+  }
+
+  body.fold-print {
+    background: #fff;
+    page: fold;
+  }
+
+  body.fold-print .preview-page {
+    padding: 0;
+  }
+
+  body.fold-print .zine-page,
+  body.fold-print .fold-help {
+    display: none !important;
+  }
+
+  body.fold-print .fold-wrap {
+    display: block !important;
+    margin: 0;
+  }
+
+  body.fold-print .fold-sheet {
+    width: 100vw;
+    height: 100vh;
+    aspect-ratio: auto;
+    border: 0;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    margin: 0.3in;
+  }
+
+  @page fold {
+    size: landscape;
+    margin: 0.2in;
+  }
+}

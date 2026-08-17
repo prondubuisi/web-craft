@@ -21,15 +21,47 @@ export function Topbar() {
           Cover
         </NavLink>
         <NavLink to="/studio">Studio</NavLink>
-        <NavLink to="/cork">Desk</NavLink>
         <NavLink to="/explore">Stream</NavLink>
-        <NavLink to="/board">Board</NavLink>
-        <NavLink to="/fest">Fest</NavLink>
-        <NavLink to="/mail">Letters</NavLink>
+        <NavLink to="/help">Help</NavLink>
+        {session ? <NavLink to="/mail">Letters</NavLink> : null}
         {session ? <NavLink to={`/u/${session.name}`}>@{session.name}</NavLink> : null}
         <Inbox />
       </nav>
     </header>
+  )
+}
+
+export function LocalNote() {
+  const { online } = useZines()
+  if (online) return null
+  return (
+    <p className="local-note serif">
+      Local studio. Snapshot links and print work here. Board, fest, and letters need the API.{' '}
+      <Link to="/help">What do the words mean?</Link>
+    </p>
+  )
+}
+
+export function SceneLinks() {
+  const { online, session } = useZines()
+  if (!online) return null
+  return (
+    <div className="scene-links cta-row">
+      <Link to="/cork" className="comic-btn small ghost">
+        Desk
+      </Link>
+      <Link to="/board" className="comic-btn small ghost">
+        Board
+      </Link>
+      <Link to="/fest" className="comic-btn small ghost">
+        Fest
+      </Link>
+      {session ? (
+        <Link to="/mail" className="comic-btn small ghost">
+          Letters
+        </Link>
+      ) : null}
+    </div>
   )
 }
 

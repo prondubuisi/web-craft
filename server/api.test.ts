@@ -102,6 +102,19 @@ describe('zines', () => {
   })
 })
 
+describe('demo drop', () => {
+  it('reseals midnight run after the clock has passed', async () => {
+    const db = openDb(':memory:')
+    const client = createApp(db)
+    db.prepare(`UPDATE zines SET drops_at = ? WHERE title = 'midnight run'`).run(Date.now() - 1000)
+    await client.request('/api/health')
+    const row = db.prepare(`SELECT drops_at FROM zines WHERE title = 'midnight run'`).get() as {
+      drops_at: number
+    }
+    expect(row.drops_at).toBeGreaterThan(Date.now())
+  })
+})
+
 describe('stream filters', () => {
   it('filters by vibe and query', async () => {
     const client = app()

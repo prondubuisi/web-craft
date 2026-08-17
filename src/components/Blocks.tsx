@@ -87,6 +87,7 @@ export function BlockView({
     case 'sticker':
       return (
         <div className="sticker-block" style={{ transform: `rotate(${block.rotation}deg)` }}>
+          {block.src ? <img src={assetUrl(block.src)} alt="" className="sticker-cutout" /> : null}
           <Field
             value={block.text}
             onChange={onChange ? (text) => onChange({ ...block, text }) : undefined}

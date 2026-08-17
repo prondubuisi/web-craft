@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { demoJams, formatHint, isJamLive } from '../lib/jam'
 import type { Jam, Zine } from '../lib/types'
 import { byline, coverSrc, filterStream, profilePath } from '../lib/zine'
@@ -14,24 +15,19 @@ export function JamPage() {
   const [jam, setJam] = useState<Jam | null>(local)
   const [issues, setIssues] = useState<Zine[]>(() => filterStream(zines, { jamId: id }))
 
+  const remote = useRemote(() => api.jam(id), [id])
   useEffect(() => {
     const offline = demoJams().find((item) => item.id === id) ?? demoJams()[0] ?? null
-    if (!online) {
+    if (!online || remote.error) {
       setJam(offline)
       setIssues(filterStream(zines, { jamId: id }))
       return
     }
-    void api
-      .jam(id)
-      .then((res) => {
-        setJam(res.jam)
-        setIssues(res.zines)
-      })
-      .catch(() => {
-        setJam(offline)
-        setIssues(filterStream(zines, { jamId: id }))
-      })
-  }, [id, online, zines])
+    if (remote.data) {
+      setJam(remote.data.jam)
+      setIssues(remote.data.zines)
+    }
+  }, [id, online, zines, remote.data, remote.error])
 
   if (!jam) {
     return (

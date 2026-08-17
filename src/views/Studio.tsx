@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Badge, ComicButton, Halftone, Modal, Topbar, VibePicks } from '../components/Chrome'
+import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { loadBag } from '../lib/social'
 import type { BadgeId, BagItem, VibeId, Zine } from '../lib/types'
 import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
@@ -36,16 +37,14 @@ export function Studio() {
   const [bag, setBag] = useState<BagItem[]>(() => loadBag(session?.name ?? profile.name))
   const navigate = useNavigate()
 
+  const remoteBag = useRemote(() => api.bag(), [session?.name], { enabled: Boolean(online && session) })
   useEffect(() => {
-    if (online && session) {
-      void api
-        .bag()
-        .then((res) => setBag(res.bag))
-        .catch(() => setBag(loadBag(session.name)))
+    if (!online || !session || remoteBag.error) {
+      setBag(loadBag(session?.name ?? profile.name))
       return
     }
-    setBag(loadBag(session?.name ?? profile.name))
-  }, [online, session, profile.name])
+    if (remoteBag.data) setBag(remoteBag.data.bag)
+  }, [online, session, profile.name, remoteBag.data, remoteBag.error])
 
   function drop() {
     const id = createZine(title.trim() || 'untitled issue', vibe)
@@ -57,6 +56,7 @@ export function Studio() {
     <div data-vibe="miles">
       <Topbar />
       <main className="studio">
+        <LocalNote />
         <div className="studio-head">
           <div>
             <div className="issue-chip">

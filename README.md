@@ -6,14 +6,14 @@ A playful, Spider-Verse-inspired zine builder. Pages are digital collage — blo
 
 Live demo: https://prondubuisi.github.io/web-craft/
 
-Installable as a standalone app on a phone (Add to Home Screen). Reader view has **Print issue**. Snapshot links stay the sharing model — there is no account or server. Everything you make lives in this browser unless you export JSON or copy a snapshot.
+Installable as a standalone app on a phone (Add to Home Screen). Reader view has **Print issue**. The public Pages demo works without an account. Locally, `npm run dev` also starts the SQLite API — claim a handle to sync drafts. Snapshot links still work with no server. Without the API, everything you make lives in this browser unless you export JSON or copy a snapshot.
 
 ```bash
 npm install
 npm run dev
 ```
 
-That starts the Vite app **and** the SQLite API (`http://127.0.0.1:8787`). Open the local URL Vite prints (usually `http://localhost:5173`). Claim a handle in the studio to sync drafts across browsers. Without the API, the site still runs locally from `localStorage`.
+That starts the Vite app **and** the SQLite API (`http://127.0.0.1:8787`). Open the local URL Vite prints (usually `http://localhost:5173`). Claim a handle in the studio to sync drafts across browsers. Without the API, the **studio and issue data** still run from `localStorage`. Board, mail, jam, archive, fest, cork, bag, and the other community surfaces need the API — they do not have a full offline store.
 
 ```bash
 npm run dev:web   # frontend only
@@ -22,16 +22,17 @@ npm run dev:api   # API only
 
 ```bash
 npm test          # unit tests
-npm run lint      # oxlint
+npm run lint      # oxlint + stylelint
 npm run build     # typecheck + production bundle
 ```
 
 ## What you can do
 
-- **Cover** (`/`) — vibe switcher, widget zoo, start an issue
+- **Cover** (`/`) — start an issue, vibes, a seeded sample, first-visit primer
 - **Studio** (`/studio`) — your zines, comic badges, **in my bag**, community stream, corkboard
+- **Help** (`/help`) — glossary for drops, bags, fests, and the rest of the vocabulary
 - **Editor** (`/edit/:id`) — slash commands, widget tray, undo, image upload, phone/tablet/fold frames. On a phone: `+` opens a bottom sheet, `☰` is the issue menu.
-- **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**
+- **Stream** (`/explore`) — search, vibe filters, watching lane, jam lane, archive lane, community tags, **pull from the pile**. Board, fest, and desk are one hop from here when the API is up.
 - **Board** (`/board`) — trade, collab, and feedback pins. Mark a swap done. Mail-swap culture, not a marketplace.
 - **Fest** (`/fest`) — tables on the floor, filtered by scene. Sit if you want. Not a marketplace.
 - **Issue** (`/z/:id`) — flip or scroll, like/remix/letters/blurbs/polls/marginalia, fold-sheet print with QR, distro stock, **stuff in bag**, archive nominate, library checkout, b-side fold, errata, compilations, corpse invites, unlisted/password links
@@ -44,7 +45,7 @@ npm run build     # typecheck + production bundle
 
 **Drop issue** publishes now or on a timer. A future drop shows a comic countdown and keeps pages sealed for everyone except the author.
 
-**Copy snapshot link** packs the zine into the URL so it can be opened in another browser. Custom photo uploads stay local (they’re too heavy for a link); export JSON to move those.
+**Copy snapshot link** packs the zine into the URL so it can be opened in another browser. Photos are compressed on upload. If they still will not fit the link, copy refuses instead of dropping the pictures — export JSON to move those.
 
 Everything else lives in `localStorage` (`zineverse.v1`). **Reset demo** restores the seeded issues, including a sealed `midnight run` drop.
 

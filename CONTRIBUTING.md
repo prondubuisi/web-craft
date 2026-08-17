@@ -35,7 +35,8 @@ npm run dev
 
 ```bash
 npm test
-npm run lint
+npm run test:e2e  # Playwright flows; needs `npm run dev` on :5173
+npm run lint      # oxlint + stylelint
 npm run build
 ```
 
@@ -47,4 +48,4 @@ CI runs those on `main` and `develop`.
 
 ## API
 
-Hono + SQLite in `server/`. Auth is handle + password (`scrypt`). Publish, likes, remix, comments, poll votes, profiles, and the drop-seal are server-enforced. Deploy with `Dockerfile` + `fly.toml` (`flyctl deploy`) after `flyctl auth login`.
+Hono + SQLite in `server/`. Schema lives in numbered files under `server/migrations/`; `openDb()` runs them at boot. Auth is handle + password (`scrypt`). Publish, likes, remix, comments, poll votes, profiles, mail, fest, and the drop-seal are server-enforced. Shared request/response shapes live in `src/lib/contract.ts`. Deploy with `Dockerfile` + `fly.toml` (`flyctl deploy`) after `flyctl auth login`. Needs repo secret `FLY_API_TOKEN` for Actions.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { addLocalListing, loadLocalListings, removeLocalListing, swapLocalListing } from '../lib/social'
 import type { Listing, ListingKind } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
@@ -24,24 +25,17 @@ export function Board() {
   const [error, setError] = useState('')
   const mine = zines.filter((z) => z.published && isMine(z, session?.name)).slice(0, 12)
 
+  const remote = useRemote(
+    () => api.board(kind === 'all' ? undefined : kind),
+    [kind],
+  )
   useEffect(() => {
-    if (!online) {
+    if (!online || remote.error) {
       setItems(loadLocalListings())
       return
     }
-    let cancelled = false
-    void api
-      .board(kind === 'all' ? undefined : kind)
-      .then((res) => {
-        if (!cancelled) setItems(res.listings)
-      })
-      .catch(() => {
-        if (!cancelled) setItems(loadLocalListings())
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [online, kind])
+    if (remote.data) setItems(remote.data.listings)
+  }, [online, remote.data, remote.error])
 
   const visible = useMemo(
     () => (kind === 'all' ? items : items.filter((item) => item.kind === kind)),

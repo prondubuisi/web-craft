@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { useCountdown } from '../lib/useCountdown'
 import { demoJams, formatHint, liveJam } from '../lib/jam'
 import type { Jam, StreamSort, VibeId, Zine } from '../lib/types'
@@ -20,38 +21,35 @@ export function Explore() {
   const [remote, setRemote] = useState<Zine[] | null>(null)
   const [jam, setJam] = useState<Jam | null>(() => liveJam(demoJams()) ?? null)
 
+  const jams = useRemote(() => api.jams(), [])
+  const stream = useRemote(
+    () =>
+      api.stream({
+        q,
+        vibe: vibe === 'all' ? undefined : vibe,
+        sort,
+        following: lane === 'following',
+        tag: tag || undefined,
+        jam: lane === 'jam',
+        archive: lane === 'archive',
+      }),
+    [q, vibe, sort, lane, session, tag],
+    { enabled: online && !(lane === 'following' && !session), delay: 180 },
+  )
   useEffect(() => {
-    if (!online) {
+    if (!online || jams.error) {
       setJam(liveJam(demoJams()) ?? null)
       return
     }
-    void api
-      .jams()
-      .then((res) => setJam(res.live))
-      .catch(() => setJam(liveJam(demoJams()) ?? null))
-  }, [online])
-
+    if (jams.data) setJam(jams.data.live)
+  }, [online, jams.data, jams.error])
   useEffect(() => {
-    if (!online || (lane === 'following' && !session)) {
+    if (!online || (lane === 'following' && !session) || stream.error) {
       setRemote(null)
       return
     }
-    const handle = window.setTimeout(() => {
-      void api
-        .stream({
-          q,
-          vibe: vibe === 'all' ? undefined : vibe,
-          sort,
-          following: lane === 'following',
-          tag: tag || undefined,
-          jam: lane === 'jam',
-          archive: lane === 'archive',
-        })
-        .then((res) => setRemote(res.zines))
-        .catch(() => setRemote(null))
-    }, 180)
-    return () => window.clearTimeout(handle)
-  }, [online, q, vibe, sort, lane, session, tag])
+    if (stream.data) setRemote(stream.data.zines)
+  }, [online, lane, session, stream.data, stream.error])
 
   const published = useMemo(() => {
     const opts = {
@@ -77,14 +75,15 @@ export function Explore() {
     <div data-vibe="miles">
       <Topbar />
       <main className="studio">
+        <LocalNote />
         <div className="studio-head">
           <div>
             <div className="issue-chip">ONE-CLICK REMIX</div>
             <h1 className="display chroma">the stream</h1>
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
-              A website is a gathering place, not a billboard. Fork anything you like.{' '}
-              <Link to="/board">Need a trade or a second pair of eyes? The board is up.</Link>
+              A website is a gathering place, not a billboard. Fork anything you like.
             </p>
+            <SceneLinks />
             {jam ? (
               <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
                 <Link to={`/jam/${jam.id}`}>
@@ -187,7 +186,7 @@ export function Explore() {
               key={z.id}
               zine={z}
               onRemix={() => {
-                void remixZine(z.id).then((id) => {
+                void remixZine(z.id, z).then((id) => {
                   if (id) navigate(`/edit/${id}`)
                 })
               }}

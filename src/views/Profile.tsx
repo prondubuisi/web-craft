@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { useRemote } from '../lib/useRemote'
 import { BADGE_META, computeBadges } from '../lib/seed'
 import type { BadgeId, FestTable, GuestNote, Loan, ShelfItem, Stamp, Zine } from '../lib/types'
 import {
@@ -70,38 +71,32 @@ export function Profile() {
   const [guest, setGuest] = useState('')
   const [shelf, setShelf] = useState<ShelfItem[]>(() => loadShelf(name))
 
+  const remoteUser = useRemote(() => api.user(name), [name], { enabled: online && name !== 'you' })
+  const remoteLoans = useRemote(() => api.loans(), [name, session?.name], {
+    enabled: Boolean(online && mine && session && name !== 'you'),
+  })
   useEffect(() => {
-    if (!online || name === 'you') {
+    if (!online || name === 'you' || remoteUser.error) {
       setRemote(null)
       return
     }
-    let cancelled = false
-    void api
-      .user(name)
-      .then((res) => {
-        if (!cancelled) {
-          setRemote(res)
-          setBio(res.bio)
-          setScene(res.scene ?? '')
-          if (res.guestbook) setNotes(res.guestbook)
-          if (res.shelf) setShelf(res.shelf)
-          if (res.stamps) setStamps(res.stamps)
-          if (mine && session) {
-            void api
-              .loans()
-              .then((loanRes) => setLoans(loanRes.loans))
-              .catch(() => setLoans(loadLoans(name)))
-          }
-          if (res.table !== undefined) setTable(res.table ?? null)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setRemote(null)
-      })
-    return () => {
-      cancelled = true
+    if (!remoteUser.data) return
+    const res = remoteUser.data
+    setRemote(res)
+    setBio(res.bio)
+    setScene(res.scene ?? '')
+    if (res.guestbook) setNotes(res.guestbook)
+    if (res.shelf) setShelf(res.shelf)
+    if (res.stamps) setStamps(res.stamps)
+    if (res.table !== undefined) setTable(res.table ?? null)
+  }, [name, online, remoteUser.data, remoteUser.error])
+  useEffect(() => {
+    if (!online || !mine || !session || name === 'you' || remoteLoans.error) {
+      if (!online || name === 'you') setLoans(loadLoans(name))
+      return
     }
-  }, [name, online])
+    if (remoteLoans.data) setLoans(remoteLoans.data.loans)
+  }, [name, online, mine, session, remoteLoans.data, remoteLoans.error])
 
   useEffect(() => {
     if (online && name !== 'you') return
