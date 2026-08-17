@@ -34,9 +34,7 @@ Do not start a seventh product round. `docs/sg3.md` stays the observation note; 
 
 The 1.4.x support pass is complete. Do not cut another 1.4.x patch unless CI is red or the live demo lies.
 
-**Stop.** Freeze still holds. No new blocks, routes-as-mechanics, badges, or notice kinds.
-
-**1.5.0, only if you open it:** not more zine nouns. sg1’s maker-depth list already shipped in 1.4.0. The leftover from sg2 is a **consolidation pass** — bag vs distro shelf vs archive, and the five ways to respond to an issue (blurb, letter, margin, dedication, tear-out). Write down what people actually reach for before merging or deleting any of them.
+**1.5.0 is open as observation, not a feature train.** See `docs/sg4.md`. Keep bag / shelf / archive. Keep the five answer forms. Name the missing glossary terms so Help matches the reader INK lede. Do not merge stores.
 
 **Incremental, when touching a file anyway (not a project):**
 - Add the route’s types to `src/lib/contract.ts`

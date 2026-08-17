@@ -60,7 +60,23 @@ const ENTRIES = [
   },
   {
     term: 'letters',
-    body: 'Private pen-pal threads. A postcard is the tiny version. MAIL in the topbar is the wire — notices, not the inbox.',
+    body: 'Private pen-pal threads. A postcard is the tiny version. MAIL in the topbar is the wire — notices, not the inbox. On an issue, a letter under INK stays on that page.',
+  },
+  {
+    term: 'blurb',
+    body: 'One line on the issue, no stars. Under INK with letters. Not a letter and not a margin note.',
+  },
+  {
+    term: 'margin',
+    body: 'A scribble on one panel (¶). Lives on that block, not the whole issue.',
+  },
+  {
+    term: 'dedication',
+    body: 'The maker writes “for …” before the drop. Not a reader response. It prints with the issue.',
+  },
+  {
+    term: 'tear-out',
+    body: 'A reply block on the page. Tear it off and it mails a postcard. The block is the form; the postcard is mail.',
   },
   {
     term: 'b-side',

@@ -4,7 +4,7 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
-`sg.md` records that the 1.4.x support pass is complete. Next decision is whether to open 1.5.0 as a consolidation pass, not more features.
+1.5.0 opened as a consolidation observation (`docs/sg4.md`). Help names blurb, margin, dedication, and tear-out. Bag / shelf / archive stay three piles.
 
 ## 1.4.8 — 2026-08-17
 
