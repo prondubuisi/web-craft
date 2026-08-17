@@ -113,8 +113,9 @@ export async function waitForStudioMode(page: Page) {
 
 export async function claimHandle(page: Page, handle?: string): Promise<string | null> {
   await page.goto('/studio')
-  const claim = page.getByRole('button', { name: /Claim studio|API offline/i })
+  const claim = page.getByRole('button', { name: /Claim studio|API offline|Checking API/i })
   await expect(claim).toBeVisible()
+  await expect(claim).not.toHaveText(/Checking API/i, { timeout: 15_000 })
   if (!(await claim.isEnabled()) || /offline/i.test((await claim.innerText()) ?? '')) {
     return null
   }

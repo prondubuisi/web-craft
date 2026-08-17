@@ -21,7 +21,11 @@ test.describe('topbar', () => {
     await page.goto('/')
     const nav = page.locator('nav[aria-label="Primary"]')
     await expect(nav).toBeVisible()
-    await expect(page.locator('.brand')).toHaveAttribute('aria-label', /Zineverse, (local|api live|@)/i)
+    await expect(page.locator('.brand')).toHaveAttribute(
+      'aria-label',
+      /Zineverse, (checking|local|api live|@)/i,
+    )
+    await expect(page.locator('.brand small')).toHaveText(/local|api live|@/i, { timeout: 15_000 })
 
     await nav.getByRole('link', { name: 'Studio', exact: true }).click()
     await expect(page).toHaveURL(/\/studio/)

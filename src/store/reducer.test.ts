@@ -23,6 +23,7 @@ function issue(partial: Partial<Zine> = {}): Zine {
 function state(partial: Partial<FullState> = {}): FullState {
   return {
     online: false,
+    apiReady: false,
     session: null,
     profile: { name: 'you', remixPoints: 0, likedIds: [], following: [] },
     zines: [issue()],
@@ -74,6 +75,15 @@ describe('apply', () => {
       { type: 'mergeZines', zines: [issue({ id: 'remote', title: 'sunday market', owner: '@yuzu' })] },
     )
     expect(dropped.zines.map((z) => z.id)).toEqual(['remote'])
+  })
+
+  it('marks the API as ready when online is set', () => {
+    const next = apply(state(), { type: 'setOnline', online: true })
+    expect(next.online).toBe(true)
+    expect(next.apiReady).toBe(true)
+    const down = apply(next, { type: 'setOnline', online: false })
+    expect(down.online).toBe(false)
+    expect(down.apiReady).toBe(true)
   })
 
   it('sets a session without dropping remix points unless told', () => {

@@ -286,7 +286,7 @@ test.describe('B. maker — studio and editor', () => {
   test('studio header chip and empty bag', async ({ page }) => {
     await forceOffline(page)
     await page.goto('/studio')
-    await expect(page.locator('.studio-head .issue-chip')).toContainText(/OFFLINE/i)
+    await expect(page.locator('.studio-head .issue-chip')).toContainText(/OFFLINE/i, { timeout: 15_000 })
     await expect(page.getByRole('heading', { name: /in my bag/i })).toHaveCount(0)
     await expect(page.getByRole('button', { name: /Claim studio|API offline/i })).toBeDisabled()
   })

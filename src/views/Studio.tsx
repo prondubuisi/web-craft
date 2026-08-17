@@ -23,6 +23,7 @@ export function Studio() {
     importZine,
     session,
     online,
+    apiReady,
     signIn,
     signOut,
   } = useZines()
@@ -64,9 +65,11 @@ export function Studio() {
             <div className="issue-chip">
               {session
                 ? `SIGNED IN · @${session.name}`
-                : online
-                  ? 'API LIVE · LOCAL STUDIO'
-                  : 'PERSONAL STUDIO · OFFLINE'}
+                : !apiReady
+                  ? 'CHECKING THE LINE'
+                  : online
+                    ? 'API LIVE · LOCAL STUDIO'
+                    : 'PERSONAL STUDIO · OFFLINE'}
             </div>
             <h1 className="display chroma">your zines</h1>
             <div className="badge-row">
@@ -116,8 +119,8 @@ export function Studio() {
                 Sign out
               </ComicButton>
             ) : (
-              <ComicButton className="cyan" disabled={!online} onClick={() => setAuthOpen(true)}>
-                {online ? 'Claim studio' : 'API offline'}
+              <ComicButton className="cyan" disabled={!apiReady || !online} onClick={() => setAuthOpen(true)}>
+                {!apiReady ? 'Checking API' : online ? 'Claim studio' : 'API offline'}
               </ComicButton>
             )}
             {!session ? (

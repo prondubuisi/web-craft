@@ -29,7 +29,7 @@ export type Action =
   | { type: 'unfollow'; handle: string }
   | { type: 'mergeZines'; zines: Zine[]; handle?: string | null }
 
-export type FullState = AppState & { online: boolean; session: Session | null }
+export type FullState = AppState & { online: boolean; apiReady: boolean; session: Session | null }
 
 function assertDev(ok: boolean, message: string): void {
   if (import.meta.env.DEV && !ok) throw new Error(`reducer: ${message}`)
@@ -140,9 +140,9 @@ function reduce(state: FullState, action: Action): FullState {
     case 'renameProfile':
       return { ...state, profile: { ...state.profile, name: action.name } }
     case 'reset':
-      return { ...resetState(), online: state.online, session: state.session }
+      return { ...resetState(), online: state.online, apiReady: state.apiReady, session: state.session }
     case 'setOnline':
-      return { ...state, online: action.online }
+      return { ...state, online: action.online, apiReady: true }
     case 'setSession':
       return {
         ...state,

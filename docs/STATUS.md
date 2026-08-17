@@ -71,6 +71,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at 
 
 No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev` (`0003_legacy_columns` unblocked the leftover volume).
 
-Engineering, from `sg.md` / `docs/sg3.md`: no dedicated items open. sg3 1–5 shipped in 1.4.5 (Playwright in CI was 1.4.3). Server JSON parse-or-null stays.
+Engineering, from `sg.md` / `docs/sg3.md`: no dedicated items open. First paint waits for health before saying the API is down (Pages honesty).
 
 Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.

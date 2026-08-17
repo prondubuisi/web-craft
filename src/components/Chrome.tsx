@@ -9,8 +9,8 @@ import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSPropert
 import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
-  const { session, online } = useZines()
-  const status = session ? `@${session.name}` : online ? 'api live' : 'local'
+  const { session, online, apiReady } = useZines()
+  const status = session ? `@${session.name}` : !apiReady ? 'checking' : online ? 'api live' : 'local'
   return (
     <header className="topbar">
       <Link to="/" className="brand chroma" aria-label={`Zineverse, ${status}`}>
@@ -33,8 +33,8 @@ export function Topbar() {
 }
 
 export function LocalNote() {
-  const { online } = useZines()
-  if (online) return null
+  const { online, apiReady } = useZines()
+  if (!apiReady || online) return null
   return (
     <p className="local-note serif">
       Local studio. Snapshot links and print work here. Board, fest, and letters need the API.{' '}
@@ -44,8 +44,8 @@ export function LocalNote() {
 }
 
 export function SceneLinks() {
-  const { online, session } = useZines()
-  if (!online) return null
+  const { online, apiReady, session } = useZines()
+  if (!apiReady || !online) return null
   return (
     <div className="scene-links cta-row">
       <Link to="/cork" className="comic-btn small ghost">
