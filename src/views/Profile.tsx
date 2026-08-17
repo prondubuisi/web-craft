@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { Badge, ComicButton, Halftone, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import type { ProfileResponse } from '../lib/contract'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -137,6 +137,7 @@ export function Profile() {
               {followerN != null ? <span className="comic-badge">{followerN} FANS</span> : null}
               {followingN != null ? <span className="comic-badge">{followingN} WATCHING</span> : null}
             </div>
+            <SceneLinks />
             {!mine && name !== 'you' ? (
               <div className="cta-row" style={{ marginTop: 12 }}>
                 <ComicButton
@@ -222,7 +223,17 @@ export function Profile() {
         {!issues.length ? (
           <p className="serif">
             No dropped issues yet.{' '}
-            {mine ? <Link to="/studio">Open the studio.</Link> : null}
+            {mine ? (
+              <>
+                <Link to="/studio">Open the studio.</Link> Or remix a page from the{' '}
+                <Link to="/explore">stream</Link>.
+              </>
+            ) : (
+              <>
+                Write them a <Link to={`/mail/${encodeURIComponent(name)}`}>letter</Link> or find others
+                on the <Link to="/explore">stream</Link>.
+              </>
+            )}
           </p>
         ) : null}
 

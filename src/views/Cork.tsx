@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ComicButton, Topbar } from '../components/Chrome'
+import { ComicButton, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { catchBackground } from '../lib/catch'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -8,7 +8,7 @@ import { uid } from '../lib/id'
 import { loadCork, saveCork } from '../lib/social'
 import type { CorkPin } from '../lib/types'
 import { createBlock } from '../lib/widgets'
-import { isMine } from '../lib/zine'
+import { editPath, isMine, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 export function Cork() {
@@ -61,6 +61,7 @@ export function Cork() {
             <p className="serif" style={{ maxWidth: 480, marginTop: 8 }}>
               Scatter clippings before they become a page. This is not an issue yet.
             </p>
+            <SceneLinks here="/cork" />
           </div>
         </div>
         <form
@@ -116,7 +117,7 @@ export function Cork() {
                     if (sticker.type === 'sticker') sticker.text = pin.text
                     setBlocks(draftIssue.id, [...draftIssue.blocks, sticker])
                     persist(pins.filter((row) => row.id !== pin.id))
-                    navigate(`/edit/${draftIssue.id}`)
+                    navigate(editPath(draftIssue.id))
                   }}
                 >
                   paste
@@ -132,7 +133,17 @@ export function Cork() {
               </button>
             </article>
           ))}
-          {!pins.length ? <p className="hand cork-empty">the board is blank. pin something ugly.</p> : null}
+          {!pins.length ? (
+            <p className="hand cork-empty">
+              the board is blank. pin something ugly. Then{' '}
+              {draftIssue ? (
+                <Link to={editPath(draftIssue.id)}>open your draft</Link>
+              ) : (
+                <Link to={studioPath({ new: true })}>open a page</Link>
+              )}{' '}
+              and paste it in.
+            </p>
+          ) : null}
         </div>
         <Link to="/studio" className="comic-btn ghost" style={{ marginTop: 12 }}>
           Back to studio

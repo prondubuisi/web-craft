@@ -104,11 +104,14 @@ test.describe('A. first visit / readable chrome', () => {
     for (const term of GLOSSARY) {
       await expect(page.locator('dt', { hasText: new RegExp(`^${term}$`, 'i') })).toBeVisible()
     }
-    await page.getByRole('link', { name: 'Open the studio' }).click()
+    await page.getByRole('link', { name: 'Open the studio' }).first().click()
     await expect(page).toHaveURL(/\/studio/)
     await page.goto('/help')
-    await page.getByRole('link', { name: 'The stream' }).click()
+    await page.getByRole('link', { name: 'The stream' }).first().click()
     await expect(page).toHaveURL(/\/explore/)
+    await page.goto('/help')
+    await page.getByRole('link', { name: 'Open the board' }).click()
+    await expect(page).toHaveURL(/\/board/)
   })
 
   test('6 404 recovery links work', async ({ page }) => {

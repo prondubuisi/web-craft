@@ -336,7 +336,10 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             onDrop={zine.scatter ? onPageDrop : undefined}
           >
             {zine.blocks.length === 0 ? (
-              <p className="empty-hint">type / to drop a sticker. this page is yours.</p>
+              <p className="empty-hint">
+                type / for a sticker, or snap a photo. cork scraps paste in. when it feels like a page,
+                Drop issue.
+              </p>
             ) : null}
             {zine.blocks.map((block, i) => (
               <div

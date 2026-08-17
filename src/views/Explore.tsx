@@ -7,7 +7,7 @@ import { useCountdown } from '../lib/useCountdown'
 import { demoJams, formatHint, liveJam } from '../lib/jam'
 import type { StreamSort, VibeId, Zine } from '../lib/types'
 import { VIBES } from '../lib/vibes'
-import { byline, coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
+import { byline, coverSrc, filterStream, isDropLive, profilePath, seriesLabel, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 export function Explore() {
@@ -73,7 +73,7 @@ export function Explore() {
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
               A website is a gathering place, not a billboard. Fork anything you like.
             </p>
-            <SceneLinks />
+            <SceneLinks here="/explore" />
             {jam ? (
               <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
                 <Link to={`/jam/${jam.id}`}>
@@ -183,7 +183,63 @@ export function Explore() {
             />
           ))}
         </div>
-        {!published.length ? <p className="serif">Nothing in this lane yet. Try another vibe.</p> : null}
+        {!published.length ? (
+          <p className="serif">
+            {lane === 'following' && !session ? (
+              <>
+                Watching is a signed-in pile. <Link to="/studio">Claim studio</Link> or stay in{' '}
+                <button type="button" className="owner-link" onClick={() => setLane('all')}>
+                  the whole stream
+                </button>
+                .
+              </>
+            ) : lane === 'following' ? (
+              <>
+                Nobody you watch dropped yet. Find a maker on{' '}
+                <button type="button" className="owner-link" onClick={() => setLane('all')}>
+                  the stream
+                </button>
+                , sit at the <Link to="/fest">fest</Link>, or pin a <Link to="/board">collab</Link>.
+              </>
+            ) : lane === 'archive' ? (
+              <>
+                The archive is still empty. Open a live issue, then Nominate from More.{' '}
+                <button type="button" className="owner-link" onClick={() => setLane('all')}>
+                  Back to the pile
+                </button>
+                .
+              </>
+            ) : lane === 'jam' ? (
+              <>
+                Nothing in this jam yet.{' '}
+                {jam ? (
+                  <Link to={`/jam/${jam.id}`}>{jam.title}</Link>
+                ) : (
+                  <Link to={studioPath({ new: true })}>Make a one-pager</Link>
+                )}
+                {' · '}
+                <Link to="/cork">steal a scrap from the desk</Link>.
+              </>
+            ) : (
+              <>
+                Nothing in this lane yet. Try another vibe.{' '}
+                <button
+                  type="button"
+                  className="owner-link"
+                  onClick={() => {
+                    setQ('')
+                    setTag('')
+                    setVibe('all')
+                    setLane('all')
+                  }}
+                >
+                  Clear the filters
+                </button>{' '}
+                or pull from the pile.
+              </>
+            )}
+          </p>
+        ) : null}
       </main>
     </div>
   )

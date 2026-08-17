@@ -43,25 +43,24 @@ export function LocalNote() {
   )
 }
 
-export function SceneLinks() {
+export function SceneLinks({ here }: { here?: string } = {}) {
   const { online, apiReady, session } = useZines()
   if (!apiReady || !online) return null
+  const items = [
+    { to: '/explore', label: 'Stream' },
+    { to: '/cork', label: 'Desk' },
+    { to: '/board', label: 'Board' },
+    { to: '/fest', label: 'Fest' },
+    ...(session ? [{ to: '/mail', label: 'Letters' }] : []),
+  ].filter((item) => item.to !== here)
+  if (!items.length) return null
   return (
     <div className="scene-links cta-row">
-      <Link to="/cork" className="comic-btn small ghost">
-        Desk
-      </Link>
-      <Link to="/board" className="comic-btn small ghost">
-        Board
-      </Link>
-      <Link to="/fest" className="comic-btn small ghost">
-        Fest
-      </Link>
-      {session ? (
-        <Link to="/mail" className="comic-btn small ghost">
-          Letters
+      {items.map((item) => (
+        <Link key={item.to} to={item.to} className="comic-btn small ghost">
+          {item.label}
         </Link>
-      ) : null}
+      ))}
     </div>
   )
 }
@@ -130,7 +129,17 @@ function Inbox() {
               ))}
             </ul>
           ) : (
-            <p className="serif">quiet on this frequency.</p>
+            <p className="serif">
+              quiet on this frequency.{' '}
+              <Link to="/explore" onClick={() => setOpen(false)}>
+                like an issue
+              </Link>{' '}
+              or{' '}
+              <Link to="/mail" onClick={() => setOpen(false)}>
+                write a letter
+              </Link>
+              .
+            </p>
           )}
         </div>
       ) : null}

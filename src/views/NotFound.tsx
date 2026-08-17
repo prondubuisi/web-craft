@@ -21,6 +21,9 @@ export function NotFound() {
           <Link to="/explore" className="comic-btn ghost">
             Stream
           </Link>
+          <Link to="/help" className="comic-btn ghost">
+            Help
+          </Link>
         </div>
       </main>
     </div>

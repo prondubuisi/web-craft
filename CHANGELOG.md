@@ -4,6 +4,12 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.5.8 — 2026-08-17
+
+Empty watching / archive / jam / board / cork / fest / mail / bag / wire / editor states hop to another resource instead of dead-ending.
+
+Help terms that name a resource now open it. Scene hops (stream, desk, board, fest, letters) sit on every scene page, the cover, studio, help, jam, and profile.
+
 ## 1.5.7 — 2026-08-17
 
 Cover vibe paints studio on first paint. Enter the studio and the topbar Studio hop keep the last picked vibe.

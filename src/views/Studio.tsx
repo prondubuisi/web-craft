@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
+import { Badge, ComicButton, Halftone, LocalNote, Modal, SceneLinks, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -111,6 +111,7 @@ export function Studio() {
             <Link to="/cork" className="comic-btn ghost">
               Corkboard
             </Link>
+            <SceneLinks here="/cork" />
             <label className="comic-btn ghost">
               Import JSON
               <input
@@ -190,7 +191,12 @@ export function Studio() {
           </div>
 
           <aside>
-            {bag.length ? (
+            {!bag.length ? (
+              <p className="serif">
+                your bag is empty. stuff an issue from the <Link to="/explore">stream</Link> or check
+                one out of the <Link to="/explore">archive</Link>.
+              </p>
+            ) : (
               <section className="bag-shelf">
                 <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
                   in my bag
@@ -216,7 +222,7 @@ export function Studio() {
                   ))}
                 </div>
               </section>
-            ) : null}
+            )}
             <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
               community stream
             </h2>
