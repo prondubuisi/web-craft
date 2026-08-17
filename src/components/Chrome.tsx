@@ -129,7 +129,17 @@ function Inbox() {
               ))}
             </ul>
           ) : (
-            <p className="serif">quiet on this frequency.</p>
+            <p className="serif">
+              quiet on this frequency.{' '}
+              <Link to="/explore" onClick={() => setOpen(false)}>
+                like an issue
+              </Link>{' '}
+              or{' '}
+              <Link to="/mail" onClick={() => setOpen(false)}>
+                write a letter
+              </Link>
+              .
+            </p>
           )}
         </div>
       ) : null}

@@ -223,7 +223,17 @@ export function Profile() {
         {!issues.length ? (
           <p className="serif">
             No dropped issues yet.{' '}
-            {mine ? <Link to="/studio">Open the studio.</Link> : null}
+            {mine ? (
+              <>
+                <Link to="/studio">Open the studio.</Link> Or remix a page from the{' '}
+                <Link to="/explore">stream</Link>.
+              </>
+            ) : (
+              <>
+                Write them a <Link to={`/mail/${encodeURIComponent(name)}`}>letter</Link> or find others
+                on the <Link to="/explore">stream</Link>.
+              </>
+            )}
           </p>
         ) : null}
 

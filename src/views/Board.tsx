@@ -182,7 +182,13 @@ export function Board() {
             </article>
           ))}
         </div>
-        {!visible.length ? <p className="serif">quiet board. pin the first want.</p> : null}
+        {!visible.length ? (
+          <p className="serif">
+            quiet board. pin the first want. Or steal a dare from the <Link to="/explore">stream</Link>,
+            sit at the <Link to="/fest">fest</Link>, or write someone from the{' '}
+            <Link to="/mail">letters</Link> pile.
+          </p>
+        ) : null}
       </main>
     </div>
   )

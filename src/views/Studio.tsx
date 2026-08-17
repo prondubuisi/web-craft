@@ -191,7 +191,12 @@ export function Studio() {
           </div>
 
           <aside>
-            {bag.length ? (
+            {!bag.length ? (
+              <p className="serif">
+                your bag is empty. stuff an issue from the <Link to="/explore">stream</Link> or check
+                one out of the <Link to="/explore">archive</Link>.
+              </p>
+            ) : (
               <section className="bag-shelf">
                 <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
                   in my bag
@@ -217,7 +222,7 @@ export function Studio() {
                   ))}
                 </div>
               </section>
-            ) : null}
+            )}
             <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
               community stream
             </h2>
