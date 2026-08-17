@@ -20,6 +20,8 @@
   --font-serif: 'Fraunces', Georgia, serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: dark;
+  --ghost-ink: var(--paper);
+  --ghost-border: var(--paper);
 }
 
 [data-vibe='miles'] {

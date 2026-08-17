@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Ghost buttons on the reader and in modals use ink on paper instead of cream-on-cream.
+
 ## 1.5.8 — 2026-08-17
 
 Empty watching / archive / jam / board / cork / fest / mail / bag / wire / editor states hop to another resource instead of dead-ending.

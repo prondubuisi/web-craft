@@ -44,9 +44,9 @@ Routes (from `src/App.tsx`):
 
 **Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build + Playwright e2e.
 
-**Testing:** Vitest + happy-dom (25 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 68 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
+**Testing:** Vitest + happy-dom (25 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 69 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass, open/unimplemented).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; item 1 shipped).
 
 ## Access & Security Review
 
@@ -87,6 +87,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a sev
 
 **§14 done:** shared `.github/actions/setup`, `setup-flyctl@v1`, no `allowScripts`, Playwright browser cache keyed on the Playwright version.
 
-**Open, unimplemented:** `docs/sg6.md`, a visual QA pass read from running screenshots (desktop + mobile) rather than code alone. Top item: `.comic-btn.ghost` (`src/styles/base.css:178`) is cream-on-cream inside the reader and any modal (`src/styles/reader.css:501` — same `--paper` background), hiding "More on this issue" and six other controls. Fix at the CSS-variable root, not per call site. Four smaller, independently-scoped findings behind it (Board's duplicated filter class, Profile's duplicated vibe label, Help's oversized glossary cards, Stream's ungrouped filter row); one open tone question, not a fix.
+**Open from `docs/sg6.md`:** item 1 shipped (`--ghost-ink` / `--ghost-border`; reader and modal ghosts are ink on paper). Still open: Board's duplicated filter class, Profile's duplicated vibe label, Help's oversized glossary cards, Stream's ungrouped filter row; one open tone question, not a fix.
 
 `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev`.

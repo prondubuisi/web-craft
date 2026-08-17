@@ -8,7 +8,7 @@ Five real findings, one confirmed non-issue, one open question:
 
 | # | Where | What | Confidence |
 | --- | --- | --- | --- |
-| 1 | Reader + any modal | Secondary buttons render nearly invisible (cream-on-cream) | High — root-caused, reproduced twice |
+| 1 | Reader + any modal | Secondary buttons render nearly invisible (cream-on-cream) | **Shipped** — `--ghost-ink` / `--ghost-border` |
 | 2 | `Board.tsx` | Filter row and "post as" picker share one CSS class | High — confirmed in code |
 | 3 | `Profile.tsx` | Un-penned issues show the vibe twice in the meta line | High — confirmed in code |
 | 4 | `Help.tsx` | Glossary cards force a 180px minimum height regardless of content | High — confirmed in code |
@@ -34,6 +34,8 @@ That's not one button:
 Reproduced identically across two screenshots taken 300ms apart (ruling out a render-timing artifact) and again on the mobile viewport, where it's worse — several controls reduce to a barely-visible outline.
 
 **Fix:** don't touch eight call sites — fix the root. Add two CSS custom properties (e.g. `--ghost-ink`, `--ghost-border`) defaulting to `var(--paper)` at `:root`; have `.comic-btn.ghost` reference them instead of `var(--paper)` directly; override both to `var(--ink)` inside `.zine-page` and `.modal`'s scope. One class definition, two small overrides, zero JSX changes.
+
+**Shipped.** Tokens default to paper; `.zine-page` and `.modal` flip both to ink. Dark surfaces (Help, Studio, Cover) keep cream ghosts.
 
 ## 2. Board's filter row and "post as" picker are visually identical
 
@@ -80,7 +82,7 @@ This one needs a design nod before touching markup (which grouping treatment), u
 
 ## Suggested sequence
 
-1. **Item 1** first — it's not polish, it's controls a user can't find, and the fix is a handful of CSS lines with no behavior change.
+1. **Item 1** — shipped (`--ghost-ink` / `--ghost-border`).
 2. **Items 2–4** — each is a small, independent, precisely-scoped fix; any order, could land in one PR or three.
 3. **Item 5** — needs a quick call on the grouping treatment, then it's equally mechanical.
 4. **The seeded-notices question** — raise with whoever owns product tone; not blocking on anything above.

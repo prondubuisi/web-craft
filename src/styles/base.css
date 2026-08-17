@@ -177,9 +177,9 @@ p {
 
 .comic-btn.ghost {
   background: transparent;
-  color: var(--paper);
-  border-color: var(--paper);
-  box-shadow: 4px 4px 0 color-mix(in oklab, var(--paper) 35%, transparent);
+  color: var(--ghost-ink);
+  border-color: var(--ghost-border);
+  box-shadow: 4px 4px 0 color-mix(in oklab, var(--ghost-border) 35%, transparent);
 }
 
 .comic-btn.small {

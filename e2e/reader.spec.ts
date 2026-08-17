@@ -4,6 +4,7 @@ import {
   clickText,
   dropNow,
   expectNoPageErrors,
+  expectGhostContrast,
   forceOffline,
   fresh,
   insertSlash,
@@ -18,6 +19,24 @@ test.describe('C. reader — /z/:id', () => {
 
   test.afterEach(({ page }) => {
     expectNoPageErrors(page)
+  })
+
+  test('ghost buttons read on paper and stay cream on ink', async ({ page }) => {
+    await page.goto('/explore')
+    await readIssue(page, /sunday market/i)
+    const more = page.getByRole('button', { name: /More on this issue/i })
+    await expect(more).toBeVisible()
+    await expectGhostContrast(more, 'paper')
+    await more.click()
+    await expectGhostContrast(page.getByRole('button', { name: /Preview fold/i }), 'paper')
+
+    await openNewIssue(page, 'ghost drop')
+    await clickIncludes(page, 'Drop issue')
+    await expectGhostContrast(page.locator('[role="dialog"]').getByRole('button', { name: 'Export JSON' }), 'paper')
+    await page.keyboard.press('Escape')
+
+    await page.goto('/help')
+    await expectGhostContrast(page.locator('.help-page .comic-btn.ghost').first(), 'ink')
   })
 
   test('18 primary actions stay thin', async ({ page }) => {
