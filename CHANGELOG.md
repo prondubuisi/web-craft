@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+MAIL on the topbar closes with Escape or a close control. The phone nav wraps so Cover / Studio / Stream / Help / MAIL stay on screen.
+
 ## 1.4.6 — 2026-08-17
 
 Remote sync drops leftover local demo copies that are not yours, so a stream fetch cannot leave two `sunday market` rows with different ids.

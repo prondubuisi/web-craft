@@ -10,13 +10,14 @@ import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
   const { session, online } = useZines()
+  const status = session ? `@${session.name}` : online ? 'api live' : 'local'
   return (
     <header className="topbar">
-      <Link to="/" className="brand chroma">
+      <Link to="/" className="brand chroma" aria-label={`Zineverse, ${status}`}>
         ZINEVERSE
-        <small>{session ? `@${session.name}` : online ? 'api live' : 'local'}</small>
+        <small>{status}</small>
       </Link>
-      <nav className="nav-links">
+      <nav className="nav-links" aria-label="Primary">
         <NavLink to="/" end>
           Cover
         </NavLink>
@@ -75,8 +76,15 @@ function Inbox() {
     function onDoc(ev: MouseEvent) {
       if (!root.current?.contains(ev.target as Node)) setOpen(false)
     }
+    function onKey(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [])
 
   return (
@@ -96,7 +104,12 @@ function Inbox() {
       </button>
       {open ? (
         <div className="inbox-panel" role="dialog" aria-label="Notices">
-          <strong className="hand">the wire</strong>
+          <div className="inbox-head">
+            <strong className="hand">the wire</strong>
+            <button type="button" className="inbox-close" onClick={() => setOpen(false)}>
+              close
+            </button>
+          </div>
           {notices.length ? (
             <ul>
               {notices.map((item) => (

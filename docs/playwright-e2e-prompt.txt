@@ -3,8 +3,20 @@ docs/playwright-user-stories.txt. The thoroughness gaps listed here have
 been closed in the suite (60 passed): cork mouse-drag, editor redo /
 Backspace / slash filter, reader widget round-trip + blackout holes,
 board pin disabled + attach + 280 cap, mail empty/unread/char limits,
-profile series/sealed/empty-wall/badges, nav on every top-level route,
-MAIL hot → read. Keep this file as inventory, not as a spec to re-run.
+profile series/sealed/empty-wall/badges, nav chrome on every Topbar-bearing
+route, MAIL hot → read. Keep this file as inventory, not as a spec to re-run.
+
+CORRECTION: this draft's "nav links present on every page" framing below
+(Chrome / cross-page section, and the viewport-matrix note) is wrong for the
+Editor. The Editor has no Topbar by design — its own `.editor-bar` chrome
+carries only a "← studio" link back to Studio. Stream and Help are not
+persistent-nav destinations reachable from inside the Editor; they're a hop
+away, through that back link. The implemented test
+(`cover.spec.ts`: "nav chrome is on every top-level route") already gets this
+right — it loops `/`, `/studio`, `/help`, `/explore`, `/board`, `/fest`,
+`/cork`, `/mail` and correctly does not include `/edit/:id`. Read every "nav
+on every route" phrase below as "every Topbar-bearing route," not literally
+every route in `App.tsx`.
 
 ---
 
@@ -41,7 +53,9 @@ assert both states rather than just one. Comments/Reviews/Margins textareas are
 disabled with a "claim a handle" placeholder when online-but-signed-out.
 
 VIEWPORT MATRIX
-Run the Editor flows (and ideally the whole nav) at both:
+Run the Editor flows (its own `.editor-bar` chrome, not the Topbar — Editor
+has no Topbar by design) and, separately, the Topbar-bearing views' nav, at
+both:
   - desktop: 1440x900 (default) — uses .desktop-only tray/inspector
   - mobile: 390x844 — uses .mobile-only FAB (+) button, .sheet BottomSheet,
     swipe-based FlipReader navigation
@@ -218,8 +232,11 @@ NotFound (*)
   Studio, Stream) work.
 
 Chrome / cross-page (Topbar, Inbox)
-- Nav links (Cover/Studio/Stream/Help) present on every page; Letters + @handle
-  links appear only when signed in.
+- Nav links (Cover/Studio/Stream/Help) present on every Topbar-bearing route
+  — every top-level screen except the Editor, which has no Topbar by design
+  (its `.editor-bar` carries only a "← studio" link; Stream and Help are a
+  hop back through Studio from there, not part of a persistent global nav).
+  Letters + @handle links appear only when signed in.
 - Inbox: "MAIL" toggle opens role="dialog" aria-label="Notices"; unread items
   show .fresh styling and .hot on the toggle button; opening the panel marks
   notices read; empty state "quiet on this frequency."; click-outside closes
