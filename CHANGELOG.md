@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Cover make / build / start open `/studio?new=1` with the vibe, not a silent draft on `/edit`.
+
 ## 1.5.4 — 2026-08-17
 
 Cover and studio create buttons say make / new. Editor **Drop issue** still means publish (`docs/sg5.md`).

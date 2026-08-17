@@ -69,7 +69,7 @@ Landing (/)
   ("Got it") persists via localStorage so a reload doesn't show it again.
 - Switching the vibe rail (.vibe-card, 5 vibes) updates [data-vibe] on root and
   the "Build with {vibe}" CTA text.
-- "Make an issue" creates a new zine and lands in the Editor.
+- "Make an issue" opens /studio with the new-issue modal.
 - "Enter the studio" navigates to /studio.
 - The sample-issue link only renders when a published sample zine exists —
   test both with and without seeded data.

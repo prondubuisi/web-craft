@@ -5,20 +5,20 @@ import { ComicButton, Halftone, LocalNote, Topbar } from '../components/Chrome'
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
+import { studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 import type { VibeId } from '../lib/types'
 
 export function Landing() {
   const [vibe, setVibe] = useState<VibeId>('miles')
   const [primer, setPrimer] = useState(() => !primerSeen())
-  const { createZine, zines } = useZines()
+  const { zines } = useZines()
   const navigate = useNavigate()
   const current = VIBES.find((v) => v.id === vibe)!
   const sample = zines.find((z) => z.published && z.title.toLowerCase().includes('after hours')) ?? zines.find((z) => z.published)
 
-  function start(withVibe: VibeId, title = 'untitled issue') {
-    const id = createZine(title, withVibe)
-    navigate(`/edit/${id}`)
+  function start(withVibe: VibeId) {
+    navigate(studioPath({ new: true, vibe: withVibe }))
   }
 
   return (
@@ -76,10 +76,10 @@ export function Landing() {
             printed slightly wrong on purpose.
           </p>
           <div className="cta-row">
-            <ComicButton className="pink" onClick={() => start(vibe, `${current.name.toLowerCase()} draft`)}>
+            <ComicButton className="pink" onClick={() => start(vibe)}>
               Make an issue
             </ComicButton>
-            <ComicButton className="ghost" onClick={() => navigate('/studio')}>
+            <ComicButton className="ghost" onClick={() => navigate(studioPath())}>
               Enter the studio
             </ComicButton>
           </div>
@@ -109,7 +109,7 @@ export function Landing() {
           ))}
         </div>
         <div style={{ marginTop: '1.1rem' }}>
-          <ComicButton onClick={() => start(vibe, `${current.name.toLowerCase()} issue`)}>
+          <ComicButton onClick={() => start(vibe)}>
             Build with {current.name}
           </ComicButton>
         </div>

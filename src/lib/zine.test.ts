@@ -8,7 +8,9 @@ import {
   isDropLive,
   isMine,
   isPublicDrop,
+  editPath,
   issuePath,
+  studioPath,
   normalizeIssueNo,
   normalizeSeries,
   ownerHandle,
@@ -129,6 +131,12 @@ describe('profiles', () => {
   it('strips the @ from a handle', () => {
     expect(ownerHandle('@yuzu')).toBe('yuzu')
     expect(profilePath('@yuzu')).toBe('/u/yuzu')
+  })
+
+  it('builds studio and editor routes', () => {
+    expect(studioPath()).toBe('/studio')
+    expect(studioPath({ new: true, vibe: 'peni' })).toBe('/studio?new=1&vibe=peni')
+    expect(editPath('abc')).toBe('/edit/abc')
   })
 })
 

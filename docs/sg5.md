@@ -8,7 +8,7 @@ The file’s leftover rule: a next idea has to help someone **finish a first iss
 
 | Path | Door | What works |
 | --- | --- | --- |
-| Finish | Cover “Drop a zine” / Studio “Drop a new issue” → `/edit/:id` | Empty-page hint, `/` tray, **Drop issue** publishes |
+| Finish | Cover “Make an issue” → `/studio?new=1` → Open the page → `/edit/:id` | Empty-page hint, `/` tray, **Drop issue** publishes |
 | Share | Reader + drop modal | Print, fold sheet, snapshot (refuses fat photos out loud) |
 | Find one | Sample issue + Stream + Claim studio | Remix the seeded `after hours`; mail/board/fest need a handle |
 

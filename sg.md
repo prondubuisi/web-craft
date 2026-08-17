@@ -38,7 +38,7 @@ The 1.4.x support pass is complete. Do not cut another 1.4.x patch unless CI is 
 
 `docs/ARCHITECTURE_PLAN.md` Round 2 is that note. **§8–14 done.** Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
 
-`docs/sg5.md` is the first-visit honesty note: create is make/new; drop stays publish. Not a feature round.
+`docs/sg5.md` is the first-visit honesty note: create is make/new; drop stays publish. Cover make uses `/studio?new=1`, not a silent `/edit` draft.
 
 **Incremental, when touching a file anyway (not a project):**
 - Add the route’s types to `src/lib/contract.ts`

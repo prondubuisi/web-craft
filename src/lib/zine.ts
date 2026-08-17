@@ -27,6 +27,18 @@ export function issuePath(zine: Pick<Zine, 'id' | 'shareKey' | 'visibility'>): s
   return `/z/${zine.id}`
 }
 
+export function editPath(id: string): string {
+  return `/edit/${encodeURIComponent(id)}`
+}
+
+export function studioPath(opts?: { new?: boolean; vibe?: VibeId }): string {
+  const q = new URLSearchParams()
+  if (opts?.new) q.set('new', '1')
+  if (opts?.vibe) q.set('vibe', opts.vibe)
+  const qs = q.toString()
+  return qs ? `/studio?${qs}` : '/studio'
+}
+
 export function canOpenSecret(zine: Zine, key?: string | null): boolean {
   if (!zine.shareKey) return false
   return Boolean(key && key === zine.shareKey)
