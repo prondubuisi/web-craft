@@ -35,6 +35,7 @@ export type MeResponse = {
   remixPoints?: number
   likedIds?: string[]
   following?: string[]
+  token?: string
 }
 
 export type StreamQuery = {

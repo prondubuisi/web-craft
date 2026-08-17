@@ -20,7 +20,7 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**. Auth hardening is the next engineering pass.
+Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**. Auth rate limits and token rotation are on `develop` (Unreleased).
 
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 
@@ -35,7 +35,6 @@ Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**
 
 Still later:
 
-- Auth rate limit and token rotation
 - Split `social.ts` by bag / mail / archive / run
 - Merging overlapping mechanics (bag/shelf/archive, response verbs)
 
