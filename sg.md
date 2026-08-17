@@ -20,7 +20,7 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. The sg3 safety pass is **1.4.5**: `mergeZines`, `assertZineShape`, reducer invariants, and the client catch sweep. **1.4.6** drops leftover local demo copies that are not yours (two `sunday market` rows with different ids). **1.4.7** is chrome: MAIL and studio modals close with Escape, the phone nav wraps, and the topbar has its own Playwright suite. **1.4.8** waits for health before calling the API down.
+Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. The sg3 safety pass is **1.4.5**: `mergeZines`, `assertZineShape`, reducer invariants, and the client catch sweep. **1.4.6** drops leftover local demo copies that are not yours (two `sunday market` rows with different ids). **1.4.7** is chrome: MAIL and studio modals close with Escape, the phone nav wraps, and the topbar has its own Playwright suite. **1.4.8** waits for health before calling the API down. **1.5.0** is the consolidation observation (`docs/sg4.md`): Help names blurb, margin, dedication, and tear-out; the More sheet points at Help.
 
 **Still open from sg3 (safety, not features):** none as a dedicated pass. Server `req.json()` parse-or-null stays; leftover `catch {}` in storage/share/api are parse fallbacks, not user actions.
 
@@ -34,7 +34,7 @@ Do not start a seventh product round. `docs/sg3.md` stays the observation note; 
 
 The 1.4.x support pass is complete. Do not cut another 1.4.x patch unless CI is red or the live demo lies.
 
-**1.5.0 is open as observation, not a feature train.** See `docs/sg4.md`. Keep bag / shelf / archive. Keep the five answer forms. Name the missing glossary terms so Help matches the reader INK lede. Do not merge stores.
+**1.5.0 shipped as observation, not a feature train.** See `docs/sg4.md`. Bag / shelf / archive stay. The five answer forms stay. Help and the More sheet name them. Do not merge stores. No 1.5.x follow-up unless CI is red, the live demo lies, or you open a new note.
 
 **Incremental, when touching a file anyway (not a project):**
 - Add the route’s types to `src/lib/contract.ts`
