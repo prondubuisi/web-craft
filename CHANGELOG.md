@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.
+
 ## 1.5.1 — 2026-08-17
 
 API upsert and corpse-chain pages run `assertBlocks`. Stream/jam/archive decorate nomination and claim counts in one query per list. Pages CI lints; Fly deploy runs test and build first.
