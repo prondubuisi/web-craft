@@ -2,7 +2,7 @@
 
 _Compiled: 2026-08-14_
 
-**Won’t add (for now).** This file is history. Rounds 1–6 shipped. Do not start a seventh round of mechanics until the readable slice in `sg.md` is done — no new block types, community routes, badges, or notice kinds. New ideas have to help someone finish a first issue, share it, or find one other person.
+**Won’t add (for now).** This file is history. Rounds 1–6 shipped. The readable slice shipped in 1.4.0. Do not start a seventh round of mechanics — no new block types, community routes, badges, or notice kinds. New ideas have to help someone finish a first issue, share it, or find one other person.
 
 ---
 
