@@ -1,0 +1,11 @@
+name: Setup
+description: Node 22 with npm cache, then npm ci
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 22
+        cache: npm
+    - run: npm ci
+      shell: bash
