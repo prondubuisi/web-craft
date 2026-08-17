@@ -26,7 +26,6 @@ export type Action =
   | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[]; following?: string[] }
   | { type: 'follow'; handle: string }
   | { type: 'unfollow'; handle: string }
-  | { type: 'replaceZines'; zines: Zine[] }
   | { type: 'mergeZines'; zines: Zine[] }
 
 export type FullState = AppState & { online: boolean; session: Session | null }
@@ -135,8 +134,6 @@ export function apply(state: FullState, action: Action): FullState {
         },
       }
     }
-    case 'replaceZines':
-      return { ...state, zines: action.zines }
     case 'mergeZines': {
       const map = new Map(state.zines.map((z) => [z.id, z]))
       for (const zine of action.zines) map.set(zine.id, zine)

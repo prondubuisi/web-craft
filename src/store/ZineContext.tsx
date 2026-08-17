@@ -75,13 +75,14 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             following: me.following,
           })
           const [mine, stream] = await Promise.all([api.mine(), api.stream()])
-          if (!cancelled) dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+          if (!cancelled) {
+            dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
+          }
           if (!cancelled) void refreshNotices()
         } else {
           const stream = await api.stream()
           if (cancelled) return
-          const localMine = stateRef.current.zines.filter((z) => isMine(z, null))
-          dispatch({ type: 'replaceZines', zines: [...localMine, ...stream.zines] })
+          dispatch({ type: 'mergeZines', zines: stream.zines })
         }
       } catch {
         dispatch({ type: 'setOnline', online: false })
@@ -202,7 +203,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         likedIds: me.likedIds,
         following: me.following,
       })
-      dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+      dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
       void refreshNotices()
     },
     [refreshNotices],

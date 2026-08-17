@@ -141,8 +141,8 @@ test.describe('B. maker — studio and editor', () => {
     expect(download.suggestedFilename()).toMatch(/file-hop|file hop/i)
 
     await page.goto('/studio')
+    await expect(page.locator('.studio-head')).toBeVisible()
     await page.locator('input[accept*="json"]').setInputFiles(FIXTURES.zine)
-    await expect(page).toHaveURL(/\/edit\//)
     await expect(page.locator('.title-input')).toHaveValue('imported scrap')
     await expect(page.locator('.sticker-block')).toContainText('from a json file')
 

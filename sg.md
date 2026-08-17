@@ -20,7 +20,7 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3**. Hook/provider split and Actions v5 are **1.4.4**.
+Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3**. Hook/provider split and Actions v5 are **1.4.4**. Boot/sign-in use `mergeZines` (the `replaceZines` overwrite is gone).
 
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 
