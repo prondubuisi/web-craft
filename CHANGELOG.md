@@ -14,6 +14,8 @@ Migration runner ignores leftover errors only on `0002_scatter` and `0003_legacy
 
 API image is multi-stage: compile `better-sqlite3` in the builder, ship a pruned runtime without Vite/Playwright/TypeScript. `tsx` is a runtime dependency.
 
+CI setup lives in one composite action. Playwright browsers cache by version. `flyctl` is pinned to `@v1`. Dead `allowScripts` is gone.
+
 ## 1.5.2 — 2026-08-17
 
 Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.

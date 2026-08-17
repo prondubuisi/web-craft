@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Items **8–13** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests; per-migration ignore list; multi-stage Docker). Item **14** is the remaining CI/tooling polish — not urgent; no user-facing behavior change.
+Items **8–14** are done. Round 2 is complete.
 
 ## Priority order
 
@@ -31,7 +31,7 @@ Items **8–13** are done (`useRemote` on Preview; `useRemoteWithFallback` on th
 11. Add test coverage for `useIssueSocial.ts` — done
 12. Narrow the migration runner's error-swallowing — done
 13. Multi-stage `Dockerfile` — done
-14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — not started
+14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — done
 
 Items 4 and 5 have no dependency on anything else and can be done anytime, including in parallel with 1–3. Items 8–14 are each independent of one another and of 1–7.
 
@@ -230,6 +230,8 @@ Four small, independent, low-risk items — good candidates to bundle into one P
 - **`deploy-api.yml` pins `superfly/flyctl-actions/setup-flyctl@master`** — a floating branch reference, the only unpinned action among the four used across all three workflow files (everything else is pinned to a major-version tag: `@v5`, `@v4`). Pin it to a version tag.
 - **`package.json` has a dead `allowScripts` field** (`"allowScripts": { "better-sqlite3@13.0.3": true }`) — not a real npm config key (that's a pnpm concept; this project uses npm, confirmed by `package-lock.json`). Has no effect; safe to remove.
 - **No `actions/cache` for Playwright's browser binary in `ci.yml`** — `npx playwright install --with-deps chromium` re-downloads on every run. Caching keyed on the Playwright version would speed up every CI run.
+
+**Done.** `.github/actions/setup` owns Node 22 + `npm ci` for `ci.yml`, `pages.yml`, and `deploy-api.yml` (checkout stays in each workflow so the local composite can load). `setup-flyctl` is pinned to `@v1`. Dead `allowScripts` is gone. Playwright browsers cache on `~/.cache/ms-playwright` keyed by `@playwright/test` version; cache hits only reinstall OS deps.
 
 ---
 
