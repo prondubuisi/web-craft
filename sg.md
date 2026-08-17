@@ -24,9 +24,10 @@ Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, chec
 
 **Still open from sg3 (safety, not features):**
 
-1. **`assertZineShape`** at Studio JSON import and `decodeShare()` — hand-written checks, specific errors, no schema library. Next small ship.
-2. **Silent-catch sweep** — mark background vs user-initiated silence. Opportunistic, when touching the file.
-3. **Reducer invariants** in dev: non-empty ids, no insert collision, no duplicate id in `mergeZines`. Opportunistic, when touching the reducer.
+1. **Silent-catch sweep** — mark background vs user-initiated silence. Opportunistic, when touching the file.
+2. **Reducer invariants** in dev: non-empty ids, no insert collision, no duplicate id in `mergeZines`. Opportunistic, when touching the reducer.
+
+`assertZineShape` is on `develop` (unreleased): Studio JSON import and snapshot `decodeShare()` reject bad fields with a specific message. No schema library.
 
 Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.
 
