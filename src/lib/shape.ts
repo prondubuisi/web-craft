@@ -230,7 +230,7 @@ function assertBlock(value: unknown, path: string): Block {
   }
 }
 
-function assertBlocks(value: unknown): Block[] {
+export function assertBlocks(value: unknown): Block[] {
   if (!Array.isArray(value)) fail('blocks', 'an array')
   return value.map((block, i) => assertBlock(block, `blocks[${i}]`))
 }

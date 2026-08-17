@@ -159,6 +159,43 @@ describe('zines', () => {
     expect((remix.zine as { title: string }).title).toContain('remix')
     expect((remix.zine as { owner: string }).owner).toBe('@reader1')
   })
+
+  it('rejects a save with a malformed block', async () => {
+    const client = app()
+    const { cookie } = await register(client)
+    const res = await client.request('/api/zines/bad1', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: cookie },
+      body: JSON.stringify({ title: 'bad', vibe: 'miles', blocks: [{ id: '1', type: 'heading' }] }),
+    })
+    expect(res.status).toBe(400)
+    const body = await json(res)
+    expect(String(body.error)).toMatch(/text/)
+  })
+
+  it('rejects a malformed page added to an exquisite corpse chain', async () => {
+    const client = app()
+    const { cookie } = await register(client, 'corpse1', 'inkstain1')
+    await client.request('/api/zines/c1', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', authorization: cookie },
+      body: JSON.stringify(sample),
+    })
+    const publish = await json(
+      await client.request('/api/zines/c1/publish', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: cookie },
+        body: JSON.stringify({ dropsAt: Date.now() - 1, visibility: 'unlisted', chain: true }),
+      }),
+    )
+    const invite = String((publish.zine as { chainKey: string }).chainKey)
+    const res = await client.request('/api/zines/c1/chain', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: cookie },
+      body: JSON.stringify({ invite, blocks: [{ id: 'x', type: 'sticker' }] }),
+    })
+    expect(res.status).toBe(400)
+  })
 })
 
 describe('demo drop', () => {
@@ -505,6 +542,46 @@ describe('social', () => {
     expect(nom2.archived).toBe(true)
     const archive = await json(await client.request('/api/archive'))
     expect((archive.zines as { title: string }[]).some((z) => z.title === 'cheap copy')).toBe(true)
+  })
+
+  it('keeps nomination and claim counts independent across zines in one stream page', async () => {
+    const client = app()
+    const author = await register(client, 'author10', 'strawberry1')
+    for (const slug of ['many-noms', 'one-nom']) {
+      await client.request(`/api/zines/${slug}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', authorization: author.cookie },
+        body: JSON.stringify({ title: slug, vibe: 'noir', blocks: sample.blocks }),
+      })
+      await client.request(`/api/zines/${slug}/publish`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: author.cookie },
+        body: JSON.stringify({ dropsAt: Date.now() - 1 }),
+      })
+    }
+    const reader = await register(client, 'reader10', 'cartoon99')
+    const fan = await register(client, 'fan10x', 'cartoon99')
+    await client.request('/api/zines/many-noms/nominate', {
+      method: 'POST',
+      headers: { authorization: reader.cookie },
+    })
+    await client.request('/api/zines/many-noms/nominate', {
+      method: 'POST',
+      headers: { authorization: fan.cookie },
+    })
+    await client.request('/api/zines/one-nom/nominate', {
+      method: 'POST',
+      headers: { authorization: reader.cookie },
+    })
+
+    const stream = await json(await client.request('/api/stream'))
+    const zines = stream.zines as { title: string; noms: number; archived: boolean }[]
+    const many = zines.find((z) => z.title === 'many-noms')!
+    const one = zines.find((z) => z.title === 'one-nom')!
+    expect(many.noms).toBe(2)
+    expect(many.archived).toBe(true)
+    expect(one.noms).toBe(1)
+    expect(one.archived).toBe(false)
   })
 
   it('sets a fest table and stamps an issue', async () => {

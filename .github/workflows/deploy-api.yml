@@ -30,6 +30,17 @@ jobs:
           fi
       - uses: actions/checkout@v5
         if: steps.fly.outputs.has_token == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.fly.outputs.has_token == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: steps.fly.outputs.has_token == 'true'
+      - run: npm test
+        if: steps.fly.outputs.has_token == 'true'
+      - run: npm run build
+        if: steps.fly.outputs.has_token == 'true'
       - uses: superfly/flyctl-actions/setup-flyctl@master
         if: steps.fly.outputs.has_token == 'true'
       - run: flyctl deploy --remote-only

@@ -5,6 +5,7 @@ import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
 import { liveJam } from '../../src/lib/jam.ts'
 import { normalizeTags } from '../../src/lib/tags.ts'
 import { normalizeIssueNo, normalizeSeries } from '../../src/lib/zine.ts'
+import { assertBlocks } from '../../src/lib/shape.ts'
 import { verifyPassword } from '../auth.ts'
 import { dropIsLive, getZineRow, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { currentUser, VIBES } from '../http.ts'
@@ -12,7 +13,7 @@ import { listJams } from '../services/jams.ts'
 import { notify } from '../services/notify.ts'
 import { publishZine } from '../services/publish.ts'
 import { refreshDemoDrop } from '../community.ts'
-import { accessZine, decorate } from '../services/zines.ts'
+import { accessZine, decorate, decorateMany } from '../services/zines.ts'
 
 export function registerZines(app: Hono, db: Db) {
   app.get('/api/stream', (c) => {
@@ -70,13 +71,10 @@ export function registerZines(app: Hono, db: Db) {
       )
       .all(...params) as ZineRow[]
     return c.json({
-      zines: rows.map((row) =>
-        decorate(
-          db,
-          rowToZine(row, {
-            hideBlocks: !dropIsLive(row) && row.owner_id !== user?.id,
-          }),
-        ),
+      zines: decorateMany(
+        db,
+        rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) && row.owner_id !== user?.id })),
+        user?.id,
       ),
     })
   })
@@ -150,6 +148,12 @@ export function registerZines(app: Hono, db: Db) {
       return c.json({ error: 'Need title, vibe, and blocks' }, 400)
     }
     if (!VIBES.has(body.vibe)) return c.json({ error: 'Unknown vibe' }, 400)
+    let blocks: Block[]
+    try {
+      blocks = assertBlocks(body.blocks)
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : 'Bad blocks' }, 400)
+    }
     const id = c.req.param('id')
     const existing = getZineRow(db, id)
     if (existing && existing.owner_id !== user.id) return c.json({ error: 'Not your issue' }, 403)
@@ -167,7 +171,7 @@ export function registerZines(app: Hono, db: Db) {
       owner_id: user.id,
       title: String(body.title).slice(0, 120),
       vibe: body.vibe,
-      blocks_json: JSON.stringify(body.blocks as Block[]),
+      blocks_json: JSON.stringify(blocks),
       published: existing?.published ?? 0,
       drops_at: existing?.drops_at ?? null,
       views: existing?.views ?? 0,
@@ -332,7 +336,14 @@ export function registerZines(app: Hono, db: Db) {
     if (!row || !row.chain_open || row.chain_key !== invite) {
       return c.json({ error: 'that corpse is closed' }, 404)
     }
-    const extra = Array.isArray(body?.blocks) ? (body.blocks as Block[]) : []
+    let extra: Block[] = []
+    if (Array.isArray(body?.blocks)) {
+      try {
+        extra = assertBlocks(body.blocks)
+      } catch (err) {
+        return c.json({ error: err instanceof Error ? err.message : 'Bad blocks' }, 400)
+      }
+    }
     if (!extra.length) return c.json({ error: 'Add a page' }, 400)
     const blocks = [...(JSON.parse(row.blocks_json) as Block[]), ...extra.map((b) => ({ ...b, id: randomUUID() }))]
     const nextInvite = randomUUID().replace(/-/g, '').slice(0, 16)
