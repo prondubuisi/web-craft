@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.5.7 — 2026-08-17
+
 Cover vibe paints studio on first paint. Enter the studio and the topbar Studio hop keep the last picked vibe.
 
 ## 1.5.6 — 2026-08-17
