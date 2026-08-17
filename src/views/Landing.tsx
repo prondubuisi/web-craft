@@ -5,7 +5,7 @@ import { ComicButton, Halftone, LocalNote, Topbar } from '../components/Chrome'
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
-import { studioPath } from '../lib/zine'
+import { rememberVibe, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 import type { VibeId } from '../lib/types'
 
@@ -18,6 +18,7 @@ export function Landing() {
   const sample = zines.find((z) => z.published && z.title.toLowerCase().includes('after hours')) ?? zines.find((z) => z.published)
 
   function start(withVibe: VibeId) {
+    rememberVibe(withVibe)
     navigate(studioPath({ new: true, vibe: withVibe }))
   }
 
@@ -79,7 +80,13 @@ export function Landing() {
             <ComicButton className="pink" onClick={() => start(vibe)}>
               Make an issue
             </ComicButton>
-            <ComicButton className="ghost" onClick={() => navigate(studioPath())}>
+            <ComicButton
+              className="ghost"
+              onClick={() => {
+                rememberVibe(vibe)
+                navigate(studioPath({ vibe }))
+              }}
+            >
               Enter the studio
             </ComicButton>
           </div>
@@ -97,7 +104,10 @@ export function Landing() {
             <button
               key={v.id}
               className={`vibe-card ${vibe === v.id ? 'on' : ''}`}
-              onClick={() => setVibe(v.id)}
+              onClick={() => {
+                setVibe(v.id)
+                rememberVibe(v.id)
+              }}
               type="button"
             >
               <Halftone src={v.art} alt="" className="thumb" />
