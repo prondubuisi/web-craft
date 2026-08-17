@@ -175,7 +175,12 @@ export function Fest() {
             </article>
           ))}
         </div>
-        {!visible.length ? <p className="serif">the floor is empty. set a table first.</p> : null}
+        {!visible.length ? (
+          <p className="serif">
+            the floor is empty. set a table first. Or <Link to="/studio">drop an issue</Link> to put on
+            it, pin a <Link to="/board">trade</Link>, then come sit.
+          </p>
+        ) : null}
       </main>
     </div>
   )

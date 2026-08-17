@@ -98,7 +98,10 @@ export function Mail() {
                 </Link>
               ))
             ) : (
-              <p className="serif">no envelopes yet. write first.</p>
+              <p className="serif">
+                no envelopes yet. write first — try <Link to="/mail/yuzu">@yuzu</Link> or find a handle
+                on the <Link to="/explore">stream</Link>.
+              </p>
             )}
           </aside>
 

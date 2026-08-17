@@ -3,7 +3,7 @@ import { Halftone, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { useRemoteWithFallback } from '../lib/useRemote'
 import { demoJams, formatHint, isJamLive } from '../lib/jam'
-import { byline, coverSrc, filterStream, profilePath } from '../lib/zine'
+import { byline, coverSrc, filterStream, profilePath, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 export function JamPage() {
@@ -69,10 +69,19 @@ export function JamPage() {
             </article>
           ))}
         </div>
-        {!issues.length ? <p className="serif">Nobody printed into this jam yet.</p> : null}
+        {!issues.length ? (
+          <p className="serif">
+            Nobody printed into this jam yet. {jam.prompt}{' '}
+            <Link to={studioPath({ new: true })}>Make a one-pager</Link> or{' '}
+            <Link to="/cork">cut scraps on the desk</Link> first.
+          </p>
+        ) : null}
         <div className="cta-row" style={{ marginTop: 16 }}>
-          <Link to="/studio" className="comic-btn pink">
+          <Link to={studioPath({ new: true })} className="comic-btn pink">
             Enter the jam
+          </Link>
+          <Link to="/explore" className="comic-btn ghost">
+            Remix the pile
           </Link>
         </div>
       </main>
