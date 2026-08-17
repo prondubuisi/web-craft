@@ -69,17 +69,18 @@ export function useIssueSocial(opts: {
     }
   }, [id, remoteSocial, locked])
 
+  const zineId = zine?.id
   useEffect(() => {
-    if (!zine) return
+    if (!zineId) return
     if (online && session) {
       void api
         .bag()
-        .then((res) => setBagged(res.bag.some((item) => item.zineId === zine.id)))
-        .catch(() => setBagged(inBag(bagOwner, zine.id)))
+        .then((res) => setBagged(res.bag.some((item) => item.zineId === zineId)))
+        .catch(() => setBagged(inBag(bagOwner, zineId)))
       return
     }
-    setBagged(inBag(bagOwner, zine.id))
-  }, [zine?.id, online, session, bagOwner])
+    setBagged(inBag(bagOwner, zineId))
+  }, [zineId, online, session, bagOwner])
 
   useEffect(() => {
     if (!id || locked || needsPass) return

@@ -8,7 +8,7 @@ import { demoJams, formatHint, liveJam } from '../lib/jam'
 import type { Jam, StreamSort, VibeId, Zine } from '../lib/types'
 import { VIBES } from '../lib/vibes'
 import { byline, coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Explore() {
   const { zines, remixZine, online, profile, session } = useZines()

@@ -26,7 +26,7 @@ import {
   seriesLabel,
   wearLevel,
 } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Preview() {
   const { id } = useParams()
@@ -87,6 +87,8 @@ export function Preview() {
       })
       if (online && session) void api.stamp(zine.id).catch(() => undefined)
     }
+    // Stamp once per issue visit.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (!zine || hiddenUnlisted) {

@@ -24,12 +24,14 @@ export function FlipReader({
   const page = pages[i] ?? pages[0]
   const stat = stats?.find((row) => row.page === page?.n)
 
+  const pageN = page?.n
   useEffect(() => {
     entered.current = Date.now()
     return () => {
-      if (page) onPage?.(page.n, Date.now() - entered.current)
+      if (pageN) onPage?.(pageN, Date.now() - entered.current)
     }
-  }, [page?.n])
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageN])
 
   function go(next: number) {
     if (next < 0 || next >= pages.length || next === i) return

@@ -6,7 +6,7 @@ import { useRemote } from '../lib/useRemote'
 import { loadSits, loadTables, toggleSit, upsertTable } from '../lib/social'
 import type { FestTable } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Fest() {
   const { session, online, profile, zines } = useZines()

@@ -6,7 +6,7 @@ import { useRemote } from './useRemote'
 
 const online = { value: true }
 
-vi.mock('../store/ZineContext', () => ({
+vi.mock('../store/useZines', () => ({
   useZines: () => ({ online: online.value }),
 }))
 
