@@ -69,8 +69,6 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at the top of that file). Do not start a seventh round of mechanics.
 
-Still open:
-
-1. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)
+No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev` (`0003_legacy_columns` unblocked the leftover volume).
 
 Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.
