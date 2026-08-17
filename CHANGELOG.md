@@ -4,7 +4,7 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
-1.5.0 opened as a consolidation observation (`docs/sg4.md`). Help names blurb, margin, dedication, and tear-out. Bag / shelf / archive stay three piles.
+1.5.0 opened as a consolidation observation (`docs/sg4.md`). Help names blurb, margin, dedication, and tear-out. The reader More sheet says bag / distro / archive in one line and links to Help. Piles stay three.
 
 ## 1.4.8 — 2026-08-17
 

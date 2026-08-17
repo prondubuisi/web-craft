@@ -9,6 +9,16 @@
   margin: 0.55rem 0 0;
 }
 
+.issue-more .more-lede {
+  max-width: 36rem;
+  margin: 0 0 0.55rem;
+}
+
+.issue-more .more-lede a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .issue-ink .comments {
   margin-top: 1rem;
   padding-top: 0.8rem;

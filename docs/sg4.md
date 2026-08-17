@@ -33,9 +33,9 @@ The reader already groups blurb + letter under **INK** and says dedication and t
 
 ## What 1.5.0 should actually do
 
-1. **Name the missing glossary terms** (blurb, margin, dedication, tear-out) so Help matches the INK lede. No new mechanics.
+1. **Name the missing glossary terms** (blurb, margin, dedication, tear-out) so Help matches the INK lede. Landed on `develop`.
 2. **Leave the three piles and five forms in place** until someone has a reason stronger than “there are a lot of words.”
-3. **If a More-sheet label is unclear**, point at Help — do not add a sixth verb.
+3. **More sheet** points at Help and says bag / distro / archive in one line. Nominate / checkout labels name archive and bag. No sixth verb. Landed on `develop`.
 
 Not in 1.5.0: deleting a store, combining bag and shelf, retiring tear-out, a seventh `IMPROVEMENTS` round.
 
