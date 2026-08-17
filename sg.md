@@ -41,6 +41,8 @@ The 1.4.x support pass is complete. Do not cut another 1.4.x patch unless CI is 
 - Split `reader.css` only if it grows again
 - The next real schema change is `0004_…`, not an inline `ALTER TABLE`
 
+`assertBlocks` now also guards API upsert and corpse-chain pages. List endpoints decorate noms/claims in batch.
+
 **Do not:** a dedicated silent-catch sweep of parse fallbacks; SaaS; a second client.
 
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**

@@ -2,7 +2,7 @@ import type { Hono } from 'hono'
 import { isJamLive, liveJam } from '../../src/lib/jam.ts'
 import { dropIsLive, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { listJams } from '../services/jams.ts'
-import { decorate } from '../services/zines.ts'
+import { decorateMany } from '../services/zines.ts'
 
 export function registerJam(app: Hono, db: Db) {
   app.get('/api/jams', (c) => {
@@ -23,7 +23,7 @@ export function registerJam(app: Hono, db: Db) {
     return c.json({
       jam,
       live: isJamLive(jam),
-      zines: rows.map((row) => decorate(db, rowToZine(row, { hideBlocks: !dropIsLive(row) }))),
+      zines: decorateMany(db, rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) }))),
     })
   })
 }

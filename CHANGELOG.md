@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+API upsert and corpse-chain pages run `assertBlocks`. Stream/jam/archive decorate nomination and claim counts in one query per list. Pages CI lints; Fly deploy runs test and build first.
+
 ## 1.5.0 — 2026-08-17
 
 Consolidation observation (`docs/sg4.md`), not more features. Help names blurb, margin, dedication, and tear-out. The reader More sheet says bag / distro / archive in one line and links to Help. Three piles and five answer forms stay.
