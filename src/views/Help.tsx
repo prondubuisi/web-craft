@@ -32,15 +32,15 @@ const ENTRIES = [
   },
   {
     term: 'bag',
-    body: 'Your private reading pile. Stuff an issue in. Distinct from the public distro shelf.',
+    body: 'Your private reading pile. Stuff an issue in, or check one out of the Archive — that copy lands here too. Not the public distro shelf.',
   },
   {
     term: 'distro shelf',
-    body: 'Issues you stock on your profile for other people to find. A table, not a store.',
+    body: 'Issues you stock on your profile for other people to find. A table, not a store, and not your bag.',
   },
   {
     term: 'archive',
-    body: 'Community nomination, not a popularity list. Enough votes and the issue gets a permanent home.',
+    body: 'Community nomination, not a popularity list. Enough votes and the issue gets a permanent home. Check out a filed issue and it also goes in your bag for a week.',
   },
   {
     term: 'board',

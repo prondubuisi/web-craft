@@ -35,8 +35,9 @@ Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**
 
 Still later:
 
-- Split `social.ts` by bag / mail / archive / run
-- Merging overlapping mechanics (bag/shelf/archive, response verbs)
+- `FLY_API_TOKEN` if the hosted API should deploy
+
+Bag / shelf / archive stay three stores. Checkout writes the bag. Reader ink groups blurbs + letters without deleting either form.
 
 ## What this pass implements
 

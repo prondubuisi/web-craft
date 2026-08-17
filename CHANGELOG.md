@@ -6,6 +6,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 Auth: login/register rate limit (8 attempts / 10 minutes per handle). A new login retires other sessions for that handle. Mid-life sessions rotate on `/api/auth/me`; the client already stores a returned `token`.
 
+`social.ts` is a barrel over bag / mail / archive / run (plus ink and scene leftovers). Checking out an archived issue also tucks it in the bag. Reader blurbs and letters sit under one INK grouping.
+
 ## 1.4.0 — 2026-08-17
 
 Readable slice (`sg.md`): smaller topbar, offline honesty, cover rewrite, first-visit primer, `/help` glossary, thinned reader actions. Reader social state lives in `useIssueSocial`. Shared `contract.ts` types cover the remaining `api.ts` endpoints.
