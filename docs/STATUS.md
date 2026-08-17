@@ -42,7 +42,7 @@ Routes (from `src/App.tsx`):
 
 **Runtime deps:** `react`, `react-dom`, `react-router-dom`, `hono`, `@hono/node-server`, `better-sqlite3`, `qrcode`.
 
-**Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + test + build.
+**Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build + Playwright e2e.
 
 **Testing:** Vitest + happy-dom (21 `*.test.ts` files, 124 tests, including `server/api.test.ts`, `server/rateLimit.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 60 tests (`npm run test:e2e`, needs `npm run dev`). Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 

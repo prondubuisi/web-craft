@@ -40,7 +40,7 @@ npm run lint      # oxlint + stylelint
 npm run build
 ```
 
-CI runs those on `main` and `develop`.
+CI on `main` and `develop` runs lint, unit tests, build, and Playwright (`npm run test:e2e`). Local e2e can reuse an already-running `npm run dev`.
 
 ## State
 
