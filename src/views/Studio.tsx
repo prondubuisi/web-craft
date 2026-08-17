@@ -8,7 +8,17 @@ import { loadBag } from '../lib/social'
 import { actionError } from '../lib/catch'
 import { assertZineShape } from '../lib/shape'
 import type { BadgeId, VibeId } from '../lib/types'
-import { coverSrc, editPath, isDropLive, isMine, profilePath, readStudioCreate, seriesLabel } from '../lib/zine'
+import {
+  coverSrc,
+  editPath,
+  isDropLive,
+  isMine,
+  profilePath,
+  readStudioCreate,
+  recalledVibe,
+  rememberVibe,
+  seriesLabel,
+} from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -29,24 +39,32 @@ export function Studio() {
   } = useZines()
   const mine = zines.filter((z) => isMine(z, session?.name))
   const stream = zines.filter((z) => !isMine(z, session?.name)).slice(0, 6)
-  const [open, setOpen] = useState(false)
+  const boot = readStudioCreate(typeof window === 'undefined' ? '' : window.location.search)
+  const [open, setOpen] = useState(boot.create)
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
   const [handle, setHandle] = useState('')
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [title, setTitle] = useState('')
-  const [vibe, setVibe] = useState<VibeId>('miles')
+  const [vibe, setVibe] = useState<VibeId>(boot.vibe ?? recalledVibe() ?? 'miles')
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
   useEffect(() => {
     const intent = readStudioCreate(params)
-    if (!intent.create) return
-    if (intent.vibe) setVibe(intent.vibe)
-    setOpen(true)
-    setParams({}, { replace: true })
+    if (intent.vibe) {
+      setVibe(intent.vibe)
+      rememberVibe(intent.vibe)
+    }
+    if (intent.create) setOpen(true)
+    if (intent.create || intent.vibe) setParams({}, { replace: true })
   }, [params, setParams])
+
+  function pickVibe(next: VibeId) {
+    setVibe(next)
+    rememberVibe(next)
+  }
 
   const [bag] = useRemoteWithFallback(
     () => api.bag(),
@@ -280,7 +298,7 @@ export function Studio() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="issue title"
           />
-          <VibePicks value={vibe} onChange={setVibe} />
+          <VibePicks value={vibe} onChange={pickVibe} />
           <ComicButton className="pink" onClick={drop}>
             Open the page
           </ComicButton>

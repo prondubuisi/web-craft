@@ -43,7 +43,26 @@ export function isVibeId(value: string | null | undefined): value is VibeId {
   return Boolean(value && VIBES.some((v) => v.id === value))
 }
 
-/** Cover "Make an issue" lands here: `?new=1` plus an optional vibe. */
+const VIBE_MEMORY = 'zineverse.vibe'
+
+export function rememberVibe(id: VibeId): void {
+  try {
+    sessionStorage.setItem(VIBE_MEMORY, id)
+  } catch {
+    /* private mode */
+  }
+}
+
+export function recalledVibe(): VibeId | undefined {
+  try {
+    const raw = sessionStorage.getItem(VIBE_MEMORY)
+    return isVibeId(raw) ? raw : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Cover make / enter studio: `?new=1` and/or `?vibe=`. */
 export function readStudioCreate(search: string | URLSearchParams): { create: boolean; vibe?: VibeId } {
   const q = typeof search === 'string' ? new URLSearchParams(search.replace(/^\?/, '')) : search
   const vibeRaw = q.get('vibe')
