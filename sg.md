@@ -24,6 +24,8 @@ Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, chec
 
 **Still open from sg3 (safety, not features):** none as a dedicated pass. Server `req.json()` parse-or-null stays; leftover `catch {}` in storage/share/api are parse fallbacks, not user actions.
 
+**Honesty:** first paint says `checking` until `/api/health` returns. `local` / `API offline` only after a failed check — Pages no longer lies while Fly is waking up.
+
 Insert is an upsert; uniqueness is asserted on the result, not as a collision error.
 
 Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.

@@ -43,13 +43,13 @@ test.describe('A. first visit / readable chrome', () => {
     expect(nav).not.toMatch(/\bBoard\b/)
     expect(nav).not.toMatch(/\bFest\b/)
     expect(nav).not.toMatch(/\bDesk\b/)
-    await expect(page.locator('.brand small')).toHaveText(/local|api live|@/i)
+    await expect(page.locator('.brand small')).toHaveText(/local|api live|@/i, { timeout: 15_000 })
   })
 
   test('3 offline honesty vs live scene links', async ({ page }) => {
     await forceOffline(page)
     await page.goto('/')
-    await expect(page.locator('.local-note')).toContainText(/Local studio/i)
+    await expect(page.locator('.local-note')).toContainText(/Local studio/i, { timeout: 15_000 })
     await expect(page.locator('.local-note a')).toHaveAttribute('href', /help/)
     await page.goto('/explore')
     await expect(page.locator('.scene-links')).toHaveCount(0)

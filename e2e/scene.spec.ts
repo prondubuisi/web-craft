@@ -269,8 +269,11 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
 
   test('login toggle on claim modal', async ({ page }) => {
     await page.goto('/studio')
-    const claim = page.getByRole('button', { name: /Claim studio/i })
-    if (!(await claim.isEnabled())) test.skip(true, 'API offline')
+    const claim = page.getByRole('button', { name: /Claim studio|API offline|Checking API/i })
+    await expect(claim).not.toHaveText(/Checking API/i, { timeout: 15_000 })
+    if (!(await claim.isEnabled()) || /offline/i.test((await claim.innerText()) ?? '')) {
+      test.skip(true, 'API offline')
+    }
     await claim.click()
     await clickText(page, 'I already have one')
     await expect(page.locator('[role="dialog"]')).toContainText(/open your studio/i)
