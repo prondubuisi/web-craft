@@ -141,8 +141,8 @@ test.describe('B. maker — studio and editor', () => {
     expect(download.suggestedFilename()).toMatch(/file-hop|file hop/i)
 
     await page.goto('/studio')
+    await expect(page.locator('.studio-head')).toBeVisible()
     await page.locator('input[accept*="json"]').setInputFiles(FIXTURES.zine)
-    await expect(page).toHaveURL(/\/edit\//)
     await expect(page.locator('.title-input')).toHaveValue('imported scrap')
     await expect(page.locator('.sticker-block')).toContainText('from a json file')
 
@@ -289,6 +289,16 @@ test.describe('B. maker — studio and editor', () => {
     const prompt = await dialog
     expect(prompt.message()).toMatch(/not a Zineverse issue/i)
     await prompt.accept()
+
+    const shaped = page.waitForEvent('dialog')
+    await page.locator('input[accept*="json"]').setInputFiles({
+      name: 'almost.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ title: 'almost', vibe: 'spider', blocks: [] })),
+    })
+    const shapePrompt = await shaped
+    expect(shapePrompt.message()).toMatch(/vibe must be miles, gwen, peni, ham, or noir/)
+    await shapePrompt.accept()
   })
 
   test('empty canvas hint after deleting blocks', async ({ page }) => {

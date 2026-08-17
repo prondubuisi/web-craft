@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { actionError, catchBackground } from '../lib/catch'
 import { useRemote } from '../lib/useRemote'
 import { addLocalListing, loadLocalListings, removeLocalListing, swapLocalListing } from '../lib/social'
 import type { Listing, ListingKind } from '../lib/types'
@@ -64,13 +65,13 @@ export function Board() {
       }
       setBody('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not post')
+      setError(actionError(err, 'Could not post'))
     }
   }
 
   async function remove(id: string) {
     if (online && session) {
-      await api.removeListing(id).catch(() => undefined)
+      await api.removeListing(id).catch(catchBackground)
       setItems((prev) => prev.filter((item) => item.id !== id))
       return
     }
@@ -79,7 +80,7 @@ export function Board() {
 
   async function swap(id: string) {
     if (online && session) {
-      await api.swapListing(id).catch(() => undefined)
+      await api.swapListing(id).catch(catchBackground)
       setItems((prev) =>
         prev.map((item) => (item.id === id ? { ...item, swapped: !item.swapped } : item)),
       )

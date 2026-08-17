@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { actionError } from '../lib/catch'
 import { useRemote } from '../lib/useRemote'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
 import type { Letter, MailThread, VibeId } from '../lib/types'
@@ -64,7 +65,7 @@ export function Mail() {
       setBody('')
       if (!other) navigate(`/mail/${encodeURIComponent(dest)}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send')
+      setError(actionError(err, 'Could not send'))
     }
   }
 

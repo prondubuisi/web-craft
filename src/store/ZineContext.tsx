@@ -13,6 +13,7 @@ import { loadState, saveState } from '../lib/storage'
 import type { Notice, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
 import { demoJams, jamForPublish } from '../lib/jam'
+import { catchBackground } from '../lib/catch'
 import { fingerprint, isMine } from '../lib/zine'
 import { apply } from './reducer'
 import { Ctx, type Store } from './ctx'
@@ -41,8 +42,8 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.notices()
       setNotices(res.notices)
-    } catch {
-      // keep local inbox
+    } catch (err) {
+      catchBackground(err)
     }
   }, [])
 
@@ -52,7 +53,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     window.clearTimeout(timers.current[id])
     timers.current[id] = window.setTimeout(() => {
       const zine = stateRef.current.zines.find((z) => z.id === id)
-      if (zine) void api.upsert(zine).catch(() => undefined)
+      if (zine) void api.upsert(zine).catch(catchBackground)
     }, 450)
   }, [])
 
@@ -75,13 +76,14 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             following: me.following,
           })
           const [mine, stream] = await Promise.all([api.mine(), api.stream()])
-          if (!cancelled) dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+          if (!cancelled) {
+            dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
+          }
           if (!cancelled) void refreshNotices()
         } else {
           const stream = await api.stream()
           if (cancelled) return
-          const localMine = stateRef.current.zines.filter((z) => isMine(z, null))
-          dispatch({ type: 'replaceZines', zines: [...localMine, ...stream.zines] })
+          dispatch({ type: 'mergeZines', zines: stream.zines })
         }
       } catch {
         dispatch({ type: 'setOnline', online: false })
@@ -202,14 +204,14 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         likedIds: me.likedIds,
         following: me.following,
       })
-      dispatch({ type: 'replaceZines', zines: [...mine.zines, ...stream.zines] })
+      dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
       void refreshNotices()
     },
     [refreshNotices],
   )
 
   const signOut = useCallback(async () => {
-    await api.logout().catch(() => undefined)
+    await api.logout().catch(catchBackground)
     dispatch({ type: 'setSession', session: null })
   }, [])
 
@@ -236,7 +238,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
       },
       deleteZine: (id) => {
         dispatch({ type: 'delete', id })
-        if (state.session) void api.remove(id).catch(() => undefined)
+        if (state.session) void api.remove(id).catch(catchBackground)
       },
       likeZine: (id) => {
         if (state.session) {
@@ -253,7 +255,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
                 likedIds,
               })
             })
-            .catch(() => undefined)
+            .catch(() => dispatch({ type: 'like', id }))
           return
         }
         dispatch({ type: 'like', id })
@@ -317,13 +319,13 @@ export function ZineProvider({ children }: { children: ReactNode }) {
                   },
                 })
               })
-              .catch(() => undefined)
+              .catch(catchBackground)
           }
         })()
       },
       recordView: (id) => {
         dispatch({ type: 'view', id })
-        if (state.online) void api.view(id).catch(() => undefined)
+        if (state.online) void api.view(id).catch(catchBackground)
       },
       renameProfile: (name) => dispatch({ type: 'renameProfile', name }),
       resetStudio: () => {
@@ -343,7 +345,9 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             void refreshNotices()
             return res.following
           } catch {
-            return state.profile.following.includes(name)
+            const on = state.profile.following.includes(name)
+            dispatch({ type: on ? 'unfollow' : 'follow', handle: name })
+            return !on
           }
         }
         const on = state.profile.following.includes(name)
@@ -352,7 +356,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
       },
       markNoticesRead: () => {
         setNotices((prev) => prev.map((item) => ({ ...item, read: true })))
-        if (state.session && state.online) void api.readNotices().catch(() => undefined)
+        if (state.session && state.online) void api.readNotices().catch(catchBackground)
         else markLocalNoticesRead()
       },
     }

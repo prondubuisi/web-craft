@@ -54,13 +54,20 @@ describe('apply', () => {
     expect(next.zines[0]?.dropsAt).toBe(99)
   })
 
-  it('merges remote zines by id', () => {
+  it('merges remote zines by id and keeps local extras', () => {
     const next = apply(state(), {
       type: 'mergeZines',
       zines: [issue({ id: 'z1', title: 'server' }), issue({ id: 'z3', title: 'stream' })],
     })
     expect(next.zines.find((z) => z.id === 'z1')?.title).toBe('server')
-    expect(next.zines.some((z) => z.id === 'z3')).toBe(true)
+    expect(next.zines.map((z) => z.id)).toEqual(['z1', 'z3'])
+
+    const withLocal = apply(state({ zines: [issue({ id: 'local', title: 'imported scrap' })] }), {
+      type: 'mergeZines',
+      zines: [issue({ id: 'remote', title: 'sunday market' })],
+    })
+    expect(withLocal.zines.map((z) => z.id)).toEqual(['local', 'remote'])
+    expect(withLocal.zines.find((z) => z.id === 'local')?.title).toBe('imported scrap')
   })
 
   it('sets a session without dropping remix points unless told', () => {
@@ -70,6 +77,17 @@ describe('apply', () => {
     expect(next.profile.remixPoints).toBe(4)
     expect(next.profile.likedIds).toEqual(['a'])
     expect(next.profile.following).toEqual(['yuzu'])
+  })
+
+  it('rejects empty ids and duplicate merge input in dev', () => {
+    expect(() => apply(state(), { type: 'insert', zine: issue({ id: '' }) })).toThrow(/missing an id/)
+    expect(() => apply(state(), { type: 'patch', id: '', patch: { title: 'x' } })).toThrow(/missing an id/)
+    expect(() =>
+      apply(state(), {
+        type: 'mergeZines',
+        zines: [issue({ id: 'dup' }), issue({ id: 'dup', title: 'other' })],
+      }),
+    ).toThrow(/duplicate id/)
   })
 
   it('follows and unfollows a handle once', () => {

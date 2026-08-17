@@ -26,14 +26,51 @@ export type Action =
   | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[]; following?: string[] }
   | { type: 'follow'; handle: string }
   | { type: 'unfollow'; handle: string }
-  | { type: 'replaceZines'; zines: Zine[] }
   | { type: 'mergeZines'; zines: Zine[] }
 
 export type FullState = AppState & { online: boolean; session: Session | null }
 
+function assertDev(ok: boolean, message: string): void {
+  if (import.meta.env.DEV && !ok) throw new Error(`reducer: ${message}`)
+}
+
+function checkAction(action: Action): void {
+  if (action.type === 'insert') {
+    assertDev(Boolean(action.zine.id.trim()), 'insert zine is missing an id')
+    return
+  }
+  if (action.type === 'mergeZines') {
+    const ids = action.zines.map((zine) => zine.id)
+    assertDev(
+      ids.every((id) => Boolean(id.trim())),
+      'mergeZines zine is missing an id',
+    )
+    assertDev(new Set(ids).size === ids.length, 'mergeZines incoming list has a duplicate id')
+    return
+  }
+  if ('id' in action) assertDev(Boolean(action.id.trim()), `${action.type} is missing an id`)
+}
+
+function checkState(next: FullState, action: Action): void {
+  const ids = next.zines.map((zine) => zine.id)
+  assertDev(
+    ids.every((id) => Boolean(id.trim())),
+    `${action.type} left a zine without an id`,
+  )
+  assertDev(new Set(ids).size === ids.length, `${action.type} left duplicate zine ids`)
+}
+
 export function apply(state: FullState, action: Action): FullState {
+  checkAction(action)
+  const next = reduce(state, action)
+  checkState(next, action)
+  return next
+}
+
+function reduce(state: FullState, action: Action): FullState {
   switch (action.type) {
     case 'insert':
+      // Upsert: same id replaces, so a local fork cannot collide into two rows.
       return { ...state, zines: [action.zine, ...state.zines.filter((z) => z.id !== action.zine.id)] }
     case 'patch':
       return {
@@ -135,8 +172,6 @@ export function apply(state: FullState, action: Action): FullState {
         },
       }
     }
-    case 'replaceZines':
-      return { ...state, zines: action.zines }
     case 'mergeZines': {
       const map = new Map(state.zines.map((z) => [z.id, z]))
       for (const zine of action.zines) map.set(zine.id, zine)

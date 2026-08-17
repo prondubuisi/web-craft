@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
+import { actionError, catchBackground } from './catch'
 import { appHref } from './paths'
 import { copyText } from './share'
 import {
@@ -147,7 +148,12 @@ export function useIssueSocial(opts: {
       void api
         .votePoll(zine.id, blockId, option)
         .then((res) => setPolls((prev) => ({ ...prev, [blockId]: res })))
-        .catch(() => undefined)
+        .catch(() =>
+          setPolls((prev) => ({
+            ...prev,
+            [blockId]: voteLocalPoll(zine.id, blockId, option, optionCount),
+          })),
+        )
       return
     }
     setPolls((prev) => ({
@@ -159,14 +165,14 @@ export function useIssueSocial(opts: {
   function hitPage(page: number, dwell: number) {
     if (!zine) return
     setStats(bumpPageStat(zine.id, page, dwell))
-    if (online) void api.pageHit(zine.id, page, dwell).catch(() => undefined)
+    if (online) void api.pageHit(zine.id, page, dwell).catch(catchBackground)
   }
 
   function toggleBag() {
     if (!zine) return
     if (bagged) {
       dumpBag(bagOwner, zine.id)
-      if (session && online) void api.dump(zine.id).catch(() => undefined)
+      if (session && online) void api.dump(zine.id).catch(catchBackground)
       setBagged(false)
       return
     }
@@ -176,7 +182,7 @@ export function useIssueSocial(opts: {
       owner: zine.owner,
       vibe: zine.vibe,
     })
-    if (session && online) void api.tuck(zine.id).catch(() => undefined)
+    if (session && online) void api.tuck(zine.id).catch(catchBackground)
     setBagged(true)
   }
 
@@ -189,7 +195,7 @@ export function useIssueSocial(opts: {
       note: 'stocked from the pile',
       vibe: zine.vibe,
     })
-    if (session && online) void api.stock(zine.id).catch(() => undefined)
+    if (session && online) void api.stock(zine.id).catch(catchBackground)
   }
 
   function nominate() {
@@ -208,7 +214,7 @@ export function useIssueSocial(opts: {
     if (!zine?.series) return
     const next = toggleSeriesWatch(bagOwner, zine.series)
     setWatchingRun(next.includes(zine.series.trim().toLowerCase()))
-    if (session && online) void api.watchSeries(zine.series).catch(() => undefined)
+    if (session && online) void api.watchSeries(zine.series).catch(catchBackground)
   }
 
   function checkout() {
@@ -216,7 +222,7 @@ export function useIssueSocial(opts: {
     checkoutLocal(bagOwner, zine.id, zine.title, { owner: zine.owner, vibe: zine.vibe })
     setLoaned(true)
     setBagged(true)
-    if (session && online) void api.checkout(zine.id).catch(() => undefined)
+    if (session && online) void api.checkout(zine.id).catch(catchBackground)
   }
 
   function claim() {
@@ -243,7 +249,10 @@ export function useIssueSocial(opts: {
       void api
         .sendMail(dest, text, { postcard: true, vibe: zine.vibe })
         .then(() => setMailNote('postcard mailed.'))
-        .catch(() => sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe }))
+        .catch(() => {
+          sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
+          setMailNote('postcard folded.')
+        })
       return
     }
     sendLetter(bagOwner, dest, text, { postcard: true, vibe: zine.vibe })
@@ -262,7 +271,7 @@ export function useIssueSocial(opts: {
           void copyText(url)
           setChainMsg('page added. next invite copied.')
         })
-        .catch((err: unknown) => setChainMsg(err instanceof Error ? err.message : 'could not add'))
+        .catch((err: unknown) => setChainMsg(actionError(err, 'could not add')))
     } else {
       setChainMsg('claim a handle to pass the corpse on the API')
     }

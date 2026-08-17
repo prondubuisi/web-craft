@@ -81,6 +81,19 @@ describe('share codec', () => {
     expect(decodeShare('')).toBeNull()
     expect(decodeShare('not-valid')).toBeNull()
     expect(decodeShare(btoa('{"v":2,"title":"x"}'))).toBeNull()
+    expect(decodeShare(btoa(JSON.stringify({ v: 1, title: 'x', vibe: 'spider', blocks: [] })))).toBeNull()
+    expect(
+      decodeShare(
+        btoa(
+          JSON.stringify({
+            v: 1,
+            title: 'x',
+            vibe: 'miles',
+            blocks: [{ id: 'b', type: 'heading', size: 'xl' }],
+          }),
+        ),
+      ),
+    ).toBeNull()
   })
 
   it('builds a fresh zine from a payload', () => {
