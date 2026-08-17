@@ -10,11 +10,11 @@ import { cutoutImage } from '../lib/cutout'
 import { appHref } from '../lib/paths'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
+import { useHistory } from '../lib/useHistory'
 import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
-type Snap = { title: string; vibe: VibeId; blocks: Block[] }
 type Sheet = 'tray' | 'inspect' | 'more' | null
 
 export function Editor() {
@@ -46,10 +46,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const [dropOpen, setDropOpen] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
-  const past = useRef<Snap[]>([])
-  const future = useRef<Snap[]>([])
   const textTimer = useRef<number>(0)
   const textDirty = useRef(false)
+  const { remember, undo, redo } = useHistory(zine)
 
   const selectedBlock = zine.blocks.find((b) => b.id === selected)
 
@@ -59,39 +58,6 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       (w) => w.slash.includes(q) || w.label.toLowerCase().includes(q) || w.type.includes(q),
     )
   }, [slash])
-
-  function snapshot(): Snap {
-    return {
-      title: zine.title,
-      vibe: zine.vibe,
-      blocks: structuredClone(zine.blocks),
-    }
-  }
-
-  function remember() {
-    past.current.push(snapshot())
-    if (past.current.length > 60) past.current.shift()
-    future.current = []
-  }
-
-  function applySnap(snap: Snap) {
-    patchZine(zine.id, { title: snap.title, vibe: snap.vibe })
-    setBlocks(zine.id, snap.blocks)
-  }
-
-  function undo() {
-    const prev = past.current.pop()
-    if (!prev) return
-    future.current.push(snapshot())
-    applySnap(prev)
-  }
-
-  function redo() {
-    const next = future.current.pop()
-    if (!next) return
-    past.current.push(snapshot())
-    applySnap(next)
-  }
 
   function update(next: Block[], record = true) {
     if (record) remember()

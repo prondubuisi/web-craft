@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Items **8** and **9** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites). Items **10–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+Items **8–10** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`). Items **11–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
 
 ## Priority order
 
@@ -27,7 +27,7 @@ Items **8** and **9** are done (`useRemote` on Preview; `useRemoteWithFallback` 
 7. Shared client/server request-response types — done (incremental; auth/board/fest + `api.ts`)
 8. Adopt `useRemote` in the one view that still bypasses it — done
 9. Extract the duplicated "remote + local fallback" merge into a shared hook — done
-10. Split `Editor.tsx`'s six concerns, starting with undo/redo — not started
+10. Split `Editor.tsx`'s six concerns, starting with undo/redo — done (undo/redo only)
 11. Add test coverage for `useIssueSocial.ts` — not started
 12. Narrow the migration runner's error-swallowing — not started
 13. Multi-stage `Dockerfile` — not started
@@ -181,6 +181,8 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 **Target:** extract at least undo/redo into its own hook (e.g. `useHistory`) as the first, most self-contained cut — the functions are already named and bounded (`snapshot`/`remember`/`undo`/`redo`), making it the lowest-risk starting point. Keyboard shortcuts and drag/scatter positioning are reasonable follow-ups once the pattern is proven, not required in the same PR.
 
 **Migration path:** one concern at a time, each its own PR, each behavior-preserving. `e2e/studio.spec.ts` already covers undo/redo, keyboard shortcuts (`Meta+Z`, `Meta+Shift+Z`, `Backspace`), and drag/scatter — existing regression net, no new tests required unless the extraction changes an edge case.
+
+**Done (first cut).** `useHistory` owns `snapshot` / `remember` / `undo` / `redo`. Keyboard shortcuts, drag/scatter, block CRUD, share, and cutout stay in `Editor.tsx`. Follow-ups are not required until someone is already in that file.
 
 ---
 
