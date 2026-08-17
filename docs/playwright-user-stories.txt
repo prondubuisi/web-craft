@@ -1,5 +1,11 @@
 # Prompt: Complete Playwright user-story suite for Zineverse
 
+> **Status: Implemented, 2026-08-17.** Stories 1–40 plus the thoroughness
+> gaps from `docs/playwright-e2e-prompt.txt` live in
+> `e2e/{cover,studio,reader,stream,scene,snapshot}.spec.ts`.
+> `npx playwright test` is **60 passed**. Unit tests 124, lint warnings only.
+> `e2e/flows.spec.ts` is gone. CI still does not run e2e — needs `npm run dev`.
+
 You are implementing a **complete Playwright user-story suite** for Zineverse (`web-craft`). The goal is not more screenshots and not another feature. The goal is: a first-time visitor, a local maker, and a signed-in scene member can walk every real route and every named mechanic without a pageerror, and the suite documents those walks as tests.
 
 Read first, in this order: `README.md`, `sg.md`, `docs/STATUS.md`, `e2e/flows.spec.ts`, `playwright.config.ts`, `src/App.tsx`, `src/lib/widgets.ts`, `src/lib/primer.ts`, `src/components/Chrome.tsx`, `src/components/DropModal.tsx`, `src/components/EditorMeta.tsx`, `src/views/{Landing,Studio,Editor,Preview,Explore,Help,Board,Fest,Cork,Mail,Jam,Profile,Share,NotFound}.tsx`, `src/lib/seed.ts`. Do not invent routes or buttons. Assert the copy and controls that already exist.

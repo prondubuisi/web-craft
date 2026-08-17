@@ -20,7 +20,7 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**. Auth rate limits and token rotation are on `develop` (Unreleased).
+Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**. Auth, the `social/` split, checkout-into-bag, reader INK, and 60 Playwright stories shipped in **1.4.1**.
 
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 

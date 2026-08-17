@@ -1,14 +1,14 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.4.0)_
+_Last reviewed: 2026-08-17 (1.4.1)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.4.0`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.4.1`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
 
 Public repo: https://github.com/prondubuisi/web-craft  
 Live demo: https://prondubuisi.github.io/web-craft/  
-git-flow: `main` / `develop`, tags `0.1.0` … `1.4.0`.
+git-flow: `main` / `develop`, tags `0.1.0` … `1.4.1`.
 
 Routes (from `src/App.tsx`):
 
@@ -44,7 +44,7 @@ Routes (from `src/App.tsx`):
 
 **Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + test + build.
 
-**Testing:** Vitest + happy-dom (19 `*.test.ts` files, including `server/api.test.ts` plus migration and service tests). Playwright user-story suite in `e2e/` (`npm run test:e2e`, needs `npm run dev`). Puppeteer smoke script `scripts/verify.mjs` (~319 lines); 22 shots in `scripts/shots/`.
+**Testing:** Vitest + happy-dom (21 `*.test.ts` files, 124 tests, including `server/api.test.ts`, `server/rateLimit.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 60 tests (`npm run test:e2e`, needs `npm run dev`). Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
 **Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (next changes).
 
@@ -61,7 +61,7 @@ Routes (from `src/App.tsx`):
 
 Zineverse is a **working client-first zine tool with an optional multi-user API**. The Pages demo stays usable offline. Signed-in local or hosted API sessions sync drafts and enforce publish, likes, remix, comments, polls, mail, fest, and the drop-seal.
 
-Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass in `sg.md` shipped in 1.4.0.
+Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1.
 
 `docs/ARCHITECTURE_PLAN.md` items 1–7 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches, and incremental `src/lib/contract.ts` types.
 

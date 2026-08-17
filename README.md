@@ -22,6 +22,7 @@ npm run dev:api   # API only
 
 ```bash
 npm test          # unit tests
+npm run test:e2e  # Playwright user stories; needs `npm run dev` on :5173
 npm run lint      # oxlint + stylelint
 npm run build     # typecheck + production bundle
 ```

@@ -150,4 +150,28 @@ test.describe('A. first visit / readable chrome', () => {
     await page.reload()
     await expect(page.getByRole('heading', { name: 'One finished issue' })).toHaveCount(0)
   })
+
+  test('nav chrome is on every top-level route', async ({ page }) => {
+    for (const path of ['/', '/studio', '/help', '/explore', '/board', '/fest', '/cork', '/mail']) {
+      await page.goto(path)
+      const nav = page.locator('.nav-links')
+      await expect(nav.getByRole('link', { name: 'Cover', exact: true })).toBeVisible()
+      await expect(nav.getByRole('link', { name: 'Studio', exact: true })).toBeVisible()
+      await expect(nav.getByRole('link', { name: 'Stream', exact: true })).toBeVisible()
+      await expect(nav.getByRole('link', { name: 'Help', exact: true })).toBeVisible()
+      expect(await nav.innerText()).not.toMatch(/\bBoard\b/)
+    }
+  })
+
+  test('MAIL wire hot unread then marks read', async ({ page }) => {
+    await page.goto('/')
+    const mail = page.getByRole('button', { name: /new notices|Notices/i })
+    await expect(mail).toHaveClass(/hot/)
+    await expect(page.locator('.inbox-count')).toBeVisible()
+    await mail.click()
+    const panel = page.locator('[role="dialog"][aria-label="Notices"]')
+    await expect(panel).toBeVisible()
+    await expect(panel.locator('li').first()).toBeVisible()
+    await expect(page.locator('.inbox-btn.hot')).toHaveCount(0)
+  })
 })

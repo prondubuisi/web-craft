@@ -2,7 +2,7 @@
 
 _Compiled: 2026-08-14, against v1.1.0. Implemented on `develop` 2026-08-14._
 
-This is a restructuring plan for the seven issues raised in the architecture critique of the same date. **Authentication/session security (login rate limiting, token hardening) is explicitly out of scope here and left for later** — that item stays tracked in `docs/STATUS.md`'s Access & Security Review. Everything else from the critique is covered below.
+This is a restructuring plan for the seven issues raised in the architecture critique of the same date. **Authentication/session security** (login rate limiting, token rotation) shipped in 1.4.1 — see `docs/STATUS.md`. Everything else from the critique is covered below.
 
 Each item states the problem in one line, the target structure, and a migration path that doesn't require a big-bang rewrite — every one of these can land as its own incremental PR against `develop`, in the priority order given.
 
@@ -137,6 +137,6 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 
 ## What's deliberately not in this plan
 
-- **Auth/session hardening** (login rate limiting, token rotation) — deferred per instruction, tracked in `docs/STATUS.md`.
+- **Auth/session hardening** (login rate limiting, token rotation) — shipped 1.4.1.
 - **A full CSS Modules or CSS-in-JS migration** — the actual problem (file size, reviewability, the class of bug that slipped through) is solved by §5's split + lint step without paying for a bigger scoping migration.
 - **A full tRPC/GraphQL/codegen layer** — §7 gets most of the safety (compile-time shape checking) at a fraction of the migration cost; revisit only if the hand-written contract file itself becomes unwieldy.
