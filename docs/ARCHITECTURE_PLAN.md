@@ -6,6 +6,16 @@ This is a restructuring plan for the seven issues raised in the architecture cri
 
 Each item states the problem in one line, the target structure, and a migration path that doesn't require a big-bang rewrite — every one of these can land as its own incremental PR against `develop`, in the priority order given.
 
+## Round 2 — 2026-08-17, against v1.5.0
+
+Items 1–7 below are the original audit and are fully shipped. A second, independent audit was read against the codebase after the `sg1`–`sg4` product/safety passes (`1.4.0`–`1.5.0`), covering client state, the server, and build/CI/deploy tooling — three areas the first audit already restructured once, now revisited for drift and new growth. It found 18 evidence-backed issues, grouped by risk/value. The **correctness & security tier shipped in 1.5.1**:
+
+- Server-side validation of zine/block JSON, reusing the client's `src/lib/shape.ts` validator (`assertBlocks`) at the two write endpoints that previously did a blind `as Block[]` cast — see item 1 of the original critique's counterpart, now closed at the server too.
+- Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
+- Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
+
+Item **8** (Preview through `useRemote`) is done. Items **9–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+
 ## Priority order
 
 1. Migrations framework (unblocks safely touching schema for everything else) — done
@@ -15,8 +25,15 @@ Each item states the problem in one line, the target structure, and a migration 
 5. Split `global.css` by domain + add a CSS lint step — done
 6. Formalize the "online-only feature" data-fetch pattern — done
 7. Shared client/server request-response types — done (incremental; auth/board/fest + `api.ts`)
+8. Adopt `useRemote` in the one view that still bypasses it — done
+9. Extract the duplicated "remote + local fallback" merge into a shared hook — not started
+10. Split `Editor.tsx`'s six concerns, starting with undo/redo — not started
+11. Add test coverage for `useIssueSocial.ts` — not started
+12. Narrow the migration runner's error-swallowing — not started
+13. Multi-stage `Dockerfile` — not started
+14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — not started
 
-Items 4 and 5 have no dependency on anything else and can be done anytime, including in parallel with 1–3.
+Items 4 and 5 have no dependency on anything else and can be done anytime, including in parallel with 1–3. Items 8–14 are each independent of one another and of 1–7.
 
 ---
 
@@ -135,8 +152,81 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 
 ---
 
+## 8. `Preview.tsx` doesn't use `useRemote`
+
+**Problem:** §6 (above) added `useRemote` specifically to stop every view from hand-rolling its own online-check/loading/error fetch effect. Eight call sites across seven views (`Cork`, `Studio`, `Explore` ×2, `Profile` ×2, `Board`, `Fest`, `Jam`) adopted it. `Preview.tsx:68-77` — the single highest-traffic view in the app — still hand-rolls its own `cancelled`-flag `useEffect` around `api.get(id, key)`, the exact pattern `useRemote` was built to replace.
+
+**Target:** convert `Preview.tsx`'s fetch to `useRemote(() => api.get(id, key), [id, key])`, matching every other adopter. **Done.** Unlock still writes an overlay (`unlockedZine`) because `api.unlock` is a user action, not the initial fetch.
+
+**Migration path:** single-view, self-contained change. `e2e/reader.spec.ts` already exercises `/z/:id` end to end (missing-issue fallback, locked/sealed states, passphrase gating, chain mode) — that's the regression net; no new test needed unless behavior actually changes.
+
+---
+
+## 9. The "remote value + local fallback" merge is duplicated five times
+
+**Problem:** even with `useRemote` handling the fetch itself, four views hand-copy a second, near-identical `useEffect` on top of it that merges the remote result with a `localStorage` fallback when offline or errored: `Cork.tsx:24-31`, `Studio.tsx:43-50`, `Explore.tsx:24-45`, `Profile.tsx:74-96`. This is the same class of duplication §6 already fixed one layer down — it just grew back a layer up.
+
+**Target:** a small hook layered on `useRemote`, e.g. `useRemoteWithFallback(fetcher, loadLocal, deps)` returning the merged value directly, so each view drops its second effect.
+
+**Migration path:** write the hook once with its own test (mirrors how `useRemote` itself was introduced), then convert one view at a time — low risk, each conversion is independent and behavior-preserving, same migration shape §6 used.
+
+---
+
+## 10. `Editor.tsx` mixes six concerns in one 587-line component
+
+**Problem:** undo/redo history (`snapshot`/`remember`/`undo`/`redo`), global keyboard shortcut handling, drag-and-drop reordering plus scatter-mode positioning, block CRUD, share/clipboard actions, and photo-cutout upload all live in one component with nothing extracted to hooks — unlike `Preview.tsx`, which did pull its social logic into `useIssueSocial` (see item 11).
+
+**Target:** extract at least undo/redo into its own hook (e.g. `useHistory`) as the first, most self-contained cut — the functions are already named and bounded (`snapshot`/`remember`/`undo`/`redo`), making it the lowest-risk starting point. Keyboard shortcuts and drag/scatter positioning are reasonable follow-ups once the pattern is proven, not required in the same PR.
+
+**Migration path:** one concern at a time, each its own PR, each behavior-preserving. `e2e/studio.spec.ts` already covers undo/redo, keyboard shortcuts (`Meta+Z`, `Meta+Shift+Z`, `Backspace`), and drag/scatter — existing regression net, no new tests required unless the extraction changes an edge case.
+
+---
+
+## 11. `useIssueSocial.ts` has no test coverage
+
+**Problem:** at 308 lines, `useIssueSocial` is the largest and most logic-dense hook in `src/lib/` — it backs most of `Preview.tsx`'s business logic (margins, archive, run, bag, watch state) via six independent hand-rolled fetch effects plus several imperative `.catch(catchBackground)` calls — and has zero dedicated tests. Every other safety-relevant module added this cycle (`shape.ts`, `catch.ts`, the reducer's `assertDev` invariants) shipped with tests; this one predates that discipline and was never backfilled.
+
+**Target:** add `useIssueSocial.test.ts`. This requires a hook-testing utility not currently a devDependency (the project's existing tests are either pure-function unit tests or full HTTP integration tests via Hono's `app.request` — nothing renders a hook in isolation yet). Evaluate `@testing-library/react` (already implied by `happy-dom` + `react`/`react-dom` being present) before reaching for a heavier dependency.
+
+**Migration path:** lowest priority of this group — it's additive test coverage, not a behavior change, and the dependency question needs a decision before the first line of test code. Do items 8–10 first; revisit this once there's a second hook that would benefit from the same test setup, to justify the new tooling.
+
+---
+
+## 12. The migration runner swallows errors too broadly
+
+**Problem:** `server/migrate.ts:53-67` (`execSql`) now silently continues past *any* error matching `/duplicate column name|no such table/i`, repo-wide. It was broadened to patch one Fly.io incident (a deployed volume missing schema `0001_init` should have applied), but the fix — `0003_legacy_columns.sql`, which re-declares all 22 `CREATE TABLE IF NOT EXISTS` statements and every `ALTER TABLE ADD COLUMN` already in `0001_init.sql` — combined with the now-global error swallow means a genuinely broken future migration (a typo'd table or column name) fails silently instead of loudly, undermining the numbered-migration framework's original guarantee. `migrate.ts:47` also hardcodes a one-off `if (id === '0002_scatter' &amp;&amp; !hasTable(db, 'zines')) continue` special case inside the runner itself.
+
+**Target:** narrow the swallowed-error matching back down to be migration-specific rather than global — e.g., a small per-migration allowlist of "this exact error is expected here" rather than a blanket regex applied to every migration that ever runs. Express the `0002_scatter` special case as an idempotent guard inside that migration file (or drop it now that `0001_init`/`0003_legacy_columns` cover the same ground), not as a conditional in the runner.
+
+**Migration path:** the most sensitive item in this group — it touches the live Fly deploy path. Test against a copy of the pre-`0003` "legacy" schema shape (the exact scenario `0003` was written for) to confirm the tightened runner still applies cleanly, before narrowing the swallow. Don't touch `0001_init.sql` or `0003_legacy_columns.sql` themselves — they're applied history; fix the runner's handling going forward only.
+
+---
+
+## 13. Single-stage `Dockerfile` ships unused devDependencies
+
+**Problem:** `Dockerfile` runs plain `npm ci` (not `--omit=dev`) and its `CMD` runs the server via `tsx` directly rather than a compiled/pruned output — single stage, nothing removed. The resulting image carries `typescript`, `vite`, `vitest`, `playwright-core`, `puppeteer-core`, `oxlint`, `stylelint`, `concurrently` (~70MB combined) plus the `python3`/`make`/`g++` toolchain installed to compile `better-sqlite3`'s native addon, none of which the running server needs.
+
+**Target:** a multi-stage build — a builder stage with the full dependency set (needed to compile `better-sqlite3` and run any build step), and a runtime stage that does `npm ci --omit=dev` and copies over only what `server/` actually imports (confirmed: `src/lib/*` only — never `src/components`, `src/views`, `src/store`, or `src/styles`), dropping the build toolchain from the final image.
+
+**Migration path:** moderate diff, no behavior change to the running app — verify with `docker build` followed by hitting `/api/health` against the built image locally before considering it done. Independent of every other item here.
+
+---
+
+## 14. CI/tooling housekeeping
+
+Four small, independent, low-risk items — good candidates to bundle into one PR or pick off individually when touching nearby files:
+
+- **`ci.yml` and `pages.yml` duplicate identical checkout/setup-node/`npm ci` boilerplate** with no composite action — and already drifted once (lint was added to `ci.yml` without `pages.yml` following, until Round 2's correctness pass closed that gap). A `.github/actions/setup/action.yml` composite action would make a future Node-version or cache-strategy change apply once instead of needing to be hand-applied everywhere.
+- **`deploy-api.yml` pins `superfly/flyctl-actions/setup-flyctl@master`** — a floating branch reference, the only unpinned action among the four used across all three workflow files (everything else is pinned to a major-version tag: `@v5`, `@v4`). Pin it to a version tag.
+- **`package.json` has a dead `allowScripts` field** (`"allowScripts": { "better-sqlite3@13.0.3": true }`) — not a real npm config key (that's a pnpm concept; this project uses npm, confirmed by `package-lock.json`). Has no effect; safe to remove.
+- **No `actions/cache` for Playwright's browser binary in `ci.yml`** — `npx playwright install --with-deps chromium` re-downloads on every run. Caching keyed on the Playwright version would speed up every CI run.
+
+---
+
 ## What's deliberately not in this plan
 
 - **Auth/session hardening** (login rate limiting, token rotation) — shipped 1.4.1.
 - **A full CSS Modules or CSS-in-JS migration** — the actual problem (file size, reviewability, the class of bug that slipped through) is solved by §5's split + lint step without paying for a bigger scoping migration.
 - **A full tRPC/GraphQL/codegen layer** — §7 gets most of the safety (compile-time shape checking) at a fraction of the migration cost; revisit only if the hand-written contract file itself becomes unwieldy.
+- **Splitting `ZineContext.tsx`** (371 lines: local persistence, auth/session, all zine mutations, notices, follow graph, in one provider with a 20-member `Store` type and no test coverage of the provider layer itself) — observed in Round 2, not recommended as an action. Scoping it into separate contexts (auth, notices, zines) is a real architectural call, not a mechanical refactor, and there's no measured evidence yet (e.g. unnecessary re-renders) that the current shape is actually causing a problem rather than just being long. Revisit if that evidence shows up.
+- **Splitting `Landing`/`Studio` out of the eager bundle** (`src/App.tsx:5-6` — the only two routes not `React.lazy`-split, and the direct cause of the largest build chunk) — observed in Round 2, not recommended. Eager-loading the near-certain first screen to avoid a loading flash on first paint is a defensible, common trade-off, not clearly a mistake.

@@ -14,6 +14,7 @@ import { copyText, tryEncodeShare } from '../lib/share'
 import { stampIssue } from '../lib/social'
 import { useCountdown } from '../lib/useCountdown'
 import { useIssueSocial } from '../lib/useIssueSocial'
+import { useRemote } from '../lib/useRemote'
 import {
   byline,
   canOpenSecret,
@@ -36,10 +37,13 @@ export function Preview() {
   const chainInvite = search.get('chain')
   const { zineById, likeZine, remixZine, recordView, profile, session, online } = useZines()
   const found = id ? zineById(id) : undefined
-  const [remote, setRemote] = useState<typeof found>()
+  const fetched = useRemote(() => api.get(id!, key), [id, key], { enabled: Boolean(id && !found) })
+  const [unlockedZine, setUnlockedZine] = useState<typeof found>()
   const [unlocked, setUnlocked] = useState(false)
   const [pass, setPass] = useState('')
   const [passError, setPassError] = useState('')
+  const fetchedZine = fetched.data?.zine
+  const remote = unlockedZine ?? (fetchedZine && fetchedZine.id === id ? fetchedZine : undefined)
   const zine = found ?? remote
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -66,15 +70,13 @@ export function Preview() {
   })
 
   useEffect(() => {
-    if (!id || found || !online) return
-    void api
-      .get(id, key)
-      .then((res) => {
-        setRemote(res.zine)
-        if (res.locked) setUnlocked(false)
-      })
-      .catch(catchBackground)
-  }, [id, found, online, key])
+    setUnlockedZine(undefined)
+    setUnlocked(false)
+  }, [id, key])
+
+  useEffect(() => {
+    if (fetched.data?.locked) setUnlocked(false)
+  }, [fetched.data])
 
   useEffect(() => {
     if (id && zine && !locked) recordView(id)
@@ -131,7 +133,7 @@ export function Preview() {
     if (online && !found) {
       try {
         const res = await api.unlock(zine!.id, pass, key)
-        setRemote(res.zine)
+        setUnlockedZine(res.zine)
         setUnlocked(true)
       } catch (err) {
         setPassError(actionError(err, 'Wrong passphrase'))
