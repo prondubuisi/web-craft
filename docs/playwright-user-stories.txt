@@ -1,0 +1,211 @@
+# Prompt: Complete Playwright user-story suite for Zineverse
+
+You are implementing a **complete Playwright user-story suite** for Zineverse (`web-craft`). The goal is not more screenshots and not another feature. The goal is: a first-time visitor, a local maker, and a signed-in scene member can walk every real route and every named mechanic without a pageerror, and the suite documents those walks as tests.
+
+Read first, in this order: `README.md`, `sg.md`, `docs/STATUS.md`, `e2e/flows.spec.ts`, `playwright.config.ts`, `src/App.tsx`, `src/lib/widgets.ts`, `src/lib/primer.ts`, `src/components/Chrome.tsx`, `src/components/DropModal.tsx`, `src/components/EditorMeta.tsx`, `src/views/{Landing,Studio,Editor,Preview,Explore,Help,Board,Fest,Cork,Mail,Jam,Profile,Share,NotFound}.tsx`, `src/lib/seed.ts`. Do not invent routes or buttons. Assert the copy and controls that already exist.
+
+## Mission
+
+Replace the current thin smoke file with a **story-shaped Playwright suite** that:
+
+1. Touches **every route** in `src/App.tsx`.
+2. Touches **every top-level view, chrome piece, and reader/editor widget** listed below.
+3. Covers the **happy path, the empty/offline path, and the locked/error path** for each story that has one.
+4. Distinguishes **local studio (no handle)** from **signed-in API** — most scene verbs need the API; the Pages demo must stay honest when it is down.
+5. Leaves `npm run test:e2e` green with `npm run dev` on `:5173` (Vite + SQLite API).
+
+Do **not** start a new feature round. Do **not** add `data-testid` unless a locator is genuinely unstable after trying role/text/label. Prefer the helpers and conventions already in `e2e/flows.spec.ts`.
+
+## What already exists (extend, do not rewrite blindly)
+
+`e2e/flows.spec.ts` already covers:
+
+- Cover: primer, collapsed nav (Cover/Studio/Stream/Help — **not** Board/Fest/Desk), vibe switch, read “after hours”
+- Help glossary + 404 (“this page tore off”)
+- Make: landing “Drop a zine” → slash `/sfx` + `/quote` → undo
+- Scatter toggle + snap control exists
+- Drop now → Preview → Like → Stuff in bag → More sheet → Preview fold
+- Stream: jam lane, search “sunday”, remix from a card
+- Sealed “midnight run” stays folded
+- Snapshot copy → `/s#…` unpack; broken hash shows “broken snapshot”
+- Studio bag after stuffing
+- Stream scene links (Board) when API is up
+- `/mail` renders without a session
+- `/fest` + `/cork` (pin a scrap)
+- Claim studio (skips if API offline)
+- Mobile editor FAB / widget sheet
+
+Keep the `fresh()` localStorage wipe, the pageerror collector, `clickText` / `clickIncludes`, `workers: 1`, `fullyParallel: false`, and `baseURL: http://127.0.0.1:5173`. Split into multiple spec files if the single file gets unreadable — suggested split below — but share helpers.
+
+`playwright.config.ts` does **not** start the app. Tests assume `npm run dev` is already up (web + API). Document that in the spec header comment. Do not add a webServer unless you also make it reliable for the SQLite API.
+
+## Surface inventory you must hit
+
+### Routes (`src/App.tsx`)
+
+| Route | View | Must appear in at least one story |
+| --- | --- | --- |
+| `/` | Landing | primer, vibes, CTAs, sample issue |
+| `/studio` | Studio | drafts, bag, claim/sign-in, import, reset, cork link |
+| `/help` | Help | every glossary term listed in `Help.tsx` ENTRIES |
+| `/explore` | Explore | search, vibe, sort, lanes, tags, pile, scene links, remix |
+| `/board` | Board | filter kinds, pin trade/collab/feedback, swap, remove |
+| `/fest` | Fest | set up a table, scene filter, sit |
+| `/cork` | Cork | pin, drag optional, paste into a draft if UI offers it |
+| `/mail` and `/mail/:handle` | Mail | letter + postcard, thread list |
+| `/jam/:id` | Jam | live jam pile from stream link; unknown id “that jam folded” |
+| `/u/:handle` | Profile | wall by series, watch, guestbook, shelf, stamps, loans if present |
+| `/edit/:id` | Editor | tray, slash, meta, inspector, drop modal, frames, scatter, snap |
+| `/z/:id` | Preview | primary actions + “More on this issue” sheet + social blocks |
+| `/s#…` | Share | good snapshot, broken snapshot, sealed snapshot if seed allows |
+| `*` | NotFound | unknown path |
+
+### Chrome and shared components (must be exercised, not just imported)
+
+- `Topbar`: Cover / Studio / Stream / Help always; Letters + `@handle` only when signed in; brand subtitle `local` / `api live` / `@name`
+- `Inbox` (“MAIL” / the wire): open empty (“quiet on this frequency”), open with a notice after a like/letter/remix, click-through
+- `LocalNote`: visible when API is down; hidden when online
+- `SceneLinks`: Desk / Board / Fest (and Letters if signed in) on Stream **only when online**
+- `Modal`, `ComicButton`, `VibePicks`, `Badge`, `Halftone`, skip-link `#main`
+- `DropModal`: public / unlisted / exquisite corpse, passphrase field, Drop now / In a minute / In an hour / Tomorrow / In a year / In a decade, Copy studio link, Copy snapshot link, Export JSON
+- `EditorMeta`: tags, series, issue #, pen name, b-side, dedication, errata, edition size, finish (clean/riso/grain), scatter, compilation chips
+- `Inspector`: select a block, change a field, commit
+- `BlockView` for **every** widget in `WIDGETS` (see below)
+- `FlipReader` via “Flip pages” / “Scroll”
+- `FoldSheet` via “Preview fold” / “Print fold sheet” (do **not** assert the OS print dialog; assert `.fold-wrap.on .fold-sheet`)
+- `Comments` (letters to the editor), `Reviews` (blurbs), `Margins` (¶ on a block)
+- `BottomSheet` on phone (FAB `+` and `☰`)
+
+### Widgets (`src/lib/widgets.ts`) — insert each at least once
+
+heading (`/heading`), sticker (`/sticker`), hero (`/halftone`), grid (`/panel`), divider (`/scribble`), sfx (`/sfx`), glitch (`/glitch`), stack (`/stack`), quote (`/quote`), poll (`/poll`), audio (`/tape`), strip (`/strip`), colophon (`/colophon`), blackout (`/blackout`), contents (`/toc`), insert (`/insert`), reply (`/reply`). Plus the tray **snap** control (file input → cutout sticker). Assert the matching CSS hook already used in the app (`.sfx-block`, `.quote-block`, `.strip-block`, `.contents-block`, etc.) or visible default copy from `createBlock`.
+
+### Seeded issues you can rely on (`src/lib/seed.ts`)
+
+Use these titles; do not hardcode generated IDs:
+
+- `after hours / bushwick` — finished public sample on the cover
+- `sunday market` — searchable on the stream
+- `midnight run` — sealed drop (`NEXT ISSUE`, `.drop-lock`)
+- `ghost notes`, `issue 13`, `LOUDER`, `dimension hop` — extras for remix / profile / jam as they appear
+
+Reset demo (`Studio` → “Reset demo”) restores them. After each test that mutates local state, either rely on `fresh()` or explicitly reset.
+
+## User stories to implement
+
+Write each as a `test.describe` + named `test(...)` that a human can read. Group by file if you split.
+
+### A. First visit / readable chrome
+
+1. **First-visit primer.** Fresh storage → `/` shows `.primer` “Make an issue” / “Print it. Pass it.” / “Remix the pile”. “Glossary” goes to `/help`. “Got it” dismisses and stays dismissed on reload (`zineverse.primer.v1`).
+2. **Collapsed nav.** Topbar is Cover, Studio, Stream, Help, MAIL. No Board / Fest / Desk in `.nav-links`. Brand says `local` or `api live`.
+3. **Offline honesty.** If you can force `online === false` (or document a headed check): `.local-note` explains local studio and links Help; Stream has no `.scene-links`. When API is up, LocalNote is absent and SceneLinks show Desk/Board/Fest.
+4. **Cover make/print/pass/remix.** “Drop a zine” opens editor titled like `miles draft`. “Enter the studio” → `/studio`. Vibe cards switch `data-vibe`. “One finished issue” → read after hours.
+5. **Help glossary.** `/help` lists every term in `ENTRIES` (issue, vibe, drop, snapshot, snap, scatter, remix, bag, distro shelf, archive, board, fest, desk, jam, letters, b-side, corpse, handle). CTAs to studio and stream work.
+6. **404.** `/no-such-dimension` → “this page tore off”.
+7. **Skip link.** `.skip-link` is in the DOM and points at `#main`.
+
+### B. Maker — studio and editor
+
+8. **Create from studio.** Studio → “Drop a new issue” → name it → “Open the page” → title input matches.
+9. **Slash commands + tray.** Type `/` and insert several widgets; click tray `/sticker`, `/halftone`, `/poll`, `/tape`, `/strip`, `/toc`, `/insert`, `/reply`, `/blackout`, `/colophon`. Cover the rest of `WIDGETS` in the same test or a table-driven loop. Undo (Meta+Z) removes the last insert.
+10. **Block tools.** Select a block: move up/down, duplicate, delete, drag handle present. Inspector edits text/word for the selected type.
+11. **Editor meta.** Fill tags, series `rooftop hours`, issue `#`, pen name, b-side text, dedication, errata, run-of (edition size). Toggle finish clean → riso → grain (`finish-riso` class). Toggle scatter on/off (`.zine-page.scatter`). Compilation chip appears for a public seed issue and can be toggled.
+12. **Frames.** Switch page / phone / tablet / fold; the canvas class changes (`.zine-page.phone` etc.).
+13. **Snap sticker.** Set input files on the snap control with a tiny fixture PNG under `e2e/fixtures/`. A sticker (or hero) appears. Do not depend on a real camera.
+14. **Export / import / delete.** Inspector “Export JSON” downloads; Studio “Import JSON” with a fixture `.zine.json` opens the editor; “Delete issue” returns to studio and the card is gone.
+15. **Reset demo.** After creating junk, Reset demo restores `after hours` / `midnight run`.
+16. **Mobile editor.** 390×844: FAB `+` opens sheet with `/sticker` and snap; `☰` opens the issue menu (Preview / Drop).
+17. **Drop modal variants (local).**
+    - Drop now → toast “dropped” → Preview live.
+    - Unlisted drop → studio card says unlisted; stranger `/z/:id` is hidden or asks for the secret as the UI does today.
+    - Passphrase (4+ chars) → reader shows “folded behind a passphrase”; wrong phrase errors; right phrase opens.
+    - “In a minute” → reader sealed with countdown (do not sleep a full minute; assert lock + copy).
+    - Exquisite corpse toggle → after drop, More sheet has “Copy corpse link” for the author.
+    - Copy studio link / Copy snapshot link / Export JSON buttons exist and snapshot copy produces a `#` hash (skip if clipboard denied, same as today).
+
+### C. Reader — `/z/:id`
+
+18. **Primary actions only.** After a live drop: Like → Liked; Remix → editor title contains remix; Print issue does not throw (stub `window.print`); Flip pages shows flip chrome, Scroll returns; Stuff in bag → In the bag; Edit only if mine. Primary `.issue-actions` must **not** show Nominate / Preview fold / Copy snapshot (those live under More).
+19. **More on this issue.** Opens `.issue-more`. Copy snapshot; Preview fold → `.fold-wrap.on .fold-sheet`; Hide fold; Stock in distro (other people’s issues); Nominate; Watch this run if series set; Check out only if archived; Claim N/M if edition size set; Unfold the b-side if `bSide` set.
+20. **Social on the page.** Blurbs (`aria-label="Blurbs"`) — leave one, it replaces on second submit. Letters to the editor (`aria-label="Letters"`) — leave a note. Marginalia on a block. Tear-out `/reply` block (if inserted) mails the maker or shows the mail note the UI already uses.
+21. **Street poll.** Insert `/poll`, drop, vote an option on the reader; selection persists on reload for that browser.
+22. **Mixtape.** `/tape` block renders; do not require real audio playback beyond the control existing.
+23. **Sealed seed.** `midnight run` from Stream: NEXT ISSUE, `.drop-lock`, pages not readable.
+24. **Chain invite.** Author copies corpse link (`?chain=`); opening it as a “stranger” (second context) shows only the last page / invite chrome the app already has.
+
+### D. Stream, jam, archive
+
+25. **Stream filters.** `/explore`: search `sunday` filters cards; vibe chips (Miles/Gwen/Peni/Ham/Noir); sort new / likes / remixes; tag `#` chips if present.
+26. **Lanes.** all / watching / jam / archive. Watching empty or gated without a session. Jam lane shows toner week / sunday market. Archive lane renders even if empty.
+27. **Pull from the pile.** Lands on a live `/z/:id`.
+28. **Remix from a card.** Stream Remix → editor `/remix/`.
+29. **Jam page.** Click the live jam title → `/jam/:id` shows LIVE JAM, prompt, format hint, pile (or “Nobody printed into this jam yet.”). Unknown `/jam/nope` → “that jam folded”.
+30. **Scene hop.** When API up: Desk / Board / Fest from `.scene-links`.
+
+### E. Scene — board, fest, cork, mail, profile, wire
+
+Use two browser contexts (`browser.newContext()`) for anything that needs two handles. Claim unique handles (`pw` + timestamp). Skip the signed-in half cleanly if Claim studio is disabled (API down), same pattern as the existing test.
+
+31. **Board.** Pin a trade, filter trade/collab/feedback, attach an issue if the select exists, mark swapped, unswap, remove. Visit a pin’s author profile and attached issue.
+32. **Fest.** Set up a table (name, scene, blurb, attach a dropped issue). Filter by scene. Sit / leave. Open an issue from the table.
+33. **Cork / desk.** Pin a scrap; it appears as `.cork-pin`. If “paste into draft” exists, paste and land in the editor with that text. Unpin.
+34. **Letters.** `/mail` without session still renders. Signed in: send a letter to the other handle; `/mail/:handle` shows the thread; toggle postcard + vibe → “Mail postcard” → POSTCARD chip; unread badge on the thread list.
+35. **Profile.** `/u/:handle` after claim: bio + scene save if the form is there; public wall grouped by series; Watch wall / watch this person; write a guestbook note as the other user; distro shelf after “Stock in distro”; passport stamps after visiting an issue; loans section if you checked out an archive.
+36. **The wire.** After the other user likes or letters you, MAIL badge is hot; panel `aria-label="Notices"` lists the event; click opens the issue or mail thread.
+
+### F. Snapshot, PWA chrome, profile of a seed, print
+
+37. **Good snapshot.** Copy snapshot of after hours → `/s#hash` shows article text. Hash change on `/s` updates (existing bugfix — regression-test it).
+38. **Broken snapshot.** `/s#not-a-zine` → “broken snapshot”.
+39. **Studio community rail.** Open a seed from the studio sidebar “community stream”.
+40. **Help from LocalNote / primer** already covered; also Help → “Open the studio” / “The stream”.
+
+## Engineering rules
+
+- **One worker, serial.** Shared `localStorage` + one SQLite file. Do not enable full parallel.
+- **Fresh storage per test** via the existing `fresh()` init script. Do not leak primer dismissal or claimed handles across tests except inside a multi-step story that says so.
+- **No pageerrors.** Keep the afterEach collector. Filter network `Failed to load resource` the same way.
+- **Clipboard.** Grant permissions; `test.skip` if the hash is empty — do not fail CI on a Chrome clipboard quirk.
+- **Print.** Stub `window.print` so “Print issue” / “Print fold sheet” do not hang. Assert fold markup, not paper.
+- **File inputs.** Use `e2e/fixtures/` (tiny PNG, tiny valid `.zine.json`). Never hit a real camera or microphone.
+- **API optional.** Every scene story must `test.skip` (with a reason) if Claim studio is disabled or `/health`-equivalent fails. Local-studio stories must still pass with API down.
+- **Two users.** For mail, watch, like notices, board swap-as-other: two contexts, two handles. Clean up is “leave the handles”; do not write a delete-user API that does not exist.
+- **Locators.** Prefer `getByRole`, `getByLabel`, exact button copy already in the UI (`Stuff in bag`, `More on this issue`, `Drop now`, `Claim studio`). Reuse `clickText` / `clickIncludes`. Avoid brittle nth-of-type except vibe cards if necessary.
+- **Timeouts.** Stay within the 45s test / 8s expect budget. Do not `waitForTimeout` for “In a minute” to expire.
+- **No new product copy** just to make tests easier, except a `data-testid` as a last resort on the drop toast or MAIL count if roles are insufficient.
+
+## Suggested file layout
+
+```
+e2e/
+  helpers.ts          // fresh, clickText, clickIncludes, claimHandle, stubPrint
+  fixtures/dot.png
+  fixtures/sample.zine.json
+  cover.spec.ts       // A
+  studio.spec.ts      // B
+  reader.spec.ts      // C
+  stream.spec.ts      // D
+  scene.spec.ts       // E (API-aware)
+  snapshot.spec.ts    // F
+```
+
+Keep `playwright.config.ts` as-is unless you need `permissions: ['clipboard-read', 'clipboard-write']` globally.
+
+## Acceptance
+
+- `npx playwright test` (with `npm run dev` running) is green.
+- Every route in `App.tsx` is visited.
+- Every `WIDGETS` type is inserted once.
+- Primary reader actions and the More sheet are both asserted (regression for the 1.4 readable chrome).
+- Nav still excludes Board/Fest/Desk.
+- Sealed midnight run stays sealed.
+- At least one two-person story (letter or like → MAIL) when the API is up.
+- Existing unit tests and lint are untouched and still pass (`npm test`, `npm run lint`).
+- Do not bump the version. Do not start `release/1.4.0`. This is test coverage for the readable slice already on `develop`.
+
+## Out of scope
+
+Auth rate limits, token rotation, Fly deploy, merging bag/shelf/archive, new blocks/routes/badges, visual snapshot diffs, driving the real print dialog, load/perf tests.
+
+When you are done, list the spec files and a one-line map of which story IDs landed in which file. Call out any story you skipped because the UI does not expose it without a multi-minute wait or a missing API, and why.
