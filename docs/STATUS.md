@@ -1,14 +1,14 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.4.8)_
+_Last reviewed: 2026-08-17 (1.5.0)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.4.8`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.5.0`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
 
 Public repo: https://github.com/prondubuisi/web-craft  
 Live demo: https://prondubuisi.github.io/web-craft/  
-git-flow: `main` / `develop`, tags `0.1.0` … `1.4.8`.
+git-flow: `main` / `develop`, tags `0.1.0` … `1.5.0`.
 
 Routes (from `src/App.tsx`):
 
@@ -61,13 +61,13 @@ Routes (from `src/App.tsx`):
 
 Zineverse is a **working client-first zine tool with an optional multi-user API**. The Pages demo stays usable offline. Signed-in local or hosted API sessions sync drafts and enforce publish, likes, remix, comments, polls, mail, fest, and the drop-seal.
 
-Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down.
+Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down. **1.5.0** is the consolidation observation: Help names the four missing answer terms; the More sheet points at Help.
 
 `docs/ARCHITECTURE_PLAN.md` items 1–7 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches, and incremental `src/lib/contract.ts` types.
 
 ## Suggested Next Steps
 
-The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** is open as a consolidation observation (`docs/sg4.md`): keep the three piles and five answer forms; Help now names blurb, margin, dedication, and tear-out.
+The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). Three piles and five answer forms stay. No further 1.5.x work unless CI is red, the live demo lies, or you open a new note.
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
