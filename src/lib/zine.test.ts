@@ -12,6 +12,8 @@ import {
   isVibeId,
   issuePath,
   readStudioCreate,
+  recalledVibe,
+  rememberVibe,
   studioPath,
   normalizeIssueNo,
   normalizeSeries,
@@ -138,6 +140,7 @@ describe('profiles', () => {
   it('builds studio and editor routes', () => {
     expect(studioPath()).toBe('/studio')
     expect(studioPath({ new: true, vibe: 'peni' })).toBe('/studio?new=1&vibe=peni')
+    expect(studioPath({ vibe: 'peni' })).toBe('/studio?vibe=peni')
     expect(editPath('abc')).toBe('/edit/abc')
   })
 
@@ -146,7 +149,15 @@ describe('profiles', () => {
     expect(isVibeId('spider')).toBe(false)
     expect(readStudioCreate('new=1&vibe=peni')).toEqual({ create: true, vibe: 'peni' })
     expect(readStudioCreate('new=1&vibe=spider')).toEqual({ create: true, vibe: undefined })
+    expect(readStudioCreate('vibe=noir')).toEqual({ create: false, vibe: 'noir' })
     expect(readStudioCreate('')).toEqual({ create: false, vibe: undefined })
+  })
+
+  it('remembers the cover vibe for studio', () => {
+    sessionStorage.clear()
+    expect(recalledVibe()).toBeUndefined()
+    rememberVibe('noir')
+    expect(recalledVibe()).toBe('noir')
   })
 })
 
