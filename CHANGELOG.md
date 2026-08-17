@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Cover and studio create buttons say make / new. Editor **Drop issue** still means publish (`docs/sg5.md`).
+
 ## 1.5.3 — 2026-08-17
 
 Architecture plan Round 2 items 9–14. Remote + local merges use `useRemoteWithFallback`. Editor undo/redo lives in `useHistory`. `useIssueSocial` has tests. Migration leftovers ignore errors only on `0002`/`0003`. API image is multi-stage. CI shares one setup action, caches Playwright, and pins `flyctl` to `@v1`.

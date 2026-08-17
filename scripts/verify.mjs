@@ -73,7 +73,7 @@ const studioH = await page.$eval('h1', (el) => el.textContent)
 assert(studioH?.toLowerCase().includes('your zines'), `studio title ${studioH}`)
 await shot('03-studio')
 
-await clickText('Drop a new issue')
+await clickText('New issue')
 await page.waitForSelector('[role="dialog"]')
 await clickText('Gwen')
 const titleInput = await page.$('[role="dialog"] input')
