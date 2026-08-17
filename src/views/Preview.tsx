@@ -8,6 +8,7 @@ import { Comments } from '../components/Comments'
 import { Margins } from '../components/Margins'
 import { Reviews } from '../components/Reviews'
 import { api } from '../lib/api'
+import { actionError, catchBackground } from '../lib/catch'
 import { appHref } from '../lib/paths'
 import { copyText, tryEncodeShare } from '../lib/share'
 import { stampIssue } from '../lib/social'
@@ -72,7 +73,7 @@ export function Preview() {
         setRemote(res.zine)
         if (res.locked) setUnlocked(false)
       })
-      .catch(() => undefined)
+      .catch(catchBackground)
   }, [id, found, online, key])
 
   useEffect(() => {
@@ -85,7 +86,7 @@ export function Preview() {
         vibe: zine.vibe,
         createdAt: Date.now(),
       })
-      if (online && session) void api.stamp(zine.id).catch(() => undefined)
+      if (online && session) void api.stamp(zine.id).catch(catchBackground)
     }
     // Stamp once per issue visit.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +134,7 @@ export function Preview() {
         setRemote(res.zine)
         setUnlocked(true)
       } catch (err) {
-        setPassError(err instanceof Error ? err.message : 'Wrong passphrase')
+        setPassError(actionError(err, 'Wrong passphrase'))
       }
       return
     }

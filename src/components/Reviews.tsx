@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
+import { actionError } from '../lib/catch'
 import { loadReviews, upsertReview } from '../lib/social'
 import type { Review } from '../lib/types'
 import { profilePath } from '../lib/zine'
@@ -57,7 +58,7 @@ export function Reviews({
       }
       setBody('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not post')
+      setError(actionError(err, 'Could not post'))
     } finally {
       setBusy(false)
     }

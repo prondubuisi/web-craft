@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { actionError } from './catch'
 import { useZines } from '../store/useZines'
 
 export type RemoteState<T> = {
@@ -48,7 +49,7 @@ export function useRemote<T>(
         })
         .catch((err) => {
           if (!cancelled) {
-            setError(err instanceof Error ? err.message : 'request failed')
+            setError(actionError(err, 'request failed'))
             setLoading(false)
           }
         })

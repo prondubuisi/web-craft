@@ -105,7 +105,7 @@ export function Studio() {
                       const id = importZine(assertZineShape(raw))
                       navigate(`/edit/${id}`)
                     } catch (err) {
-                      window.alert(err instanceof Error ? err.message : 'That file is not a Zineverse issue.')
+                      window.alert(actionError(err, 'That file is not a Zineverse issue.'))
                     }
                   })
                 }}

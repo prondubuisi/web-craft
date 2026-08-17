@@ -71,10 +71,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at 
 
 No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev` (`0003_legacy_columns` unblocked the leftover volume).
 
-Engineering, from `sg.md` / `docs/sg3.md`:
-
-1. Finish the silent-catch sweep in remaining views when those files are touched.
-
-sg3 items 1 (`mergeZines`), 2 (`assertZineShape`), 3 (Playwright in CI), and 5 (reducer invariants) are done. Item 4 is started (`catchBackground` / `actionError`).
+Engineering, from `sg.md` / `docs/sg3.md`: no dedicated items open. sg3 1–5 are done on the client (`mergeZines`, `assertZineShape`, Playwright in CI, `catchBackground`/`actionError`, reducer invariants). Server JSON parse-or-null stays.
 
 Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.

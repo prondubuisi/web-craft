@@ -42,8 +42,8 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     try {
       const res = await api.notices()
       setNotices(res.notices)
-    } catch {
-      // keep local inbox
+    } catch (err) {
+      catchBackground(err)
     }
   }, [])
 
@@ -345,7 +345,9 @@ export function ZineProvider({ children }: { children: ReactNode }) {
             void refreshNotices()
             return res.following
           } catch {
-            return state.profile.following.includes(name)
+            const on = state.profile.following.includes(name)
+            dispatch({ type: on ? 'unfollow' : 'follow', handle: name })
+            return !on
           }
         }
         const on = state.profile.following.includes(name)
