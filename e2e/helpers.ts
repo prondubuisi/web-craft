@@ -82,6 +82,29 @@ export function expectNoPageErrors(page: Page) {
   expect(bucket, bucket.join('\n')).toEqual([])
 }
 
+function luma(rgb: string) {
+  const parts = rgb.match(/\d+/g)?.map(Number) ?? [0, 0, 0]
+  return (0.2126 * parts[0] + 0.7152 * parts[1] + 0.0722 * parts[2]) / 255
+}
+
+/** Ghost ink must read against the paper surface it sits on. */
+export async function expectGhostContrast(
+  locator: import('@playwright/test').Locator,
+  surface: 'paper' | 'ink',
+) {
+  const sample = await locator.evaluate((el) => {
+    const style = getComputedStyle(el)
+    const host = el.closest('.zine-page, .modal') ?? el.parentElement
+    return { color: style.color, background: host ? getComputedStyle(host).backgroundColor : '' }
+  })
+  if (surface === 'paper') {
+    expect(luma(sample.color), `ghost ink ${sample.color} on paper`).toBeLessThan(0.35)
+    expect(luma(sample.background), `paper surface ${sample.background}`).toBeGreaterThan(0.7)
+  } else {
+    expect(luma(sample.color), `ghost ink ${sample.color} on ink`).toBeGreaterThan(0.7)
+  }
+}
+
 export async function clickText(page: Page, text: string) {
   await page
     .locator('a,button,label,span')

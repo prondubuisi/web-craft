@@ -54,6 +54,8 @@
   width: min(720px, 100%);
   background: var(--paper);
   color: var(--ink);
+  --ghost-ink: var(--ink);
+  --ghost-border: var(--ink);
   border: 4px solid var(--ink);
   box-shadow:
     10px 12px 0 var(--ink),
