@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ComicButton, Topbar } from '../components/Chrome'
+import { ComicButton, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { actionError, catchBackground } from '../lib/catch'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -96,6 +96,7 @@ export function Board() {
             <p className="serif" style={{ maxWidth: 540, marginTop: 8 }}>
               Real zines move by trade, collab, and feedback. Pin a want. Answer in ink.
             </p>
+            <SceneLinks here="/board" />
           </div>
         </div>
 

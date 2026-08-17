@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
-import { ComicButton, Halftone, LocalNote, Topbar } from '../components/Chrome'
+import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../components/Chrome'
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
@@ -153,6 +153,7 @@ export function Landing() {
           whole studio.{' '}
           <Link to="/help">A glossary lives at /help.</Link>
         </p>
+        <SceneLinks />
       </section>
 
       <footer className="footer-issue">

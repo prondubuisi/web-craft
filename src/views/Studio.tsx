@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
+import { Badge, ComicButton, Halftone, LocalNote, Modal, SceneLinks, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -111,6 +111,7 @@ export function Studio() {
             <Link to="/cork" className="comic-btn ghost">
               Corkboard
             </Link>
+            <SceneLinks here="/cork" />
             <label className="comic-btn ghost">
               Import JSON
               <input

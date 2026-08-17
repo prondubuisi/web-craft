@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ComicButton, Topbar } from '../components/Chrome'
+import { ComicButton, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { useRemoteWithFallback } from '../lib/useRemote'
 import { loadSits, loadTables, toggleSit, upsertTable } from '../lib/social'
@@ -78,6 +78,7 @@ export function Fest() {
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
               Not a marketplace. Tables, scenes, and whatever you carried in your bag.
             </p>
+            <SceneLinks here="/fest" />
           </div>
         </div>
 

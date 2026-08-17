@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ComicButton, Topbar } from '../components/Chrome'
+import { ComicButton, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { actionError } from '../lib/catch'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -77,6 +77,7 @@ export function Mail() {
             <p className="serif" style={{ maxWidth: 480, marginTop: 8 }}>
               Private mail. Not a letter to the editor — just two handles and a folded note.
             </p>
+            <SceneLinks here="/mail" />
           </div>
         </div>
 

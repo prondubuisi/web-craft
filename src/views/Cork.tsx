@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ComicButton, Topbar } from '../components/Chrome'
+import { ComicButton, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { catchBackground } from '../lib/catch'
 import { useRemoteWithFallback } from '../lib/useRemote'
@@ -61,6 +61,7 @@ export function Cork() {
             <p className="serif" style={{ maxWidth: 480, marginTop: 8 }}>
               Scatter clippings before they become a page. This is not an issue yet.
             </p>
+            <SceneLinks here="/cork" />
           </div>
         </div>
         <form
