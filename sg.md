@@ -20,11 +20,11 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. Boot/sign-in use `mergeZines`; the `replaceZines` overwrite is gone (sg3 item 1, unreleased on `develop`).
+Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. The sg3 safety pass is **1.4.5**: `mergeZines`, `assertZineShape`, reducer invariants, and the client catch sweep.
 
 **Still open from sg3 (safety, not features):** none as a dedicated pass. Server `req.json()` parse-or-null stays; leftover `catch {}` in storage/share/api are parse fallbacks, not user actions.
 
-`assertZineShape`, reducer invariants, and the client catch sweep are on `develop` (unreleased). Insert is an upsert; uniqueness is asserted on the result, not as a collision error.
+Insert is an upsert; uniqueness is asserted on the result, not as a collision error.
 
 Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.
 

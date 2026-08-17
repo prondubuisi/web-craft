@@ -2,7 +2,7 @@
 
 _Observed: 2026-08-17, against `develop` at `1.4.1` (post auth-hardening, `social/` split, 60-test Playwright suite). Not a feature round — see `sg.md`'s freeze note, still in effect. This is a discipline pass, read through [Tiger Style](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md), TigerBeetle's engineering philosophy: safety first, performance second, developer experience third, in that order, because a fast wrong answer is worse than a slow one and a fast wrong answer nobody can debug is worse still._
 
-_Items 1–5 landed (1, 2, 4, 5 after 1.4.4; 3 in 1.4.3). Item 4 covers the client store, reader social, and views; server `req.json()` parse-or-null is left alone. The live list is `sg.md`._
+_Items 1–5 landed (1, 2, 4, 5 in 1.4.5; 3 in 1.4.3). Item 4 covers the client store, reader social, and views; server `req.json()` parse-or-null is left alone. The live list is `sg.md`._
 
 ## What Tiger Style means for this app, not TigerBeetle's
 
