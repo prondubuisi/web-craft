@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
 import { openDb } from './db.ts'
-import { migrate } from './migrate.ts'
+import { execSql, migrate } from './migrate.ts'
 
 function tables(db: Database.Database): string[] {
   return (
@@ -35,7 +35,11 @@ describe('migrate', () => {
     raw.close()
     const db = openDb(path)
     const applied = db.prepare('SELECT id FROM schema_migrations').all() as { id: string }[]
-    expect(applied.map((row) => row.id)).toEqual(['0001_init', '0003_legacy_columns'])
+    expect(applied.map((row) => row.id).sort()).toEqual([
+      '0001_init',
+      '0002_scatter',
+      '0003_legacy_columns',
+    ])
     expect(tables(db)).not.toContain('zines')
     db.close()
     rmSync(dir, { recursive: true, force: true })
@@ -86,5 +90,20 @@ describe('migrate', () => {
     )
     db.close()
     rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('does not swallow a missing table on an unlisted migration', () => {
+    const db = openDb(':memory:')
+    expect(() => execSql(db, '0004_future', 'ALTER TABLE not_a_table ADD COLUMN x TEXT')).toThrow(
+      /no such table/i,
+    )
+    db.close()
+  })
+
+  it('still ignores leftover duplicate columns on 0003 only', () => {
+    const db = openDb(':memory:')
+    execSql(db, '0003_legacy_columns', 'ALTER TABLE zines ADD COLUMN series TEXT NOT NULL DEFAULT ""')
+    execSql(db, '0002_scatter', 'ALTER TABLE missing ADD COLUMN scatter INTEGER')
+    db.close()
   })
 })

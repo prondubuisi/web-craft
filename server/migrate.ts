@@ -5,6 +5,12 @@ import type { Db } from './db.ts'
 
 const DIR = join(dirname(fileURLToPath(import.meta.url)), 'migrations')
 
+/** Only leftover repair migrations may ignore a listed error. Everything else fails loud. */
+const IGNORE: Record<string, RegExp> = {
+  '0002_scatter': /duplicate column name|no such table/i,
+  '0003_legacy_columns': /duplicate column name|no such table/i,
+}
+
 function appliedIds(db: Db): Set<string> {
   return new Set(
     (db.prepare('SELECT id FROM schema_migrations').all() as { id: string }[]).map((row) => row.id),
@@ -37,20 +43,20 @@ export function migrate(db: Db): void {
     .sort()
 
   const apply = db.transaction((id: string, sql: string) => {
-    execSql(db, sql)
+    execSql(db, id, sql)
     markApplied(db, id)
   })
 
   for (const file of files) {
     const id = file.replace(/\.sql$/, '')
     if (applied.has(id)) continue
-    if (id === '0002_scatter' && !hasTable(db, 'zines')) continue
     apply(id, readFileSync(join(DIR, file), 'utf8'))
   }
 }
 
-/** Run statements one at a time so leftover DBs can skip columns they already have. */
-function execSql(db: Db, sql: string): void {
+/** Run statements one at a time. Ignored errors are per-migration, not global. */
+export function execSql(db: Db, id: string, sql: string): void {
+  const ignore = IGNORE[id]
   const parts = sql
     .split(';')
     .map((part) => part.trim())
@@ -60,7 +66,7 @@ function execSql(db: Db, sql: string): void {
       db.exec(part)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      if (/duplicate column name|no such table/i.test(msg)) continue
+      if (ignore?.test(msg)) continue
       throw err
     }
   }

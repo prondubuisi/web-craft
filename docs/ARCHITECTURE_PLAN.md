@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Items **8–11** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests). Items **12–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+Items **8–12** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests; per-migration ignore list). Items **13–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
 
 ## Priority order
 
@@ -29,7 +29,7 @@ Items **8–11** are done (`useRemote` on Preview; `useRemoteWithFallback` on th
 9. Extract the duplicated "remote + local fallback" merge into a shared hook — done
 10. Split `Editor.tsx`'s six concerns, starting with undo/redo — done (undo/redo only)
 11. Add test coverage for `useIssueSocial.ts` — done
-12. Narrow the migration runner's error-swallowing — not started
+12. Narrow the migration runner's error-swallowing — done
 13. Multi-stage `Dockerfile` — not started
 14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — not started
 
@@ -205,6 +205,8 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 **Target:** narrow the swallowed-error matching back down to be migration-specific rather than global — e.g., a small per-migration allowlist of "this exact error is expected here" rather than a blanket regex applied to every migration that ever runs. Express the `0002_scatter` special case as an idempotent guard inside that migration file (or drop it now that `0001_init`/`0003_legacy_columns` cover the same ground), not as a conditional in the runner.
 
 **Migration path:** the most sensitive item in this group — it touches the live Fly deploy path. Test against a copy of the pre-`0003` "legacy" schema shape (the exact scenario `0003` was written for) to confirm the tightened runner still applies cleanly, before narrowing the swallow. Don't touch `0001_init.sql` or `0003_legacy_columns.sql` themselves — they're applied history; fix the runner's handling going forward only.
+
+**Done.** `IGNORE` lists expected errors for `0002_scatter` and `0003_legacy_columns` only. A typo'd table on `0004_` (or any unlisted id) throws. The runner no longer skips `0002_scatter` when `zines` is missing — that ALTER is ignored by the 0002 policy and the file is marked applied. Leftover users-only and leftover-zines fixtures still boot.
 
 ---
 
