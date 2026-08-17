@@ -4,6 +4,10 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.4.2 — 2026-08-17
+
+`0003_legacy_columns` upgrades leftover Fly SQLite volumes that skipped `0001_init` (missing `series` and later zine columns). The hosted API was crash-looping on `seedSeries`.
+
 ## 1.4.1 — 2026-08-17
 
 Auth: login/register rate limit (8 attempts / 10 minutes per handle). A new login retires other sessions for that handle. Mid-life sessions rotate on `/api/auth/me`; the client already stores a returned `token`.
