@@ -70,7 +70,7 @@ test.describe('A. first visit / readable chrome', () => {
   test('4 cover make / studio / vibe / sample', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: 'One finished issue' })).toBeVisible()
-    await clickIncludes(page, 'Drop a zine')
+    await clickIncludes(page, 'Make an issue')
     await expect(page.locator('.title-input')).toHaveValue(/miles draft/i)
     await page.goto('/')
     await clickIncludes(page, 'Enter the studio')

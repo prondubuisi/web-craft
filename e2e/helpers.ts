@@ -138,7 +138,7 @@ export function uniqueHandle() {
 
 export async function openNewIssue(page: Page, title: string) {
   await page.goto('/studio')
-  await clickIncludes(page, 'Drop a new issue')
+  await clickIncludes(page, 'New issue')
   await page.locator('[role="dialog"] input').fill(title)
   await clickText(page, 'Open the page')
   await expect(page.locator('.title-input')).toHaveValue(title)

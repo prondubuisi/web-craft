@@ -27,12 +27,12 @@ test.describe('B. maker — studio and editor', () => {
 
   test('8b new issue modal closes with Escape and close', async ({ page }) => {
     await page.goto('/studio')
-    await clickIncludes(page, 'Drop a new issue')
+    await clickIncludes(page, 'New issue')
     const dialog = page.getByRole('dialog', { name: 'new issue' })
     await expect(dialog).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(dialog).toBeHidden()
-    await clickIncludes(page, 'Drop a new issue')
+    await clickIncludes(page, 'New issue')
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'close' }).click()
     await expect(dialog).toBeHidden()

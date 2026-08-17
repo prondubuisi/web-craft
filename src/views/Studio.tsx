@@ -79,7 +79,7 @@ export function Studio() {
           </div>
           <div className="cta-row">
             <ComicButton className="pink" onClick={() => setOpen(true)}>
-              Drop a new issue
+              New issue
             </ComicButton>
             <Link to="/cork" className="comic-btn ghost">
               Corkboard
@@ -133,7 +133,7 @@ export function Studio() {
           <div>
             <div className="zine-wall">
               <button className="zine-card new-issue" onClick={() => setOpen(true)}>
-                + drop a zine
+                + new issue
               </button>
               {mine.map((z) => (
                 <Link key={z.id} to={`/edit/${z.id}`} className="zine-card">

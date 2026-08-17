@@ -77,7 +77,7 @@ export function Landing() {
           </p>
           <div className="cta-row">
             <ComicButton className="pink" onClick={() => start(vibe, `${current.name.toLowerCase()} draft`)}>
-              Drop a zine
+              Make an issue
             </ComicButton>
             <ComicButton className="ghost" onClick={() => navigate('/studio')}>
               Enter the studio

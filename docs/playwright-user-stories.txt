@@ -29,7 +29,7 @@ Do **not** start a new feature round. Do **not** add `data-testid` unless a loca
 
 - Cover: primer, collapsed nav (Cover/Studio/Stream/Help — **not** Board/Fest/Desk), vibe switch, read “after hours”
 - Help glossary + 404 (“this page tore off”)
-- Make: landing “Drop a zine” → slash `/sfx` + `/quote` → undo
+- Make: landing “Make an issue” → slash `/sfx` + `/quote` → undo
 - Scatter toggle + snap control exists
 - Drop now → Preview → Like → Stuff in bag → More sheet → Preview fold
 - Stream: jam lane, search “sunday”, remix from a card
@@ -107,14 +107,14 @@ Write each as a `test.describe` + named `test(...)` that a human can read. Group
 1. **First-visit primer.** Fresh storage → `/` shows `.primer` “Make an issue” / “Print it. Pass it.” / “Remix the pile”. “Glossary” goes to `/help`. “Got it” dismisses and stays dismissed on reload (`zineverse.primer.v1`).
 2. **Collapsed nav.** Topbar is Cover, Studio, Stream, Help, MAIL. No Board / Fest / Desk in `.nav-links`. Brand says `local` or `api live`.
 3. **Offline honesty.** If you can force `online === false` (or document a headed check): `.local-note` explains local studio and links Help; Stream has no `.scene-links`. When API is up, LocalNote is absent and SceneLinks show Desk/Board/Fest.
-4. **Cover make/print/pass/remix.** “Drop a zine” opens editor titled like `miles draft`. “Enter the studio” → `/studio`. Vibe cards switch `data-vibe`. “One finished issue” → read after hours.
+4. **Cover make/print/pass/remix.** “Make an issue” opens editor titled like `miles draft`. “Enter the studio” → `/studio`. Vibe cards switch `data-vibe`. “One finished issue” → read after hours.
 5. **Help glossary.** `/help` lists every term in `ENTRIES` (issue, vibe, drop, snapshot, snap, scatter, remix, bag, distro shelf, archive, board, fest, desk, jam, letters, b-side, corpse, handle). CTAs to studio and stream work.
 6. **404.** `/no-such-dimension` → “this page tore off”.
 7. **Skip link.** `.skip-link` is in the DOM and points at `#main`.
 
 ### B. Maker — studio and editor
 
-8. **Create from studio.** Studio → “Drop a new issue” → name it → “Open the page” → title input matches.
+8. **Create from studio.** Studio → “New issue” → name it → “Open the page” → title input matches.
 9. **Slash commands + tray.** Type `/` and insert several widgets; click tray `/sticker`, `/halftone`, `/poll`, `/tape`, `/strip`, `/toc`, `/insert`, `/reply`, `/blackout`, `/colophon`. Cover the rest of `WIDGETS` in the same test or a table-driven loop. Undo (Meta+Z) removes the last insert.
 10. **Block tools.** Select a block: move up/down, duplicate, delete, drag handle present. Inspector edits text/word for the selected type.
 11. **Editor meta.** Fill tags, series `rooftop hours`, issue `#`, pen name, b-side text, dedication, errata, run-of (edition size). Toggle finish clean → riso → grain (`finish-riso` class). Toggle scatter on/off (`.zine-page.scatter`). Compilation chip appears for a public seed issue and can be toggled.
