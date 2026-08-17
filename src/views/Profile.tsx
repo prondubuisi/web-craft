@@ -339,7 +339,10 @@ export function Profile() {
                     setNotes((prev) => [res.note, ...prev])
                     setGuest('')
                   })
-                  .catch(() => undefined)
+                  .catch(() => {
+                    setNotes((prev) => [addGuestNote(name, session.name, text), ...prev])
+                    setGuest('')
+                  })
                 return
               }
               setNotes((prev) => [addGuestNote(name, session?.name ?? profile.name, text), ...prev])

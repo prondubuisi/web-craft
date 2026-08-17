@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { catchBackground } from '../lib/catch'
 import { appHref, assetUrl } from '../lib/paths'
 import { imposeSheet, paginateZine } from '../lib/fold'
 import { issuePath } from '../lib/zine'
@@ -37,7 +38,10 @@ export function FoldSheet({ zine }: { zine: Zine }) {
   useEffect(() => {
     void QRCode.toString(foldUrl, { type: 'svg', margin: 0, width: 96 })
       .then(setQr)
-      .catch(() => setQr(''))
+      .catch((err: unknown) => {
+        catchBackground(err)
+        setQr('')
+      })
   }, [foldUrl])
   return (
     <section className="fold-sheet" aria-label="Fold-and-staple sheet">

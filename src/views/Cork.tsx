@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
+import { catchBackground } from '../lib/catch'
 import { useRemote } from '../lib/useRemote'
 import { uid } from '../lib/id'
 import { loadCork, saveCork } from '../lib/social'
@@ -32,7 +33,7 @@ export function Cork() {
   function persist(next: CorkPin[]) {
     setPins(next)
     saveCork(me, next)
-    if (online && session) void api.saveCork(next).catch(() => undefined)
+    if (online && session) void api.saveCork(next).catch(catchBackground)
   }
 
   function add() {

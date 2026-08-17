@@ -1,3 +1,4 @@
+import { actionError } from '../lib/catch'
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
@@ -31,7 +32,7 @@ export function Inspector({
         onChange({ ...block, src: await readFileAsDataUrl(file) }, true)
       }
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Upload failed')
+      window.alert(actionError(err, 'Upload failed'))
     }
   }
 
@@ -85,9 +86,7 @@ export function Inspector({
               onClick={() => {
                 void cutoutImage(block.src ?? '')
                   .then((src) => onChange({ ...block, src }, true))
-                  .catch((err: unknown) =>
-                    window.alert(err instanceof Error ? err.message : 'Cutout failed'),
-                  )
+                  .catch((err: unknown) => window.alert(actionError(err, 'Cutout failed')))
               }}
             >
               Cut out background
@@ -144,9 +143,7 @@ export function Inspector({
             onClick={() => {
               void cutoutImage(block.src)
                 .then((src) => onChange({ ...block, src }, true))
-                .catch((err: unknown) =>
-                  window.alert(err instanceof Error ? err.message : 'Cutout failed'),
-                )
+                .catch((err: unknown) => window.alert(actionError(err, 'Cutout failed')))
             }}
           >
             Cut out background

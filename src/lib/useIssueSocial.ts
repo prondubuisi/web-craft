@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from './api'
-import { catchBackground } from './catch'
+import { actionError, catchBackground } from './catch'
 import { appHref } from './paths'
 import { copyText } from './share'
 import {
@@ -271,7 +271,7 @@ export function useIssueSocial(opts: {
           void copyText(url)
           setChainMsg('page added. next invite copied.')
         })
-        .catch((err: unknown) => setChainMsg(err instanceof Error ? err.message : 'could not add'))
+        .catch((err: unknown) => setChainMsg(actionError(err, 'could not add')))
     } else {
       setChainMsg('claim a handle to pass the corpse on the API')
     }

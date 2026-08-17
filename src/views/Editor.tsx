@@ -5,6 +5,7 @@ import { BottomSheet, ComicButton, VibePicks } from '../components/Chrome'
 import { DropModal } from '../components/DropModal'
 import { EditorMeta } from '../components/EditorMeta'
 import { Inspector } from '../components/Inspector'
+import { actionError } from '../lib/catch'
 import { cutoutImage } from '../lib/cutout'
 import { appHref } from '../lib/paths'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
@@ -200,7 +201,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       setSelected(block.id)
       setSheet(null)
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'Could not use that photo')
+      window.alert(actionError(err, 'Could not use that photo'))
     }
   }
 

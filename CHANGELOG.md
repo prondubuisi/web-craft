@@ -8,7 +8,7 @@ Boot and sign-in merge the stream into the local list instead of replacing it. A
 
 Studio JSON import and snapshot `decodeShare()` run untrusted bytes through `assertZineShape` and fail with a field-specific error instead of a bare cast.
 
-The reducer asserts non-empty ids and unique `mergeZines` input in dev. Background API failures go through `catchBackground`; like and street-poll fall back locally if the API misses.
+The reducer asserts non-empty ids and unique `mergeZines` input in dev. Background API failures go through `catchBackground`; like and street-poll fall back locally if the API misses. View-level user actions (mail, board, guestbook, unlock, cutout) use `actionError` or a local fallback instead of a bare swallow.
 
 ## 1.4.4 — 2026-08-17
 
