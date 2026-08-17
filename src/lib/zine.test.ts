@@ -9,7 +9,9 @@ import {
   isMine,
   isPublicDrop,
   editPath,
+  isVibeId,
   issuePath,
+  readStudioCreate,
   studioPath,
   normalizeIssueNo,
   normalizeSeries,
@@ -137,6 +139,14 @@ describe('profiles', () => {
     expect(studioPath()).toBe('/studio')
     expect(studioPath({ new: true, vibe: 'peni' })).toBe('/studio?new=1&vibe=peni')
     expect(editPath('abc')).toBe('/edit/abc')
+  })
+
+  it('reads studio create mode from the query', () => {
+    expect(isVibeId('peni')).toBe(true)
+    expect(isVibeId('spider')).toBe(false)
+    expect(readStudioCreate('new=1&vibe=peni')).toEqual({ create: true, vibe: 'peni' })
+    expect(readStudioCreate('new=1&vibe=spider')).toEqual({ create: true, vibe: undefined })
+    expect(readStudioCreate('')).toEqual({ create: false, vibe: undefined })
   })
 })
 

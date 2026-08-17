@@ -107,7 +107,7 @@ Write each as a `test.describe` + named `test(...)` that a human can read. Group
 1. **First-visit primer.** Fresh storage → `/` shows `.primer` “Make an issue” / “Print it. Pass it.” / “Remix the pile”. “Glossary” goes to `/help`. “Got it” dismisses and stays dismissed on reload (`zineverse.primer.v1`).
 2. **Collapsed nav.** Topbar is Cover, Studio, Stream, Help, MAIL. No Board / Fest / Desk in `.nav-links`. Brand says `local` or `api live`.
 3. **Offline honesty.** If you can force `online === false` (or document a headed check): `.local-note` explains local studio and links Help; Stream has no `.scene-links`. When API is up, LocalNote is absent and SceneLinks show Desk/Board/Fest.
-4. **Cover make/print/pass/remix.** “Make an issue” opens `/studio` with the new-issue modal. “Enter the studio” → `/studio` without the modal. Vibe cards switch `data-vibe`. “One finished issue” → read after hours.
+4. **Cover make/print/pass/remix.** “Make an issue” opens `/studio` with the new-issue modal. “Enter the studio” → `/studio` without the modal. Vibe cards switch `data-vibe`. “Build with Peni” opens studio create mode on Peni. “One finished issue” → read after hours.
 5. **Help glossary.** `/help` lists every term in `ENTRIES` (issue, vibe, drop, snapshot, snap, scatter, remix, bag, distro shelf, archive, board, fest, desk, jam, letters, b-side, corpse, handle). CTAs to studio and stream work.
 6. **404.** `/no-such-dimension` → “this page tore off”.
 7. **Skip link.** `.skip-link` is in the DOM and points at `#main`.

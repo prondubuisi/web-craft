@@ -8,7 +8,7 @@ import { loadBag } from '../lib/social'
 import { actionError } from '../lib/catch'
 import { assertZineShape } from '../lib/shape'
 import type { BadgeId, VibeId } from '../lib/types'
-import { coverSrc, editPath, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
+import { coverSrc, editPath, isDropLive, isMine, profilePath, readStudioCreate, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -41,11 +41,9 @@ export function Studio() {
   const [params, setParams] = useSearchParams()
 
   useEffect(() => {
-    if (params.get('new') !== '1') return
-    const next = params.get('vibe')
-    if (next === 'miles' || next === 'gwen' || next === 'peni' || next === 'ham' || next === 'noir') {
-      setVibe(next)
-    }
+    const intent = readStudioCreate(params)
+    if (!intent.create) return
+    if (intent.vibe) setVibe(intent.vibe)
     setOpen(true)
     setParams({}, { replace: true })
   }, [params, setParams])
@@ -65,7 +63,7 @@ export function Studio() {
   }
 
   return (
-    <div data-vibe="miles">
+    <div data-vibe={vibe}>
       <Topbar />
       <main className="studio">
         <LocalNote />

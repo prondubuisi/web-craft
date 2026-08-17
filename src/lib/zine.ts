@@ -1,5 +1,5 @@
 import type { HeroBlock, StreamSort, VibeId, Zine } from './types'
-import { artForVibe } from './vibes'
+import { artForVibe, VIBES } from './vibes'
 
 export function isMine(zine: Zine, handle?: string | null): boolean {
   if (zine.owner === 'you') return true
@@ -37,6 +37,20 @@ export function studioPath(opts?: { new?: boolean; vibe?: VibeId }): string {
   if (opts?.vibe) q.set('vibe', opts.vibe)
   const qs = q.toString()
   return qs ? `/studio?${qs}` : '/studio'
+}
+
+export function isVibeId(value: string | null | undefined): value is VibeId {
+  return Boolean(value && VIBES.some((v) => v.id === value))
+}
+
+/** Cover "Make an issue" lands here: `?new=1` plus an optional vibe. */
+export function readStudioCreate(search: string | URLSearchParams): { create: boolean; vibe?: VibeId } {
+  const q = typeof search === 'string' ? new URLSearchParams(search.replace(/^\?/, '')) : search
+  const vibeRaw = q.get('vibe')
+  return {
+    create: q.get('new') === '1',
+    vibe: isVibeId(vibeRaw) ? vibeRaw : undefined,
+  }
 }
 
 export function canOpenSecret(zine: Zine, key?: string | null): boolean {

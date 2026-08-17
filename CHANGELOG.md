@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Studio create mode (`?new=1`) applies the cover vibe to the page and the new-issue picks.
+
 ## 1.5.5 — 2026-08-17
 
 Cover make / build / start open `/studio?new=1` with the vibe. The editor is only after Open the page.
