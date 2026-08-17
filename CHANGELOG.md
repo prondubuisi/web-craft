@@ -8,6 +8,8 @@ Remote + local fallbacks go through `useRemoteWithFallback` instead of a second 
 
 Editor undo/redo lives in `useHistory`. Keyboard shortcuts and the rest of the canvas stay in `Editor.tsx`.
 
+`useIssueSocial` has unit coverage for local vs remote reader actions.
+
 ## 1.5.2 — 2026-08-17
 
 Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.

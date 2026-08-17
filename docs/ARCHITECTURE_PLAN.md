@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Items **8–10** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`). Items **11–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+Items **8–11** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests). Items **12–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
 
 ## Priority order
 
@@ -28,7 +28,7 @@ Items **8–10** are done (`useRemote` on Preview; `useRemoteWithFallback` on th
 8. Adopt `useRemote` in the one view that still bypasses it — done
 9. Extract the duplicated "remote + local fallback" merge into a shared hook — done
 10. Split `Editor.tsx`'s six concerns, starting with undo/redo — done (undo/redo only)
-11. Add test coverage for `useIssueSocial.ts` — not started
+11. Add test coverage for `useIssueSocial.ts` — done
 12. Narrow the migration runner's error-swallowing — not started
 13. Multi-stage `Dockerfile` — not started
 14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — not started
@@ -193,6 +193,8 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 **Target:** add `useIssueSocial.test.ts`. This requires a hook-testing utility not currently a devDependency (the project's existing tests are either pure-function unit tests or full HTTP integration tests via Hono's `app.request` — nothing renders a hook in isolation yet). Evaluate `@testing-library/react` (already implied by `happy-dom` + `react`/`react-dom` being present) before reaching for a heavier dependency.
 
 **Migration path:** lowest priority of this group — it's additive test coverage, not a behavior change, and the dependency question needs a decision before the first line of test code. Do items 8–10 first; revisit this once there's a second hook that would benefit from the same test setup, to justify the new tooling.
+
+**Done.** `useIssueSocial.test.ts` covers local vs remote fetches, error fallbacks, and the main reader actions (bag, vote, nominate, claim, mail, checkout, corpse). Hook tests stay on the `createRoot` + `act` harness already used by `useRemote` and `useHistory`. `@testing-library/react` would only rename that mount helper; no new dependency.
 
 ---
 
