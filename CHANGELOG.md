@@ -4,17 +4,9 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
-Remote + local fallbacks go through `useRemoteWithFallback` instead of a second effect in each view.
+## 1.5.3 — 2026-08-17
 
-Editor undo/redo lives in `useHistory`. Keyboard shortcuts and the rest of the canvas stay in `Editor.tsx`.
-
-`useIssueSocial` has unit coverage for local vs remote reader actions.
-
-Migration runner ignores leftover errors only on `0002_scatter` and `0003_legacy_columns`. A later typo'd table fails instead of applying.
-
-API image is multi-stage: compile `better-sqlite3` in the builder, ship a pruned runtime without Vite/Playwright/TypeScript. `tsx` is a runtime dependency.
-
-CI setup lives in one composite action. Playwright browsers cache by version. `flyctl` is pinned to `@v1`. Dead `allowScripts` is gone.
+Architecture plan Round 2 items 9–14. Remote + local merges use `useRemoteWithFallback`. Editor undo/redo lives in `useHistory`. `useIssueSocial` has tests. Migration leftovers ignore errors only on `0002`/`0003`. API image is multi-stage. CI shares one setup action, caches Playwright, and pins `flyctl` to `@v1`.
 
 ## 1.5.2 — 2026-08-17
 

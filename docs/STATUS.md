@@ -1,14 +1,14 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.5.2 + §14)_
+_Last reviewed: 2026-08-17 (1.5.3)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.5.2`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.5.3`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
 
 Public repo: https://github.com/prondubuisi/web-craft  
 Live demo: https://prondubuisi.github.io/web-craft/  
-git-flow: `main` / `develop`, tags `0.1.0` … `1.5.2`.
+git-flow: `main` / `develop`, tags `0.1.0` … `1.5.3`.
 
 Routes (from `src/App.tsx`):
 
@@ -61,13 +61,13 @@ Routes (from `src/App.tsx`):
 
 Zineverse is a **working client-first zine tool with an optional multi-user API**. The Pages demo stays usable offline. Signed-in local or hosted API sessions sync drafts and enforce publish, likes, remix, comments, polls, mail, fest, and the drop-seal.
 
-Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down. **1.5.0** is the consolidation observation: Help names the four missing answer terms; the More sheet points at Help. **1.5.1** validates API blocks and batches stream decoration. **1.5.2** loads the reader through `useRemote`.
+Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down. **1.5.0** is the consolidation observation: Help names the four missing answer terms; the More sheet points at Help. **1.5.1** validates API blocks and batches stream decoration. **1.5.2** loads the reader through `useRemote`. **1.5.3** finishes Round 2 items 9–14 (`useRemoteWithFallback`, `useHistory`, `useIssueSocial` tests, migration ignore list, multi-stage Docker, CI housekeeping).
 
 `docs/ARCHITECTURE_PLAN.md` items 1–14 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches (including Preview), `useRemoteWithFallback` for remote+local merges, editor undo/redo in `useHistory`, `useIssueSocial` tests, per-migration ignore list, multi-stage Docker, CI setup composite + Playwright cache + pinned flyctl, and incremental `src/lib/contract.ts` types.
 
 ## Suggested Next Steps
 
-The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). **1.5.1** shipped `docs/ARCHITECTURE_PLAN.md` Round 2's correctness/security tier: server-side `assertBlocks` validation on API upsert and corpse-chain pages, batched stream/jam/archive decoration, and Pages/Fly deploys gated on lint/test/build. **1.5.2** ships Round 2 item 8: Preview loads `/z/:id` through `useRemote`. Three piles and five answer forms stay.
+The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). **1.5.1** shipped `docs/ARCHITECTURE_PLAN.md` Round 2's correctness/security tier: server-side `assertBlocks` validation on API upsert and corpse-chain pages, batched stream/jam/archive decoration, and Pages/Fly deploys gated on lint/test/build. **1.5.2** ships Round 2 item 8: Preview loads `/z/:id` through `useRemote`. **1.5.3** ships items 9–14. Three piles and five answer forms stay.
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
