@@ -359,7 +359,12 @@ export function Preview() {
             ) : null}
           </div>
           {more && !locked ? (
-            <div className="cta-row issue-more" style={{ marginTop: '0.7rem' }}>
+            <div className="issue-more" style={{ marginTop: '0.7rem' }}>
+              <p className="serif ink-lede more-lede">
+                Bag is private. Distro is your public table. Archive is a community nomination.{' '}
+                <Link to="/help">What the words mean</Link>
+              </p>
+              <div className="cta-row">
               <ComicButton className="small" onClick={() => void share()}>
                 {copied ? 'Copied' : 'Copy snapshot'}
               </ComicButton>
@@ -396,7 +401,7 @@ export function Preview() {
                   className={`small no-print ${social.archive.mine ? 'pink' : 'ghost'}`}
                   onClick={social.nominate}
                 >
-                  {social.archive.mine ? 'Nominated' : 'Nominate'} · {social.archive.noms}
+                  {social.archive.mine ? 'Nominated' : 'Nominate for archive'} · {social.archive.noms}
                 </ComicButton>
               ) : null}
               {!needsPass && zine.series ? (
@@ -412,7 +417,7 @@ export function Preview() {
                   className={`small no-print ${social.loaned ? 'pink' : 'ghost'}`}
                   onClick={social.checkout}
                 >
-                  {social.loaned ? 'On loan' : 'Check out'}
+                  {social.loaned ? 'On loan' : 'Check out to bag'}
                 </ComicButton>
               ) : null}
               {!needsPass && zine.editionSize && !mine ? (
@@ -445,6 +450,7 @@ export function Preview() {
                   Copy corpse link
                 </ComicButton>
               ) : null}
+              </div>
             </div>
           ) : null}
           {social.mailNote ? <p className="hand">{social.mailNote}</p> : null}
