@@ -77,7 +77,11 @@ export function ZineProvider({ children }: { children: ReactNode }) {
           })
           const [mine, stream] = await Promise.all([api.mine(), api.stream()])
           if (!cancelled) {
-            dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
+            dispatch({
+              type: 'mergeZines',
+              zines: [...mine.zines, ...stream.zines],
+              handle: me.session.name,
+            })
           }
           if (!cancelled) void refreshNotices()
         } else {
@@ -204,7 +208,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         likedIds: me.likedIds,
         following: me.following,
       })
-      dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines] })
+      dispatch({ type: 'mergeZines', zines: [...mine.zines, ...stream.zines], handle: me.session.name })
       void refreshNotices()
     },
     [refreshNotices],
