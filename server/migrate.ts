@@ -37,14 +37,31 @@ export function migrate(db: Db): void {
     .sort()
 
   const apply = db.transaction((id: string, sql: string) => {
-    db.exec(sql)
+    execSql(db, sql)
     markApplied(db, id)
   })
 
   for (const file of files) {
     const id = file.replace(/\.sql$/, '')
     if (applied.has(id)) continue
-    if (id !== '0001_init' && !hasTable(db, 'zines')) continue
+    if (id === '0002_scatter' && !hasTable(db, 'zines')) continue
     apply(id, readFileSync(join(DIR, file), 'utf8'))
+  }
+}
+
+/** Run statements one at a time so leftover DBs can skip columns they already have. */
+function execSql(db: Db, sql: string): void {
+  const parts = sql
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  for (const part of parts) {
+    try {
+      db.exec(part)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/duplicate column name|no such table/i.test(msg)) continue
+      throw err
+    }
   }
 }

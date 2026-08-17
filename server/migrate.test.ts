@@ -35,7 +35,7 @@ describe('migrate', () => {
     raw.close()
     const db = openDb(path)
     const applied = db.prepare('SELECT id FROM schema_migrations').all() as { id: string }[]
-    expect(applied.map((row) => row.id)).toEqual(['0001_init'])
+    expect(applied.map((row) => row.id)).toEqual(['0001_init', '0003_legacy_columns'])
     expect(tables(db)).not.toContain('zines')
     db.close()
     rmSync(dir, { recursive: true, force: true })
@@ -46,7 +46,45 @@ describe('migrate', () => {
     migrate(db)
     migrate(db)
     const applied = db.prepare('SELECT id FROM schema_migrations').all() as { id: string }[]
-    expect(applied.map((row) => row.id).sort()).toEqual(['0001_init', '0002_scatter'])
+    expect(applied.map((row) => row.id).sort()).toEqual(['0001_init', '0002_scatter', '0003_legacy_columns'])
     db.close()
+  })
+
+  it('adds series on a leftover zines table that skipped 0001', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'zv-legacy-'))
+    const path = join(dir, 'prod.sqlite')
+    const raw = new Database(path)
+    raw.exec(`
+      CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL);
+      CREATE TABLE zines (
+        id TEXT PRIMARY KEY,
+        owner_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        vibe TEXT NOT NULL,
+        blocks_json TEXT NOT NULL,
+        published INTEGER NOT NULL DEFAULT 0,
+        drops_at INTEGER,
+        views INTEGER NOT NULL DEFAULT 0,
+        likes INTEGER NOT NULL DEFAULT 0,
+        remixes INTEGER NOT NULL DEFAULT 0,
+        remixed_from TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `)
+    raw.close()
+    const db = openDb(path)
+    const cols = (db.prepare('PRAGMA table_info(zines)').all() as { name: string }[]).map((row) => row.name)
+    expect(cols).toContain('series')
+    expect(cols).toContain('scatter')
+    expect(cols).toContain('dedication')
+    expect(tables(db)).toContain('nominations')
+    db.prepare(`UPDATE zines SET series = ?, issue_no = ? WHERE title = ? AND (series IS NULL OR series = '')`).run(
+      'confession',
+      13,
+      'issue 13',
+    )
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
   })
 })
