@@ -3,7 +3,7 @@ import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
 import { dropIsLive, getZineRow, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { currentUser } from '../http.ts'
 import { notify } from '../services/notify.ts'
-import { decorate, nomCount } from '../services/zines.ts'
+import { decorateMany, nomCount } from '../services/zines.ts'
 
 export function registerArchive(app: Hono, db: Db) {
   app.get('/api/archive', (c) => {
@@ -16,7 +16,7 @@ export function registerArchive(app: Hono, db: Db) {
          ORDER BY (SELECT COUNT(*) FROM nominations n WHERE n.zine_id = z.id) DESC`,
       )
       .all(ARCHIVE_THRESHOLD) as ZineRow[]
-    return c.json({ zines: rows.map((row) => decorate(db, rowToZine(row, { hideBlocks: !dropIsLive(row) }))) })
+    return c.json({ zines: decorateMany(db, rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) }))) })
   })
 
   app.post('/api/zines/:id/nominate', (c) => {

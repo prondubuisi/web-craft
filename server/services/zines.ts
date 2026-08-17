@@ -19,6 +19,45 @@ export function decorate(db: Db, zine: Zine, viewerId?: string): Zine {
   return { ...zine, noms, archived: noms >= ARCHIVE_THRESHOLD, claimed, claimedByMe }
 }
 
+export function decorateMany(db: Db, zines: Zine[], viewerId?: string): Zine[] {
+  if (!zines.length) return []
+  const ids = zines.map((z) => z.id)
+  const placeholders = ids.map(() => '?').join(',')
+  const noms = new Map<string, number>(
+    (
+      db
+        .prepare(`SELECT zine_id, COUNT(*) AS n FROM nominations WHERE zine_id IN (${placeholders}) GROUP BY zine_id`)
+        .all(...ids) as { zine_id: string; n: number }[]
+    ).map((row) => [row.zine_id, row.n]),
+  )
+  const claims = new Map<string, number>(
+    (
+      db
+        .prepare(`SELECT zine_id, COUNT(*) AS n FROM claims WHERE zine_id IN (${placeholders}) GROUP BY zine_id`)
+        .all(...ids) as { zine_id: string; n: number }[]
+    ).map((row) => [row.zine_id, row.n]),
+  )
+  const claimedByMe = new Set<string>(
+    viewerId
+      ? (
+          db
+            .prepare(`SELECT zine_id FROM claims WHERE user_id = ? AND zine_id IN (${placeholders})`)
+            .all(viewerId, ...ids) as { zine_id: string }[]
+        ).map((row) => row.zine_id)
+      : [],
+  )
+  return zines.map((zine) => {
+    const zineNoms = noms.get(zine.id) ?? 0
+    return {
+      ...zine,
+      noms: zineNoms,
+      archived: zineNoms >= ARCHIVE_THRESHOLD,
+      claimed: claims.get(zine.id) ?? 0,
+      claimedByMe: claimedByMe.has(zine.id),
+    }
+  })
+}
+
 export function accessZine(
   row: ZineRow,
   userId: string | undefined,
