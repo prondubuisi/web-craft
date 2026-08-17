@@ -2,7 +2,7 @@
 
 _Observed: 2026-08-17, against `develop` at `1.4.1` (post auth-hardening, `social/` split, 60-test Playwright suite). Not a feature round — see `sg.md`'s freeze note, still in effect. This is a discipline pass, read through [Tiger Style](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md), TigerBeetle's engineering philosophy: safety first, performance second, developer experience third, in that order, because a fast wrong answer is worse than a slow one and a fast wrong answer nobody can debug is worse still._
 
-_Item 1 (`replaceZines` → `mergeZines`, action removed) landed after 1.4.4. Item 2 (`assertZineShape`) landed after 1.4.4. Item 3 (Playwright in CI) shipped in 1.4.3. Items 4 and 5 remain — the live list is `sg.md`._
+_Item 1 (`replaceZines` → `mergeZines`, action removed) landed after 1.4.4. Item 2 (`assertZineShape`) landed after 1.4.4. Item 3 (Playwright in CI) shipped in 1.4.3. Item 5 (reducer invariants) landed after 1.4.4. Item 4 is started (`catchBackground` / `actionError` in the store and reader social). The live list is `sg.md`._
 
 ## What Tiger Style means for this app, not TigerBeetle's
 

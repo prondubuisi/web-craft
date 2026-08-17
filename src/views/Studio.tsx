@@ -5,6 +5,7 @@ import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
 import { useRemote } from '../lib/useRemote'
 import { loadBag } from '../lib/social'
+import { actionError } from '../lib/catch'
 import { assertZineShape } from '../lib/shape'
 import type { BadgeId, BagItem, VibeId } from '../lib/types'
 import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
@@ -245,9 +246,7 @@ export function Studio() {
                 setAuthError('')
                 void signIn(handle, password, authMode)
                   .then(() => setAuthOpen(false))
-                  .catch((err: unknown) =>
-                    setAuthError(err instanceof Error ? err.message : 'Could not sign in'),
-                  )
+                  .catch((err: unknown) => setAuthError(actionError(err, 'Could not sign in')))
               }}
             >
               {authMode === 'register' ? 'Claim it' : 'Enter'}

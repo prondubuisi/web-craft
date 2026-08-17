@@ -44,7 +44,7 @@ Routes (from `src/App.tsx`):
 
 **Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build + Playwright e2e.
 
-**Testing:** Vitest + happy-dom (22 `*.test.ts` files, 133 tests, including `server/api.test.ts`, `server/rateLimit.test.ts`, `src/lib/shape.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 60 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
+**Testing:** Vitest + happy-dom (23 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 60 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
 **Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation; shipped items folded into `sg.md`).
 
@@ -73,9 +73,8 @@ No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is
 
 Engineering, from `sg.md` / `docs/sg3.md`:
 
-1. Silent-catch sweep (background vs user action) when touching those files.
-2. Dev-mode reducer invariants when touching `reducer.ts`.
+1. Finish the silent-catch sweep in remaining views when those files are touched.
 
-sg3 items 1 (`mergeZines`), 2 (`assertZineShape`), and 3 (Playwright in CI) are done.
+sg3 items 1 (`mergeZines`), 2 (`assertZineShape`), 3 (Playwright in CI), and 5 (reducer invariants) are done. Item 4 is started (`catchBackground` / `actionError`).
 
 Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.
