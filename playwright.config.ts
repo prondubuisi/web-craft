@@ -12,6 +12,7 @@ export default defineConfig({
     channel: 'chrome',
     headless: true,
     viewport: { width: 1440, height: 900 },
+    permissions: ['clipboard-read', 'clipboard-write'],
     trace: 'off',
   },
 })
