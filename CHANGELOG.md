@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.5.2 — 2026-08-17
+
 Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.
 
 ## 1.5.1 — 2026-08-17
