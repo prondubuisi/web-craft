@@ -51,8 +51,8 @@ export function SceneLinks({ here }: { here?: string } = {}) {
     { to: '/cork', label: 'Desk' },
     { to: '/board', label: 'Board' },
     { to: '/fest', label: 'Fest' },
-    session ? { to: '/mail', label: 'Letters' } : null,
-  ].filter((item): item is { to: string; label: string } => Boolean(item) && item.to !== here)
+    ...(session ? [{ to: '/mail', label: 'Letters' }] : []),
+  ].filter((item) => item.to !== here)
   if (!items.length) return null
   return (
     <div className="scene-links cta-row">
