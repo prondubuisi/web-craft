@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Items **8–12** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests; per-migration ignore list). Items **13–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+Items **8–13** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites; editor undo/redo in `useHistory`; `useIssueSocial` tests; per-migration ignore list; multi-stage Docker). Item **14** is the remaining CI/tooling polish — not urgent; no user-facing behavior change.
 
 ## Priority order
 
@@ -30,7 +30,7 @@ Items **8–12** are done (`useRemote` on Preview; `useRemoteWithFallback` on th
 10. Split `Editor.tsx`'s six concerns, starting with undo/redo — done (undo/redo only)
 11. Add test coverage for `useIssueSocial.ts` — done
 12. Narrow the migration runner's error-swallowing — done
-13. Multi-stage `Dockerfile` — not started
+13. Multi-stage `Dockerfile` — done
 14. CI/tooling housekeeping (composite action, action pin, dead config, Playwright cache) — not started
 
 Items 4 and 5 have no dependency on anything else and can be done anytime, including in parallel with 1–3. Items 8–14 are each independent of one another and of 1–7.
@@ -217,6 +217,8 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 **Target:** a multi-stage build — a builder stage with the full dependency set (needed to compile `better-sqlite3` and run any build step), and a runtime stage that does `npm ci --omit=dev` and copies over only what `server/` actually imports (confirmed: `src/lib/*` only — never `src/components`, `src/views`, `src/store`, or `src/styles`), dropping the build toolchain from the final image.
 
 **Migration path:** moderate diff, no behavior change to the running app — verify with `docker build` followed by hitting `/api/health` against the built image locally before considering it done. Independent of every other item here.
+
+**Done.** Builder runs `npm ci` with the compile toolchain, then `npm prune --omit=dev`. Runtime copies that tree plus `server/` and `src/lib/` only — no `src/views`, no python/make/g++. `tsx` is a runtime dependency because `src/lib` uses extensionless ESM imports. Local `docker build` + `GET /api/health` returns `{ ok: true }`.
 
 ---
 

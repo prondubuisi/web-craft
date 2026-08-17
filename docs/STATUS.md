@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.5.2 + §12)_
+_Last reviewed: 2026-08-17 (1.5.2 + §13)_
 
 ## Overview
 
@@ -63,7 +63,7 @@ Zineverse is a **working client-first zine tool with an optional multi-user API*
 
 Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down. **1.5.0** is the consolidation observation: Help names the four missing answer terms; the More sheet points at Help. **1.5.1** validates API blocks and batches stream decoration. **1.5.2** loads the reader through `useRemote`.
 
-`docs/ARCHITECTURE_PLAN.md` items 1–12 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches (including Preview), `useRemoteWithFallback` for remote+local merges, editor undo/redo in `useHistory`, `useIssueSocial` tests, per-migration ignore list, and incremental `src/lib/contract.ts` types.
+`docs/ARCHITECTURE_PLAN.md` items 1–13 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches (including Preview), `useRemoteWithFallback` for remote+local merges, editor undo/redo in `useHistory`, `useIssueSocial` tests, per-migration ignore list, multi-stage Docker, and incremental `src/lib/contract.ts` types.
 
 ## Suggested Next Steps
 
@@ -71,7 +71,7 @@ The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the con
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
-**Open engineering backlog:** `docs/ARCHITECTURE_PLAN.md` Round 2, items 13–14 — not urgent, no user-facing behavior change, pick up opportunistically or when touching the relevant file. In order: the Docker image ships ~70MB of unused devDependencies via a single-stage build (§13); and four small CI/tooling items — a composite action, a floating `@master` action pin, dead `package.json` config, Playwright CI caching (§14).
+**Open engineering backlog:** `docs/ARCHITECTURE_PLAN.md` Round 2, item 14 — not urgent, no user-facing behavior change. Four small CI/tooling items: a composite setup action, pin `flyctl` off `@master`, remove dead `allowScripts`, cache Playwright browsers.
 
 **§8 done:** `Preview.tsx` loads `/z/:id` through `useRemote`, same online gate as the other views. Passphrase unlock still overlays the fetched issue.
 
@@ -82,6 +82,8 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a sev
 **§11 done:** `useIssueSocial.test.ts` covers local vs remote reader social paths. Hook tests keep the existing `createRoot` harness; no new test library.
 
 **§12 done:** migration runner ignores leftover errors only on `0002_scatter` and `0003_legacy_columns`. A future typo'd table fails loud.
+
+**§13 done:** multi-stage `Dockerfile`. Runtime has no compile toolchain and no Vite/Playwright/TypeScript. `tsx` stays — `src/lib` imports have no extensions.
 
 Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
 
