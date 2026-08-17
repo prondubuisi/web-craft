@@ -1,6 +1,7 @@
 import type { Session } from '../lib/api'
 import { resetState } from '../lib/storage'
 import type { AppState, Block, Visibility, Zine } from '../lib/types'
+import { isMine } from '../lib/zine'
 
 export type Action =
   | { type: 'insert'; zine: Zine }
@@ -26,7 +27,7 @@ export type Action =
   | { type: 'setSession'; session: Session | null; remixPoints?: number; likedIds?: string[]; following?: string[] }
   | { type: 'follow'; handle: string }
   | { type: 'unfollow'; handle: string }
-  | { type: 'mergeZines'; zines: Zine[] }
+  | { type: 'mergeZines'; zines: Zine[]; handle?: string | null }
 
 export type FullState = AppState & { online: boolean; session: Session | null }
 
@@ -173,7 +174,12 @@ function reduce(state: FullState, action: Action): FullState {
       }
     }
     case 'mergeZines': {
-      const map = new Map(state.zines.map((z) => [z.id, z]))
+      const incomingIds = new Set(action.zines.map((zine) => zine.id))
+      const map = new Map(
+        state.zines
+          .filter((zine) => isMine(zine, action.handle) || incomingIds.has(zine.id))
+          .map((zine) => [zine.id, zine]),
+      )
       for (const zine of action.zines) map.set(zine.id, zine)
       return { ...state, zines: [...map.values()] }
     }
