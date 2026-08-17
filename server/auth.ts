@@ -27,6 +27,7 @@ export function newToken(): string {
 }
 
 export function createSession(db: Db, userId: string): string {
+  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId)
   const token = newToken()
   db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(
     hashToken(token),
@@ -34,6 +35,24 @@ export function createSession(db: Db, userId: string): string {
     Date.now() + SESSION_MS,
   )
   return token
+}
+
+/** Issue a fresh token when this session is past halfway through its life. */
+export function rotateSession(db: Db, token: string | undefined, now = Date.now()): string | undefined {
+  if (!token) return undefined
+  const hash = hashToken(token)
+  const row = db
+    .prepare('SELECT user_id, expires_at FROM sessions WHERE token_hash = ? AND expires_at > ?')
+    .get(hash, now) as { user_id: string; expires_at: number } | undefined
+  if (!row) return undefined
+  if (row.expires_at - now > SESSION_MS / 2) return undefined
+  const next = newToken()
+  db.prepare('UPDATE sessions SET token_hash = ?, expires_at = ? WHERE token_hash = ?').run(
+    hashToken(next),
+    now + SESSION_MS,
+    hash,
+  )
+  return next
 }
 
 export function userFromToken(db: Db, token: string | undefined): UserRow | undefined {

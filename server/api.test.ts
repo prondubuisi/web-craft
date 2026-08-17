@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.ts'
+import { hashToken } from './auth.ts'
 import { openDb } from './db.ts'
+import { AUTH_MAX_ATTEMPTS, resetLimits } from './rateLimit.ts'
 
 function app() {
   return createApp(openDb(':memory:'))
@@ -26,6 +28,10 @@ const sample = {
   blocks: [{ id: '1', type: 'heading', text: 'rooftop', size: 'xl' }],
 }
 
+afterEach(() => {
+  resetLimits()
+})
+
 describe('auth', () => {
   it('registers and returns a session', async () => {
     const { res, body } = await register(app())
@@ -41,6 +47,59 @@ describe('auth', () => {
       body: JSON.stringify({ name: 'x', password: 'inkstain1' }),
     })
     expect(res.status).toBe(400)
+  })
+
+  it('rate-limits repeated failed logins', async () => {
+    const client = app()
+    await register(client, 'lockme', 'inkstain1')
+    let last = 401
+    for (let i = 0; i < AUTH_MAX_ATTEMPTS + 1; i += 1) {
+      const res = await client.request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'lockme', password: 'wrong-pass' }),
+      })
+      last = res.status
+    }
+    expect(last).toBe(429)
+  })
+
+  it('rotates the session token on a second login', async () => {
+    const client = app()
+    const first = await register(client, 'rotate1', 'inkstain1')
+    const login = await client.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'rotate1', password: 'inkstain1' }),
+    })
+    const next = await json(login)
+    expect(String(next.token)).not.toBe(String(first.body.token))
+    const stale = await client.request('/api/auth/me', {
+      headers: { authorization: first.cookie },
+    })
+    const staleBody = await json(stale)
+    expect(staleBody.session).toBeNull()
+    const fresh = await json(
+      await client.request('/api/auth/me', {
+        headers: { authorization: `Bearer ${String(next.token)}` },
+      }),
+    )
+    expect((fresh.session as { name: string }).name).toBe('rotate1')
+  })
+
+  it('rotates a mid-life session on /me and retires the old token', async () => {
+    const db = openDb(':memory:')
+    const client = createApp(db)
+    const { body, cookie } = await register(client, 'rotate2', 'inkstain1')
+    db.prepare('UPDATE sessions SET expires_at = ? WHERE token_hash = ?').run(
+      Date.now() + 60_000,
+      hashToken(String(body.token)),
+    )
+    const me = await json(await client.request('/api/auth/me', { headers: { authorization: cookie } }))
+    expect(me.token).toBeTruthy()
+    expect(String(me.token)).not.toBe(String(body.token))
+    const stale = await json(await client.request('/api/auth/me', { headers: { authorization: cookie } }))
+    expect(stale.session).toBeNull()
   })
 })
 

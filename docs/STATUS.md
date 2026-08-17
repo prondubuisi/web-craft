@@ -50,7 +50,7 @@ Routes (from `src/App.tsx`):
 
 ## Access & Security Review
 
-- **Auth exists when the API is up.** Handle + password (`scrypt`). Session is a Bearer token in `localStorage` (`zineverse.token`) so GitHub Pages can call a hosted API on another origin. Cookie also used same-origin. No rate limit, no token rotation — deferred; see `sg.md`.
+- **Auth exists when the API is up.** Handle + password (`scrypt`). Session is a Bearer token in `localStorage` (`zineverse.token`) so GitHub Pages can call a hosted API on another origin. Cookie also used same-origin. Login/register are rate-limited (8 attempts / 10 minutes per handle). A new login retires other sessions for that handle. Sessions past halfway through their 30-day life rotate on `/api/auth/me`.
 - **Without the API the app is still a local studio.** `owner` is a display label (`you` or `@handle`). Anyone with the page can edit whatever is in that browser’s `localStorage`.
 - **Sharing is still a blob.** Snapshot URLs (`/s#…`) encode the issue. No revocation.
 - **Sealed drops and passphrases are enforced on the API** when it is up. Offline they are client-side checks only.
@@ -71,7 +71,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at 
 
 Still open:
 
-1. Auth/session hardening (rate limit, token rotation)
-2. Split `social.ts` by bag / mail / archive / run
-3. Merge overlapping mechanics (bag vs shelf vs archive; response verbs)
-4. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)
+1. Split `social.ts` by bag / mail / archive / run
+2. Merge overlapping mechanics (bag vs shelf vs archive; response verbs)
+3. `FLY_API_TOKEN` if the hosted API should actually deploy (`deploy-api.yml` skips cleanly without it)
