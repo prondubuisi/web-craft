@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { Halftone, Topbar } from '../components/Chrome'
+import { Halftone, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { useRemoteWithFallback } from '../lib/useRemote'
 import { demoJams, formatHint, isJamLive } from '../lib/jam'
@@ -47,6 +47,7 @@ export function JamPage() {
           <span>{formatHint(jam.format)}</span>
           <Link to="/explore">stream</Link>
         </div>
+        <SceneLinks />
         <div className="zine-wall" style={{ marginTop: 16 }}>
           {issues.map((z) => (
             <article key={z.id} className="zine-card">

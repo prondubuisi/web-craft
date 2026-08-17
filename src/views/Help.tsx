@@ -1,18 +1,24 @@
 import { Link } from 'react-router-dom'
-import { Topbar } from '../components/Chrome'
+import { SceneLinks, Topbar } from '../components/Chrome'
 
-const ENTRIES = [
+const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   {
     term: 'issue',
     body: 'A zine. Pages of blocks you drop, print, or pass as a snapshot.',
+    to: '/studio',
+    go: 'Open the studio',
   },
   {
     term: 'vibe',
     body: 'A palette, not a template. Miles, Gwen, Peni, Ham, Noir. Temperature, not layout.',
+    to: '/',
+    go: 'Pick a vibe',
   },
   {
     term: 'drop',
     body: 'Publish. Now, in a minute, or as a time capsule years out. A sealed drop stays folded until the clock hits.',
+    to: '/studio',
+    go: 'Open the studio',
   },
   {
     term: 'snapshot',
@@ -21,46 +27,68 @@ const ENTRIES = [
   {
     term: 'snap',
     body: 'Camera or upload → cutout → a tilted sticker. Lives in the widget tray. No new widget type, just a photo that behaves like collage.',
+    to: '/studio',
+    go: 'Open the studio',
   },
   {
     term: 'scatter',
     body: 'An optional page layout. Stickers and heroes sit free on the spread instead of in a stack. Drag the handle to pin them. Linear blocks stay the default.',
+    to: '/studio',
+    go: 'Open the studio',
   },
   {
     term: 'remix',
     body: 'Fork someone else’s issue and make it yours. Credit stays on the original.',
+    to: '/explore',
+    go: 'The stream',
   },
   {
     term: 'bag',
     body: 'Your private reading pile. Stuff an issue in, or check one out of the Archive — that copy lands here too. Not the public distro shelf.',
+    to: '/studio',
+    go: 'Your bag lives in studio',
   },
   {
     term: 'distro shelf',
     body: 'Issues you stock on your profile for other people to find. A table, not a store, and not your bag.',
+    to: '/explore',
+    go: 'The stream',
   },
   {
     term: 'archive',
     body: 'Community nomination, not a popularity list. Enough votes and the issue gets a permanent home. Check out a filed issue and it also goes in your bag for a week.',
+    to: '/explore',
+    go: 'The stream',
   },
   {
     term: 'board',
     body: 'Trade, collab, and feedback pins. Mail-swap culture, not a marketplace. Mark a swap done when it is done.',
+    to: '/board',
+    go: 'Open the board',
   },
   {
     term: 'fest',
     body: 'Tables on a floor, filtered by scene. Sit if you want. Still not a marketplace.',
+    to: '/fest',
+    go: 'Open the fest',
   },
   {
     term: 'desk',
     body: 'The corkboard. Scatter pins before they become a page. Paste a pin into a draft when you are ready.',
+    to: '/cork',
+    go: 'Open the desk',
   },
   {
     term: 'jam',
     body: 'A time-boxed prompt. Public drops that fit the format land in the pile automatically.',
+    to: '/explore',
+    go: 'The stream',
   },
   {
     term: 'letters',
     body: 'Private pen-pal threads. A postcard is the tiny version. MAIL in the topbar is the wire — notices, not the inbox. On an issue, a letter under INK stays on that page.',
+    to: '/mail',
+    go: 'Open letters',
   },
   {
     term: 'blurb',
@@ -89,6 +117,8 @@ const ENTRIES = [
   {
     term: 'handle',
     body: 'Who you are on the API. Claim one to sync drafts and join the scene. Without it, this browser is the studio.',
+    to: '/studio',
+    go: 'Claim in the studio',
   },
 ]
 
@@ -107,7 +137,15 @@ export function Help() {
           {ENTRIES.map((entry) => (
             <div key={entry.term} className="help-entry comic-cell">
               <dt className="hand">{entry.term}</dt>
-              <dd className="serif">{entry.body}</dd>
+              <dd className="serif">
+                {entry.body}
+                {entry.to ? (
+                  <>
+                    {' '}
+                    <Link to={entry.to}>{entry.go}</Link>
+                  </>
+                ) : null}
+              </dd>
             </div>
           ))}
         </dl>
@@ -119,6 +157,7 @@ export function Help() {
             The stream
           </Link>
         </div>
+        <SceneLinks />
       </main>
     </div>
   )

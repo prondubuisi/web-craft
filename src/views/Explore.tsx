@@ -73,7 +73,7 @@ export function Explore() {
             <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
               A website is a gathering place, not a billboard. Fork anything you like.
             </p>
-            <SceneLinks />
+            <SceneLinks here="/explore" />
             {jam ? (
               <p className="serif" style={{ maxWidth: 520, marginTop: 8 }}>
                 <Link to={`/jam/${jam.id}`}>
