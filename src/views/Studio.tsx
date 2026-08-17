@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { loadBag } from '../lib/social'
 import { actionError } from '../lib/catch'
 import { assertZineShape } from '../lib/shape'
-import type { BadgeId, BagItem, VibeId } from '../lib/types'
+import type { BadgeId, VibeId } from '../lib/types'
 import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -37,17 +37,15 @@ export function Studio() {
   const [authError, setAuthError] = useState('')
   const [title, setTitle] = useState('')
   const [vibe, setVibe] = useState<VibeId>('miles')
-  const [bag, setBag] = useState<BagItem[]>(() => loadBag(session?.name ?? profile.name))
   const navigate = useNavigate()
 
-  const remoteBag = useRemote(() => api.bag(), [session?.name], { enabled: Boolean(online && session) })
-  useEffect(() => {
-    if (!online || !session || remoteBag.error) {
-      setBag(loadBag(session?.name ?? profile.name))
-      return
-    }
-    if (remoteBag.data) setBag(remoteBag.data.bag)
-  }, [online, session, profile.name, remoteBag.data, remoteBag.error])
+  const [bag] = useRemoteWithFallback(
+    () => api.bag(),
+    () => loadBag(session?.name ?? profile.name),
+    (data) => data.bag,
+    [session?.name, profile.name],
+    { enabled: Boolean(online && session) },
+  )
 
   function drop() {
     const id = createZine(title.trim() || 'untitled issue', vibe)

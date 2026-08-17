@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { catchBackground } from '../lib/catch'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { uid } from '../lib/id'
 import { loadCork, saveCork } from '../lib/social'
 import type { CorkPin } from '../lib/types'
@@ -16,19 +16,17 @@ export function Cork() {
   const navigate = useNavigate()
   const me = session?.name ?? profile.name
   const draftIssue = zines.find((z) => isMine(z, session?.name) && !z.published)
-  const [pins, setPins] = useState<CorkPin[]>(() => loadCork(me))
   const [draft, setDraft] = useState('')
   const board = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; dx: number; dy: number } | null>(null)
 
-  const remote = useRemote(() => api.cork(), [session?.name], { enabled: Boolean(online && session) })
-  useEffect(() => {
-    if (!online || !session || remote.error) {
-      setPins(loadCork(me))
-      return
-    }
-    if (remote.data) setPins(remote.data.pins)
-  }, [online, session, me, remote.data, remote.error])
+  const [pins, setPins] = useRemoteWithFallback(
+    () => api.cork(),
+    () => loadCork(me),
+    (data) => data.pins,
+    [session?.name],
+    { enabled: Boolean(online && session) },
+  )
 
   function persist(next: CorkPin[]) {
     setPins(next)

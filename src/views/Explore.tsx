@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { useCountdown } from '../lib/useCountdown'
 import { demoJams, formatHint, liveJam } from '../lib/jam'
-import type { Jam, StreamSort, VibeId, Zine } from '../lib/types'
+import type { StreamSort, VibeId, Zine } from '../lib/types'
 import { VIBES } from '../lib/vibes'
 import { byline, coverSrc, filterStream, isDropLive, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/useZines'
@@ -18,11 +18,13 @@ export function Explore() {
   const [sort, setSort] = useState<StreamSort>('new')
   const [lane, setLane] = useState<'all' | 'following' | 'jam' | 'archive'>('all')
   const [tag, setTag] = useState('')
-  const [remote, setRemote] = useState<Zine[] | null>(null)
-  const [jam, setJam] = useState<Jam | null>(() => liveJam(demoJams()) ?? null)
-
-  const jams = useRemote(() => api.jams(), [])
-  const stream = useRemote(
+  const [jam] = useRemoteWithFallback(
+    () => api.jams(),
+    () => liveJam(demoJams()) ?? null,
+    (data) => data.live,
+    [],
+  )
+  const [remote] = useRemoteWithFallback(
     () =>
       api.stream({
         q,
@@ -33,23 +35,11 @@ export function Explore() {
         jam: lane === 'jam',
         archive: lane === 'archive',
       }),
+    () => null,
+    (data) => data.zines,
     [q, vibe, sort, lane, session, tag],
     { enabled: online && !(lane === 'following' && !session), delay: 180 },
   )
-  useEffect(() => {
-    if (!online || jams.error) {
-      setJam(liveJam(demoJams()) ?? null)
-      return
-    }
-    if (jams.data) setJam(jams.data.live)
-  }, [online, jams.data, jams.error])
-  useEffect(() => {
-    if (!online || (lane === 'following' && !session) || stream.error) {
-      setRemote(null)
-      return
-    }
-    if (stream.data) setRemote(stream.data.zines)
-  }, [online, lane, session, stream.data, stream.error])
 
   const published = useMemo(() => {
     const opts = {

@@ -14,7 +14,7 @@ Items 1–7 below are the original audit and are fully shipped. A second, indepe
 - Batched the N+1 query in `decorate()` (3 queries × N rows → 3 total) across the stream/archive/jam list endpoints.
 - Gated `pages.yml` and `deploy-api.yml` on lint/test/build actually passing before deploying — `deploy-api.yml` previously had no gate at all.
 
-Item **8** (Preview through `useRemote`) is done. Items **9–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
+Items **8** and **9** are done (`useRemote` on Preview; `useRemoteWithFallback` on the merge sites). Items **10–14** are the remaining structural-cleanup and tooling-polish work — not urgent; none change user-facing behavior.
 
 ## Priority order
 
@@ -26,7 +26,7 @@ Item **8** (Preview through `useRemote`) is done. Items **9–14** are the remai
 6. Formalize the "online-only feature" data-fetch pattern — done
 7. Shared client/server request-response types — done (incremental; auth/board/fest + `api.ts`)
 8. Adopt `useRemote` in the one view that still bypasses it — done
-9. Extract the duplicated "remote + local fallback" merge into a shared hook — not started
+9. Extract the duplicated "remote + local fallback" merge into a shared hook — done
 10. Split `Editor.tsx`'s six concerns, starting with undo/redo — not started
 11. Add test coverage for `useIssueSocial.ts` — not started
 12. Narrow the migration runner's error-swallowing — not started
@@ -169,6 +169,8 @@ A single `global.css` (or `index.css`) keeps `@import`-ing all of them in order,
 **Target:** a small hook layered on `useRemote`, e.g. `useRemoteWithFallback(fetcher, loadLocal, deps)` returning the merged value directly, so each view drops its second effect.
 
 **Migration path:** write the hook once with its own test (mirrors how `useRemote` itself was introduced), then convert one view at a time — low risk, each conversion is independent and behavior-preserving, same migration shape §6 used.
+
+**Done.** `useRemoteWithFallback` lives next to `useRemote` and returns `[value, setValue]`. Cork, Studio, Explore, Profile, Board, Mail, Fest, and Jam drop their second merge effect. Profile still copies a arrived user into editable bio/scene/notes fields; Mail still syncs the compose `to` field from the route. Preview stays on `useRemote` — it has no local fallback.
 
 ---
 
