@@ -257,6 +257,14 @@ export function Modal({
   children: ReactNode
   onClose: () => void
 }) {
+  useEffect(() => {
+    function onKey(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
     <div className="modal-back" onClick={onClose} role="presentation">
       <div
@@ -266,7 +274,12 @@ export function Modal({
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2>{title}</h2>
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button type="button" className="modal-close" onClick={onClose}>
+            close
+          </button>
+        </div>
         {children}
       </div>
     </div>
