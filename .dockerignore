@@ -4,5 +4,11 @@ dist
 scripts/shots
 server/data/*.sqlite
 server/data/*.sqlite-*
+**/*.test.ts
+src/components
+src/views
+src/store
+src/styles
+e2e
 *.md
 .github

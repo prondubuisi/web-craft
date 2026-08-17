@@ -3,9 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { actionError } from '../lib/catch'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
-import type { Letter, MailThread, VibeId } from '../lib/types'
+import type { VibeId } from '../lib/types'
 import { profilePath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -15,36 +15,33 @@ export function Mail() {
   const { session, online, profile } = useZines()
   const me = session?.name ?? profile.name
   const navigate = useNavigate()
-  const [threads, setThreads] = useState<MailThread[]>(() => listThreads(me))
-  const [letters, setLetters] = useState<Letter[]>(() => (other ? threadWith(me, other) : []))
   const [body, setBody] = useState('')
   const [to, setTo] = useState(other)
   const [error, setError] = useState('')
   const [card, setCard] = useState(false)
   const [vibe, setVibe] = useState<VibeId>('miles')
 
-  const inbox = useRemote(() => api.mail(), [session?.name], { enabled: Boolean(online && session) })
-  const thread = useRemote(() => api.thread(other), [other, session?.name], {
-    enabled: Boolean(online && session && other),
-  })
+  const [threads, setThreads] = useRemoteWithFallback(
+    () => api.mail(),
+    () => listThreads(me),
+    (data) => data.threads,
+    [session?.name],
+    { enabled: Boolean(online && session) },
+  )
+  const [letters, setLetters] = useRemoteWithFallback(
+    () => api.thread(other),
+    () => {
+      if (!other) return []
+      markThreadRead(me, other)
+      return threadWith(me, other)
+    },
+    (data) => data.letters,
+    [other, session?.name],
+    { enabled: Boolean(online && session && other) },
+  )
   useEffect(() => {
     setTo(other)
-    if (!online || !session || inbox.error) {
-      setThreads(listThreads(me))
-    } else if (inbox.data) {
-      setThreads(inbox.data.threads)
-    }
-    if (!other) {
-      setLetters([])
-      return
-    }
-    if (!online || !session || thread.error) {
-      markThreadRead(me, other)
-      setLetters(threadWith(me, other))
-    } else if (thread.data) {
-      setLetters(thread.data.letters)
-    }
-  }, [other, online, session, me, inbox.data, inbox.error, thread.data, thread.error])
+  }, [other])
 
   async function send() {
     const text = body.trim()

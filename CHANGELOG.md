@@ -4,6 +4,10 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.5.3 — 2026-08-17
+
+Architecture plan Round 2 items 9–14. Remote + local merges use `useRemoteWithFallback`. Editor undo/redo lives in `useHistory`. `useIssueSocial` has tests. Migration leftovers ignore errors only on `0002`/`0003`. API image is multi-stage. CI shares one setup action, caches Playwright, and pins `flyctl` to `@v1`.
+
 ## 1.5.2 — 2026-08-17
 
 Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.

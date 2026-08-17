@@ -11,6 +11,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/deploy-api.yml'
+      - '.github/actions/setup/**'
   workflow_dispatch:
 
 jobs:
@@ -30,18 +31,13 @@ jobs:
           fi
       - uses: actions/checkout@v5
         if: steps.fly.outputs.has_token == 'true'
-      - uses: actions/setup-node@v5
-        if: steps.fly.outputs.has_token == 'true'
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/setup
         if: steps.fly.outputs.has_token == 'true'
       - run: npm test
         if: steps.fly.outputs.has_token == 'true'
       - run: npm run build
         if: steps.fly.outputs.has_token == 'true'
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
         if: steps.fly.outputs.has_token == 'true'
       - run: flyctl deploy --remote-only
         if: steps.fly.outputs.has_token == 'true'

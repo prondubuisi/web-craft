@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { actionError } from './catch'
 import { useZines } from '../store/useZines'
 
@@ -62,4 +62,37 @@ export function useRemote<T>(
   }, [online, enabled, delay, depKey])
 
   return { data, loading, error }
+}
+
+/**
+ * Online fetch that overlays a local value. While the request is in flight the
+ * last value stays (initialized from `fallback`). Offline, disabled, or error
+ * re-runs `fallback`. `setValue` is for in-view mutations on top of that merge.
+ */
+export function useRemoteWithFallback<T, V>(
+  fetcher: () => Promise<T>,
+  fallback: () => V,
+  select: (data: T) => V,
+  deps: readonly unknown[],
+  opts?: UseRemoteOptions,
+): [V, Dispatch<SetStateAction<V>>] {
+  const { online } = useZines()
+  const enabled = opts?.enabled ?? true
+  const remote = useRemote(fetcher, deps, opts)
+  const fallbackRef = useRef(fallback)
+  fallbackRef.current = fallback
+  const selectRef = useRef(select)
+  selectRef.current = select
+  const [value, setValue] = useState(fallback)
+  const depKey = JSON.stringify(deps)
+
+  useEffect(() => {
+    if (!online || !enabled || remote.error) {
+      setValue(fallbackRef.current())
+      return
+    }
+    if (remote.data != null) setValue(selectRef.current(remote.data))
+  }, [online, enabled, remote.data, remote.error, depKey])
+
+  return [value, setValue]
 }
