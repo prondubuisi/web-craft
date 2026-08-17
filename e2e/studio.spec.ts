@@ -289,6 +289,16 @@ test.describe('B. maker — studio and editor', () => {
     const prompt = await dialog
     expect(prompt.message()).toMatch(/not a Zineverse issue/i)
     await prompt.accept()
+
+    const shaped = page.waitForEvent('dialog')
+    await page.locator('input[accept*="json"]').setInputFiles({
+      name: 'almost.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({ title: 'almost', vibe: 'spider', blocks: [] })),
+    })
+    const shapePrompt = await shaped
+    expect(shapePrompt.message()).toMatch(/vibe must be miles, gwen, peni, ham, or noir/)
+    await shapePrompt.accept()
   })
 
   test('empty canvas hint after deleting blocks', async ({ page }) => {

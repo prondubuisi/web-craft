@@ -5,7 +5,8 @@ import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
 import { useRemote } from '../lib/useRemote'
 import { loadBag } from '../lib/social'
-import type { BadgeId, BagItem, VibeId, Zine } from '../lib/types'
+import { assertZineShape } from '../lib/shape'
+import type { BadgeId, BagItem, VibeId } from '../lib/types'
 import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -92,13 +93,18 @@ export function Studio() {
                   e.target.value = ''
                   if (!file) return
                   void file.text().then((text) => {
+                    let raw: unknown
                     try {
-                      const parsed = JSON.parse(text) as Zine
-                      if (!parsed?.blocks || !parsed?.title) throw new Error('not a zine')
-                      const id = importZine(parsed)
-                      navigate(`/edit/${id}`)
+                      raw = JSON.parse(text)
                     } catch {
                       window.alert('That file is not a Zineverse issue.')
+                      return
+                    }
+                    try {
+                      const id = importZine(assertZineShape(raw))
+                      navigate(`/edit/${id}`)
+                    } catch (err) {
+                      window.alert(err instanceof Error ? err.message : 'That file is not a Zineverse issue.')
                     }
                   })
                 }}

@@ -1,5 +1,6 @@
-import type { Block, VibeId, Zine } from './types'
 import { uid } from './id'
+import { assertZineShape } from './shape'
+import type { Block, VibeId, Zine } from './types'
 
 export type SharePayload = {
   v: 1
@@ -80,9 +81,20 @@ export function decodeShare(raw: string): SharePayload | null {
     const b64 = trimmed.replace(/-/g, '+').replace(/_/g, '/') + pad
     const bin = atob(b64)
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
-    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as SharePayload
-    if (parsed?.v !== 1 || !parsed.title || !parsed.blocks) return null
-    return parsed
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes))
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const body = parsed as Record<string, unknown>
+    if (body.v !== 1) return null
+    const owner = typeof body.owner === 'string' && body.owner.trim() ? body.owner : 'shared'
+    const zine = assertZineShape({ ...body, owner })
+    return {
+      v: 1,
+      title: zine.title,
+      vibe: zine.vibe,
+      blocks: zine.blocks,
+      owner: zine.owner,
+      dropsAt: zine.dropsAt ?? null,
+    }
   } catch {
     return null
   }

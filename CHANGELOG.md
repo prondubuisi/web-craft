@@ -6,6 +6,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 Boot and sign-in merge the stream into the local list instead of replacing it. A late health/stream response no longer drops a just-imported or just-created unpublished issue. The blind `replaceZines` action is gone.
 
+Studio JSON import and snapshot `decodeShare()` run untrusted bytes through `assertZineShape` and fail with a field-specific error instead of a bare cast.
+
 ## 1.4.4 — 2026-08-17
 
 Store hooks live in `useZines.ts` so `ZineContext` only exports the provider. GitHub Actions use checkout/setup-node v5. Lint is clean. STATUS and sg match the 1.4.x line.
