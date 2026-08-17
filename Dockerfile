@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim AS builder
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
@@ -7,11 +7,16 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci && npm prune --omit=dev
 
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY --from=builder /app/node_modules ./node_modules
 COPY server ./server
-COPY src ./src
-COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
+COPY src/lib ./src/lib
 
 ENV NODE_ENV=production
 ENV PORT=8787
