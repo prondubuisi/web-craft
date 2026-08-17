@@ -1,6 +1,6 @@
 # sg — Next changes
 
-_Merged from `sg1.md` (repo root) and `docs/sg2.md`. Implementation target: the readable slice, not another feature round._
+_Merged from `sg1.md` (repo root), `docs/sg2.md` (readable slice), and `docs/sg3.md` (Tiger-style safety). Implementation target: support the surface you have, not another feature round._
 
 ## How the two notes compare
 
@@ -20,7 +20,15 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3**. Hook/provider split and Actions v5 are **1.4.4**. Boot/sign-in use `mergeZines` (the `replaceZines` overwrite is gone).
+Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. Boot/sign-in use `mergeZines`; the `replaceZines` overwrite is gone (sg3 item 1, unreleased on `develop`).
+
+**Still open from sg3 (safety, not features):**
+
+1. **`assertZineShape`** at Studio JSON import and `decodeShare()` — hand-written checks, specific errors, no schema library. Next small ship.
+2. **Silent-catch sweep** — mark background vs user-initiated silence. Opportunistic, when touching the file.
+3. **Reducer invariants** in dev: non-empty ids, no insert collision, no duplicate id in `mergeZines`. Opportunistic, when touching the reducer.
+
+Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.
 
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 

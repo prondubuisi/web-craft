@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.4.4)_
+_Last reviewed: 2026-08-17 (1.4.4 + unreleased mergeZines on develop)_
 
 ## Overview
 
@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (21 `*.test.ts` files, 125 tests, including `server/api.test.ts`, `server/rateLimit.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 60 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (next changes).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation; shipped items folded into `sg.md`).
 
 ## Access & Security Review
 
@@ -70,5 +70,13 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at the top of that file). Do not start a seventh round of mechanics.
 
 No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev` (`0003_legacy_columns` unblocked the leftover volume).
+
+Engineering, from `sg.md` / `docs/sg3.md`:
+
+1. **`assertZineShape`** at Studio JSON import and snapshot `decodeShare()` — hand-written, no zod. Next.
+2. Silent-catch sweep (background vs user action) when touching those files.
+3. Dev-mode reducer invariants when touching `reducer.ts`.
+
+sg3 items 1 (`mergeZines`) and 3 (Playwright in CI) are done.
 
 Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.
