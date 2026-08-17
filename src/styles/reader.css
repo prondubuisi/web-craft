@@ -689,17 +689,23 @@ button.blackout-word.hid {
 }
 
 @media (max-width: 859px) {
+  .brand {
+    font-size: 1.25rem;
+  }
+
   .brand small {
     display: none;
   }
 
   .topbar {
-    flex-wrap: nowrap;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.6rem;
   }
 
   .nav-links {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    margin-left: auto;
   }
 
   .nav-links a {
