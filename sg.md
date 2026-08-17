@@ -20,9 +20,9 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice (items 1–7 below) is in the working tree. Auth hardening is **deferred** — leave rate limits and token rotation for a later pass.
+Readable slice (items 1–7 below) and the maker-depth pass shipped in **1.4.0**. Auth hardening is the next engineering pass.
 
-**This pass (maker depth + leftover housekeeping, no auth):**
+**Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 
 - Photos that travel, or a clear refusal when they will not
 - Camera → cutout → sticker
@@ -31,13 +31,13 @@ Readable slice (items 1–7 below) is in the working tree. Auth hardening is **d
 - Group `Zine` metadata types
 - `0002_scatter` so the next schema change uses the migration runner
 - Fold/landing CSS split
+- Playwright user-story suite
 
 Still later:
 
 - Auth rate limit and token rotation
 - Split `social.ts` by bag / mail / archive / run
 - Merging overlapping mechanics (bag/shelf/archive, response verbs)
-- Version bump / `release/1.4.0`
 
 ## What this pass implements
 

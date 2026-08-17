@@ -4,11 +4,13 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.4.0 — 2026-08-17
+
 Readable slice (`sg.md`): smaller topbar, offline honesty, cover rewrite, first-visit primer, `/help` glossary, thinned reader actions. Reader social state lives in `useIssueSocial`. Shared `contract.ts` types cover the remaining `api.ts` endpoints.
 
 Maker depth: compressed photo uploads, snapshot links refuse (instead of silently dropping) photos that will not fit, camera → cutout → sticker, optional scatter layout, DropModal/EditorMeta extracted. `0002_scatter` migration. Auth hardening still deferred.
 
-Playwright flow suite (`npm run test:e2e`). Remix from the stream/reader no longer no-ops when the issue is not already in the local store. Snapshot `/s` follows hash changes. Demo `midnight run` reseals on health/stream so a long-lived API does not leave it open.
+Playwright user-story suite (`npm run test:e2e`) covers every route, every widget, and the readable-chrome regressions. Remix from the stream/reader no longer no-ops when the issue is not already in the local store. Snapshot `/s` follows hash changes. Demo `midnight run` reseals on health/stream so a long-lived API does not leave it open.
 
 ## 1.3.0 — 2026-08-14
 
