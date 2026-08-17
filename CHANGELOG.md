@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Remote sync drops leftover local demo copies that are not yours, so a stream fetch cannot leave two `sunday market` rows with different ids.
+
 ## 1.4.5 — 2026-08-17
 
 Boot and sign-in merge the stream into the local list instead of replacing it. A late health/stream response no longer drops a just-imported or just-created unpublished issue. The blind `replaceZines` action is gone.

@@ -68,6 +68,12 @@ describe('apply', () => {
     })
     expect(withLocal.zines.map((z) => z.id)).toEqual(['local', 'remote'])
     expect(withLocal.zines.find((z) => z.id === 'local')?.title).toBe('imported scrap')
+
+    const dropped = apply(
+      state({ zines: [issue({ id: 'seed-clone', title: 'sunday market', owner: '@yuzu', published: true })] }),
+      { type: 'mergeZines', zines: [issue({ id: 'remote', title: 'sunday market', owner: '@yuzu' })] },
+    )
+    expect(dropped.zines.map((z) => z.id)).toEqual(['remote'])
   })
 
   it('sets a session without dropping remix points unless told', () => {
