@@ -30,6 +30,21 @@ Insert is an upsert; uniqueness is asserted on the result, not as a collision er
 
 Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.
 
+## After 1.4.8
+
+The 1.4.x support pass is complete. Do not cut another 1.4.x patch unless CI is red or the live demo lies.
+
+**Stop.** Freeze still holds. No new blocks, routes-as-mechanics, badges, or notice kinds.
+
+**1.5.0, only if you open it:** not more zine nouns. sg1’s maker-depth list already shipped in 1.4.0. The leftover from sg2 is a **consolidation pass** — bag vs distro shelf vs archive, and the five ways to respond to an issue (blurb, letter, margin, dedication, tear-out). Write down what people actually reach for before merging or deleting any of them.
+
+**Incremental, when touching a file anyway (not a project):**
+- Add the route’s types to `src/lib/contract.ts`
+- Split `reader.css` only if it grows again
+- The next real schema change is `0004_…`, not an inline `ALTER TABLE`
+
+**Do not:** a dedicated silent-catch sweep of parse fallbacks; SaaS; a second client.
+
 **Shipped in 1.4.0 (maker depth + leftover housekeeping, no auth):**
 
 - Photos that travel, or a clear refusal when they will not

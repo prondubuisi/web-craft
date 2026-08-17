@@ -67,10 +67,14 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 
 ## Suggested Next Steps
 
-Feature list: none open from `docs/IMPROVEMENTS.md` (frozen — see the note at the top of that file). Do not start a seventh round of mechanics.
+The 1.4.x support pass is complete as of **1.4.8**. See `sg.md` § After 1.4.8.
 
-No product items open. `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev` (`0003_legacy_columns` unblocked the leftover volume).
+Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics.
 
-Engineering, from `sg.md` / `docs/sg3.md`: no dedicated items open. First-paint honesty shipped in 1.4.8.
+No 1.4.x engineering items are open. Do not cut another patch unless CI is red or the live demo lies.
 
-Bag, distro shelf, and archive stay distinct (private pile / public table / community preservation). Checkout now also stuffs the bag. Blurbs and letters stay two forms, grouped as ink on the reader. Dedication and tear-out stay maker-side.
+**If 1.5.0 opens:** a consolidation pass (sg2), not more nouns. Bag / shelf / archive stay distinct until that note exists. The five response forms stay until someone writes down which ones people use.
+
+Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
+
+`FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev`.

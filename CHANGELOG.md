@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+`sg.md` records that the 1.4.x support pass is complete. Next decision is whether to open 1.5.0 as a consolidation pass, not more features.
+
 ## 1.4.8 — 2026-08-17
 
 First paint no longer pretends the API is down. Brand, studio chip, claim button, and the local-studio line wait until health has answered.
