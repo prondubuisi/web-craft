@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.5.1)_
+_Last reviewed: 2026-08-17 (1.5.1 + Preview `useRemote`)_
 
 ## Overview
 
@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (23 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, and service tests; 140 unit tests). Playwright user-story suite in `e2e/` — 68 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation).
 
 ## Access & Security Review
 
@@ -63,13 +63,17 @@ Zineverse is a **working client-first zine tool with an optional multi-user API*
 
 Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 1.3.0. The readable slice and maker-depth pass shipped in 1.4.0. Auth hardening, the `social/` split, checkout-into-bag, reader INK grouping, and the expanded Playwright suite shipped in 1.4.1. `0003_legacy_columns` (1.4.2) upgrades leftover Fly volumes that never ran `0001_init`. Playwright e2e runs in CI as of 1.4.3. Store hooks and Actions v5 landed in 1.4.4. The 1.4.5 safety pass: `mergeZines` on boot/sign-in, `assertZineShape` on import and snapshot hashes, reducer id invariants, and named client catches. 1.4.6 drops leftover local demo copies on stream sync. 1.4.7: topbar MAIL/modal close, phone nav wrap, topbar e2e. 1.4.8 waits for health before calling the API down. **1.5.0** is the consolidation observation: Help names the four missing answer terms; the More sheet points at Help. **1.5.1** validates API blocks and batches stream decoration.
 
-`docs/ARCHITECTURE_PLAN.md` items 1–7 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches, and incremental `src/lib/contract.ts` types.
+`docs/ARCHITECTURE_PLAN.md` items 1–8 are implemented: numbered SQL migrations, `server/routes` + `server/services` with service tests, `React.lazy` on navigated routes, `src/styles/` split + stylelint, `useRemote` for online-only fetches (including Preview), and incremental `src/lib/contract.ts` types.
 
 ## Suggested Next Steps
 
-The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). Three piles and five answer forms stay. No further 1.5.x work unless CI is red, the live demo lies, or you open a new note.
+The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). **1.5.1** shipped `docs/ARCHITECTURE_PLAN.md` Round 2's correctness/security tier: server-side `assertBlocks` validation on API upsert and corpse-chain pages, batched stream/jam/archive decoration, and Pages/Fly deploys gated on lint/test/build. Three piles and five answer forms stay.
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
+
+**Open engineering backlog:** `docs/ARCHITECTURE_PLAN.md` Round 2, items 9–14 — not urgent, no user-facing behavior change, pick up opportunistically or when touching the relevant file. In order: the remote+local-fallback merge is duplicated across four views (§9); `Editor.tsx` mixes six concerns with nothing extracted to a hook (§10); `useIssueSocial.ts` has no test coverage (§11); the migration runner's error-swallowing is broader than the one Fly incident it was written for (§12); the Docker image ships ~70MB of unused devDependencies via a single-stage build (§13); and four small CI/tooling items — a composite action, a floating `@master` action pin, dead `package.json` config, Playwright CI caching (§14).
+
+**§8 done:** `Preview.tsx` loads `/z/:id` through `useRemote`, same online gate as the other views. Passphrase unlock still overlays the fetched issue.
 
 Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
 
