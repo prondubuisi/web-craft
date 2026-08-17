@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (25 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 68 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (1.5.3 finish/share/find honesty).
 
 ## Access & Security Review
 

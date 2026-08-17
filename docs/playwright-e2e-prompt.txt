@@ -69,7 +69,7 @@ Landing (/)
   ("Got it") persists via localStorage so a reload doesn't show it again.
 - Switching the vibe rail (.vibe-card, 5 vibes) updates [data-vibe] on root and
   the "Build with {vibe}" CTA text.
-- "Drop a zine" creates a new zine and lands in the Editor.
+- "Make an issue" creates a new zine and lands in the Editor.
 - "Enter the studio" navigates to /studio.
 - The sample-issue link only renders when a published sample zine exists —
   test both with and without seeded data.
@@ -77,7 +77,7 @@ Landing (/)
 Studio (/studio)
 - Header chip reflects all three states: signed-in (@handle), API-live-but-
   signed-out, and fully offline.
-- "Drop a new issue" modal: pick a vibe, title it, "Open the page" → Editor.
+- "New issue" modal: pick a vibe, title it, "Open the page" → Editor.
 - Import JSON: valid file loads a zine; invalid JSON triggers the
   window.alert('That file is not a Zineverse issue.') — assert via page.on('dialog').
 - Claim-handle modal: register a new handle+password, toggle to "I already have
