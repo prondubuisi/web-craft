@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (23 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 68 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation; shipped items folded into `sg.md`).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, written against 1.1.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation).
 
 ## Access & Security Review
 
@@ -67,13 +67,9 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 
 ## Suggested Next Steps
 
-The 1.4.x support pass is complete as of **1.4.8**. See `sg.md` § After 1.4.8.
+The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** is open as a consolidation observation (`docs/sg4.md`): keep the three piles and five answer forms; Help now names blurb, margin, dedication, and tear-out.
 
-Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics.
-
-No 1.4.x engineering items are open. Do not cut another patch unless CI is red or the live demo lies.
-
-**If 1.5.0 opens:** a consolidation pass (sg2), not more nouns. Bag / shelf / archive stay distinct until that note exists. The five response forms stay until someone writes down which ones people use.
+Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
 Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
 
