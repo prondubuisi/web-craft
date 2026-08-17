@@ -175,6 +175,29 @@ test.describe('C. reader — /z/:id', () => {
     await expect(page).toHaveURL(/\/explore/)
   })
 
+  test('widget round-trip on the reader including blackout holes', async ({ page }) => {
+    await openNewIssue(page, 'round trip')
+    for (const slash of ['panel', 'scribble', 'glitch', 'stack', 'quote', 'strip', 'colophon', 'blackout', 'toc', 'insert']) {
+      await insertSlash(page, slash)
+    }
+    await expect(page.locator('.grid-block').first()).toBeVisible()
+    await expect(page.locator('.glitch-block')).toBeVisible()
+    await dropNow(page)
+    await clickText(page, 'Preview')
+    await expect(page.locator('.heading-xl, .heading-lg, .heading-md').first()).toBeVisible()
+    await expect(page.locator('.sticker-block').first()).toBeVisible()
+    await expect(page.locator('.hero-shot').first()).toBeVisible()
+    await expect(page.locator('.grid-block').first()).toBeVisible()
+    await expect(page.locator('.glitch-block')).toBeVisible()
+    await expect(page.locator('.stack-block')).toBeVisible()
+    await expect(page.locator('.quote-block')).toBeVisible()
+    await expect(page.locator('.strip-block')).toBeVisible()
+    await expect(page.locator('.colophon-block')).toBeVisible()
+    await expect(page.locator('.contents-block')).toBeVisible()
+    await expect(page.locator('.insert-block')).toBeVisible()
+    await expect(page.locator('.blackout-block .blackout-word.hid').first()).toHaveText('████')
+  })
+
   test('own after-hours reader has edit, other issue does not', async ({ page }) => {
     await page.goto('/')
     await clickIncludes(page, 'Read after hours')
