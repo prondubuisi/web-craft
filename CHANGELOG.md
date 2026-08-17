@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.4.3 — 2026-08-17
+
 CI runs the Playwright user-story suite. Playwright starts `npm run dev` when `CI` is set; locally it still reuses a running server.
 
 ## 1.4.2 — 2026-08-17
