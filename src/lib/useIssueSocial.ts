@@ -212,8 +212,9 @@ export function useIssueSocial(opts: {
 
   function checkout() {
     if (!zine) return
-    checkoutLocal(bagOwner, zine.id, zine.title)
+    checkoutLocal(bagOwner, zine.id, zine.title, { owner: zine.owner, vibe: zine.vibe })
     setLoaned(true)
+    setBagged(true)
     if (session && online) void api.checkout(zine.id).catch(() => undefined)
   }
 

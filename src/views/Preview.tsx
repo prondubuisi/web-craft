@@ -451,8 +451,17 @@ export function Preview() {
               <p className="serif">{zine.bSide}</p>
             </aside>
           ) : null}
-          <Reviews zineId={zine.id} locked={locked || needsPass} remote={social.remoteSocial} />
-          <Comments zineId={zine.id} locked={locked || needsPass} remote={social.remoteSocial} />
+          {!locked && !needsPass ? (
+            <section className="issue-ink" aria-label="Ink">
+              <div className="issue-chip">INK</div>
+              <p className="serif ink-lede">
+                A blurb is one line. A letter stays. ¶ on a panel is a margin note. Dedication and
+                tear-out live with the maker.
+              </p>
+              <Reviews zineId={zine.id} locked={false} remote={social.remoteSocial} />
+              <Comments zineId={zine.id} locked={false} remote={social.remoteSocial} />
+            </section>
+          ) : null}
         </article>
         {!locked ? (
           <div className={`fold-wrap ${fold ? 'on' : ''}`}>

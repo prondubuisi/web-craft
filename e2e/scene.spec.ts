@@ -41,6 +41,24 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await expect(page.locator('.board-card', { hasText: body })).toHaveCount(0)
   })
 
+  test('31c board pin is disabled until text and honors the cap', async ({ page }) => {
+    await openNewIssue(page, 'board attach')
+    await dropNow(page)
+    await page.goto('/board')
+    const pin = page.locator('.board-form').getByRole('button', { name: 'Pin it' })
+    await expect(pin).toBeDisabled()
+    const area = page.locator('.board-form textarea')
+    await expect(area).toHaveAttribute('maxlength', '280')
+    await area.fill('need a second pair of eyes')
+    await expect(pin).toBeEnabled()
+    const attach = page.getByLabel('Attach an issue')
+    await expect(attach).toBeVisible()
+    const attached = await attach.locator('option', { hasText: /board attach/i }).getAttribute('value')
+    await attach.selectOption(attached ?? '')
+    await pin.click()
+    await expect(page.locator('.board-card', { hasText: 'need a second pair of eyes' })).toContainText(/board attach/i)
+  })
+
   test('31b board empty state offline', async ({ page }) => {
     await forceOffline(page)
     await page.goto('/board')
@@ -78,6 +96,15 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await clickIncludes(page, 'Pin it')
     const pin = page.locator('.cork-pin').filter({ hasText: 'a scrap from the floor' })
     await expect(pin).toBeVisible()
+    const before = await pin.getAttribute('style')
+    const box = await pin.locator('p').boundingBox()
+    if (box) {
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(box.x + 140, box.y + 110, { steps: 10 })
+      await page.mouse.up()
+    }
+    await expect.poll(async () => pin.getAttribute('style')).not.toBe(before)
     await pin.getByRole('button', { name: 'paste' }).evaluate((el) => (el as HTMLButtonElement).click())
     await expect(page).toHaveURL(/\/edit\//)
     await expect(page.locator('.sticker-block', { hasText: 'a scrap from the floor' })).toBeVisible()
@@ -96,6 +123,19 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
   })
 
   test('34 letters and postcards', async ({ page, browser }) => {
+    await forceOffline(page)
+    await page.goto('/mail')
+    await page.evaluate(() => localStorage.setItem('zineverse.mail.v1', '[]'))
+    await page.reload()
+    await expect(page.locator('h1')).toContainText(/letter/i)
+    await expect(page.locator('main')).toContainText('no envelopes yet. write first.')
+    const send = page.getByRole('button', { name: 'Send letter' })
+    await expect(send).toBeDisabled()
+    await expect(page.locator('.board-form textarea')).toHaveAttribute('maxlength', '400')
+    await page.locator('.tray-item', { hasText: 'postcard' }).click()
+    await expect(page.locator('.board-form textarea')).toHaveAttribute('maxlength', '140')
+    await page.unroute('**/api/**')
+
     await page.goto('/mail')
     await expect(page.locator('h1')).toContainText(/letter/i)
     const me = await claimHandle(page)
@@ -128,6 +168,7 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
 
     await page.goto('/mail')
     await expect(page.locator('.mail-threads')).toContainText(them)
+    await expect(page.locator('.mail-threads')).toContainText(/new/i)
     await page.locator('.mail-threads a', { hasText: them }).click()
     await expect(page.locator('.mail-thread')).toContainText('hello from the other desk')
     await ctx.close()
@@ -171,6 +212,21 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
       await expect(page.getByLabel('Passport')).toBeVisible()
     }
     void browser
+  })
+
+  test('35b profile series, sealed, empty wall, badges', async ({ page }) => {
+    await page.goto('/u/you')
+    await expect(page.getByRole('main')).toContainText(/rooftop hours|after hours/i)
+    await expect(page.locator('.comic-badge.dim').first()).toBeVisible()
+    await page.goto('/u/inkstain')
+    await expect(page.locator('main')).toContainText(/sealed|confession|midnight/i)
+
+    const me = await claimHandle(page)
+    test.skip(!me, 'API offline')
+    await page.goto(`/u/${me}`)
+    await expect(page.getByText('YOUR WALL')).toBeVisible()
+    await expect(page.locator('main')).toContainText(/No dropped issues yet/)
+    await expect(page.getByRole('link', { name: /Open the studio/i })).toBeVisible()
   })
 
   test('36 MAIL wire after a letter', async ({ page, browser }) => {

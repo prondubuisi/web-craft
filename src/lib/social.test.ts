@@ -195,11 +195,13 @@ describe('swapped trades', () => {
 })
 
 describe('library loans', () => {
-  it('checks out an issue once', () => {
-    const first = checkoutLocal('you', 'z1', 'issue 13')
+  it('checks out an issue once and tucks it in the bag', () => {
+    const first = checkoutLocal('you', 'z1', 'issue 13', { owner: '@inkstain', vibe: 'noir' })
     expect(first).toHaveLength(1)
-    expect(checkoutLocal('you', 'z1', 'issue 13')).toHaveLength(1)
+    expect(checkoutLocal('you', 'z1', 'issue 13', { owner: '@inkstain', vibe: 'noir' })).toHaveLength(1)
     expect(loadLoans('you')[0]?.title).toBe('issue 13')
+    expect(inBag('you', 'z1')).toBe(true)
+    expect(loadBag('you')[0]?.owner).toBe('@inkstain')
   })
 })
 

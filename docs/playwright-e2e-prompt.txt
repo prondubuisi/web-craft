@@ -1,3 +1,13 @@
+STATUS (2026-08-17): Historical draft. The working spec is
+docs/playwright-user-stories.txt. The thoroughness gaps listed here have
+been closed in the suite (60 passed): cork mouse-drag, editor redo /
+Backspace / slash filter, reader widget round-trip + blackout holes,
+board pin disabled + attach + 280 cap, mail empty/unread/char limits,
+profile series/sealed/empty-wall/badges, nav on every top-level route,
+MAIL hot → read. Keep this file as inventory, not as a spec to re-run.
+
+---
+
 Write a comprehensive Playwright e2e suite for the Zineverse app (this repo) that
 exercises every route, every shared component, and every major user story. An
 existing spec at e2e/flows.spec.ts already covers some flows — read it first,
