@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { loadSits, loadTables, toggleSit, upsertTable } from '../lib/social'
 import type { FestTable } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
@@ -10,29 +10,28 @@ import { useZines } from '../store/useZines'
 
 export function Fest() {
   const { session, online, profile, zines } = useZines()
-  const [tables, setTables] = useState<FestTable[]>(() => loadTables())
   const [scene, setScene] = useState('')
   const [name, setName] = useState('')
   const [blurb, setBlurb] = useState('')
   const mine = zines.filter((z) => z.published && isMine(z, session?.name)).slice(0, 8)
   const [picked, setPicked] = useState<string[]>([])
-  const [sits, setSits] = useState<Record<string, string[]>>({})
 
-  const remote = useRemote(() => api.fest(), [])
-  useEffect(() => {
-    if (!online || remote.error) {
+  const [fest, setFest] = useRemoteWithFallback(
+    () => api.fest(),
+    () => {
       const local = loadTables()
-      setTables(local)
-      setSits(Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])))
-      return
-    }
-    if (remote.data) {
-      setTables(remote.data.tables)
-      const next: Record<string, string[]> = {}
-      for (const table of remote.data.tables) next[table.id] = table.sitters ?? []
-      setSits(next)
-    }
-  }, [online, remote.data, remote.error])
+      return {
+        tables: local,
+        sits: Object.fromEntries(local.map((table) => [table.id, loadSits(table.id)])),
+      }
+    },
+    (data) => ({
+      tables: data.tables,
+      sits: Object.fromEntries(data.tables.map((table) => [table.id, table.sitters ?? []])),
+    }),
+    [],
+  )
+  const { tables, sits } = fest
 
   const visible = useMemo(() => {
     const q = scene.trim().toLowerCase()
@@ -57,9 +56,12 @@ export function Fest() {
         blurb: table.blurb,
         zineIds: picked,
       })
-      setTables((prev) => [res.table, ...prev.filter((row) => row.owner !== res.table.owner)])
+      setFest((prev) => ({
+        ...prev,
+        tables: [res.table, ...prev.tables.filter((row) => row.owner !== res.table.owner)],
+      }))
     } else {
-      setTables(upsertTable(table))
+      setFest((prev) => ({ ...prev, tables: upsertTable(table) }))
     }
     setName('')
     setBlurb('')
@@ -143,13 +145,24 @@ export function Fest() {
                     if (online && session) {
                       void api
                         .sit(table.id)
-                        .then((res) => setSits((prev) => ({ ...prev, [table.id]: res.sitters })))
+                        .then((res) =>
+                          setFest((prev) => ({
+                            ...prev,
+                            sits: { ...prev.sits, [table.id]: res.sitters },
+                          })),
+                        )
                         .catch(() =>
-                          setSits((prev) => ({ ...prev, [table.id]: toggleSit(table.id, who) })),
+                          setFest((prev) => ({
+                            ...prev,
+                            sits: { ...prev.sits, [table.id]: toggleSit(table.id, who) },
+                          })),
                         )
                       return
                     }
-                    setSits((prev) => ({ ...prev, [table.id]: toggleSit(table.id, who) }))
+                    setFest((prev) => ({
+                      ...prev,
+                      sits: { ...prev.sits, [table.id]: toggleSit(table.id, who) },
+                    }))
                   }}
                 >
                   Sit

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ComicButton, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
 import { actionError, catchBackground } from '../lib/catch'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { addLocalListing, loadLocalListings, removeLocalListing, swapLocalListing } from '../lib/social'
-import type { Listing, ListingKind } from '../lib/types'
+import type { ListingKind } from '../lib/types'
 import { isMine, profilePath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -19,24 +19,18 @@ const KINDS: { id: ListingKind | 'all'; label: string }[] = [
 export function Board() {
   const { session, online, profile, zines } = useZines()
   const [kind, setKind] = useState<ListingKind | 'all'>('all')
-  const [items, setItems] = useState<Listing[]>(() => loadLocalListings())
   const [body, setBody] = useState('')
   const [postKind, setPostKind] = useState<ListingKind>('trade')
   const [zineId, setZineId] = useState('')
   const [error, setError] = useState('')
   const mine = zines.filter((z) => z.published && isMine(z, session?.name)).slice(0, 12)
 
-  const remote = useRemote(
+  const [items, setItems] = useRemoteWithFallback(
     () => api.board(kind === 'all' ? undefined : kind),
+    () => loadLocalListings(),
+    (data) => data.listings,
     [kind],
   )
-  useEffect(() => {
-    if (!online || remote.error) {
-      setItems(loadLocalListings())
-      return
-    }
-    if (remote.data) setItems(remote.data.listings)
-  }, [online, remote.data, remote.error])
 
   const visible = useMemo(
     () => (kind === 'all' ? items : items.filter((item) => item.kind === kind)),

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { useRemote } from '../lib/useRemote'
+import type { ProfileResponse } from '../lib/contract'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { BADGE_META, computeBadges } from '../lib/seed'
-import type { BadgeId, FestTable, GuestNote, Loan, ShelfItem, Stamp, Zine } from '../lib/types'
+import type { BadgeId, FestTable, GuestNote, ShelfItem, Stamp, Zine } from '../lib/types'
 import {
   addGuestNote,
   loadGuestNotes,
@@ -45,25 +46,9 @@ export function Profile() {
   const [bio, setBio] = useState('')
   const [scene, setScene] = useState(profile.scene ?? '')
   const [stamps, setStamps] = useState<Stamp[]>(() => loadStamps(name))
-  const [loans, setLoans] = useState<Loan[]>(() => loadLoans(name))
   const [table, setTable] = useState<FestTable | null>(
     () => loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null,
   )
-  const [remote, setRemote] = useState<{
-    name: string
-    bio: string
-    scene?: string
-    remixPoints: number
-    createdAt: number
-    followers?: number
-    following?: number
-    followedByMe?: boolean
-    zines: Zine[]
-    guestbook?: GuestNote[]
-    shelf?: ShelfItem[]
-    stamps?: Stamp[]
-    table?: FestTable | null
-  } | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [busyFollow, setBusyFollow] = useState(false)
@@ -71,39 +56,35 @@ export function Profile() {
   const [guest, setGuest] = useState('')
   const [shelf, setShelf] = useState<ShelfItem[]>(() => loadShelf(name))
 
-  const remoteUser = useRemote(() => api.user(name), [name], { enabled: online && name !== 'you' })
-  const remoteLoans = useRemote(() => api.loans(), [name, session?.name], {
-    enabled: Boolean(online && mine && session && name !== 'you'),
-  })
+  const [remote, setRemote] = useRemoteWithFallback<ProfileResponse, ProfileResponse | null>(
+    () => api.user(name),
+    () => null,
+    (data) => data,
+    [name],
+    { enabled: Boolean(online && name !== 'you') },
+  )
+  const [loans] = useRemoteWithFallback(
+    () => api.loans(),
+    () => loadLoans(name),
+    (data) => data.loans,
+    [name, session?.name],
+    { enabled: Boolean(online && mine && session && name !== 'you') },
+  )
   useEffect(() => {
-    if (!online || name === 'you' || remoteUser.error) {
-      setRemote(null)
-      return
-    }
-    if (!remoteUser.data) return
-    const res = remoteUser.data
-    setRemote(res)
-    setBio(res.bio)
-    setScene(res.scene ?? '')
-    if (res.guestbook) setNotes(res.guestbook)
-    if (res.shelf) setShelf(res.shelf)
-    if (res.stamps) setStamps(res.stamps)
-    if (res.table !== undefined) setTable(res.table ?? null)
-  }, [name, online, remoteUser.data, remoteUser.error])
-  useEffect(() => {
-    if (!online || !mine || !session || name === 'you' || remoteLoans.error) {
-      if (!online || name === 'you') setLoans(loadLoans(name))
-      return
-    }
-    if (remoteLoans.data) setLoans(remoteLoans.data.loans)
-  }, [name, online, mine, session, remoteLoans.data, remoteLoans.error])
+    if (!remote) return
+    setBio(remote.bio)
+    setScene(remote.scene ?? '')
+    if (remote.guestbook) setNotes(remote.guestbook)
+    if (remote.shelf) setShelf(remote.shelf)
+    if (remote.stamps) setStamps(remote.stamps)
+    if (remote.table !== undefined) setTable(remote.table ?? null)
+  }, [remote])
 
   useEffect(() => {
     if (online && name !== 'you') return
     setNotes(loadGuestNotes(name))
     setShelf(loadShelf(name))
     setStamps(loadStamps(name))
-    setLoans(loadLoans(name))
     setTable(loadTables().find((row) => row.owner.replace(/^@/, '') === name) ?? null)
   }, [name, online])
 

@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Remote + local fallbacks go through `useRemoteWithFallback` instead of a second effect in each view.
+
 ## 1.5.2 — 2026-08-17
 
 Reader `/z/:id` loads through `useRemote` instead of a hand-rolled fetch. Passphrase unlock is unchanged.

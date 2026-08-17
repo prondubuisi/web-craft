@@ -1,33 +1,24 @@
-import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Halftone, Topbar } from '../components/Chrome'
 import { api } from '../lib/api'
-import { useRemote } from '../lib/useRemote'
+import { useRemoteWithFallback } from '../lib/useRemote'
 import { demoJams, formatHint, isJamLive } from '../lib/jam'
-import type { Jam, Zine } from '../lib/types'
 import { byline, coverSrc, filterStream, profilePath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 export function JamPage() {
   const { id = '' } = useParams()
-  const { zines, online } = useZines()
-  const local = demoJams().find((item) => item.id === id) ?? demoJams()[0] ?? null
-  const [jam, setJam] = useState<Jam | null>(local)
-  const [issues, setIssues] = useState<Zine[]>(() => filterStream(zines, { jamId: id }))
+  const { zines } = useZines()
 
-  const remote = useRemote(() => api.jam(id), [id])
-  useEffect(() => {
-    const offline = demoJams().find((item) => item.id === id) ?? demoJams()[0] ?? null
-    if (!online || remote.error) {
-      setJam(offline)
-      setIssues(filterStream(zines, { jamId: id }))
-      return
-    }
-    if (remote.data) {
-      setJam(remote.data.jam)
-      setIssues(remote.data.zines)
-    }
-  }, [id, online, zines, remote.data, remote.error])
+  const [{ jam, issues }] = useRemoteWithFallback(
+    () => api.jam(id),
+    () => ({
+      jam: demoJams().find((item) => item.id === id) ?? demoJams()[0] ?? null,
+      issues: filterStream(zines, { jamId: id }),
+    }),
+    (data) => ({ jam: data.jam, issues: data.zines }),
+    [id],
+  )
 
   if (!jam) {
     return (
