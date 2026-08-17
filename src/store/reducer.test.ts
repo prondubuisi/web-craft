@@ -79,6 +79,17 @@ describe('apply', () => {
     expect(next.profile.following).toEqual(['yuzu'])
   })
 
+  it('rejects empty ids and duplicate merge input in dev', () => {
+    expect(() => apply(state(), { type: 'insert', zine: issue({ id: '' }) })).toThrow(/missing an id/)
+    expect(() => apply(state(), { type: 'patch', id: '', patch: { title: 'x' } })).toThrow(/missing an id/)
+    expect(() =>
+      apply(state(), {
+        type: 'mergeZines',
+        zines: [issue({ id: 'dup' }), issue({ id: 'dup', title: 'other' })],
+      }),
+    ).toThrow(/duplicate id/)
+  })
+
   it('follows and unfollows a handle once', () => {
     const watched = apply(state(), { type: 'follow', handle: '@Yuzu' })
     expect(watched.profile.following).toEqual(['yuzu'])

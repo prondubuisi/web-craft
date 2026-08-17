@@ -24,10 +24,9 @@ Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, chec
 
 **Still open from sg3 (safety, not features):**
 
-1. **Silent-catch sweep** — mark background vs user-initiated silence. Opportunistic, when touching the file.
-2. **Reducer invariants** in dev: non-empty ids, no insert collision, no duplicate id in `mergeZines`. Opportunistic, when touching the reducer.
+1. **Silent-catch sweep** — remaining view/server sites. Store + reader social already use `catchBackground` / `actionError`. Opportunistic.
 
-`assertZineShape` is on `develop` (unreleased): Studio JSON import and snapshot `decodeShare()` reject bad fields with a specific message. No schema library.
+`assertZineShape` and reducer invariants are on `develop` (unreleased). Insert is an upsert; uniqueness is asserted on the result, not as a collision error.
 
 Do not start a seventh product round. `docs/sg3.md` stays the observation note; this file is the live list.
 
