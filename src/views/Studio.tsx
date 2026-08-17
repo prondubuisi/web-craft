@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Badge, ComicButton, Halftone, LocalNote, Modal, Topbar, VibePicks } from '../components/Chrome'
 import { BADGE_META } from '../lib/seed'
 import { api } from '../lib/api'
@@ -8,7 +8,7 @@ import { loadBag } from '../lib/social'
 import { actionError } from '../lib/catch'
 import { assertZineShape } from '../lib/shape'
 import type { BadgeId, VibeId } from '../lib/types'
-import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
+import { coverSrc, editPath, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
@@ -38,6 +38,17 @@ export function Studio() {
   const [title, setTitle] = useState('')
   const [vibe, setVibe] = useState<VibeId>('miles')
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+
+  useEffect(() => {
+    if (params.get('new') !== '1') return
+    const next = params.get('vibe')
+    if (next === 'miles' || next === 'gwen' || next === 'peni' || next === 'ham' || next === 'noir') {
+      setVibe(next)
+    }
+    setOpen(true)
+    setParams({}, { replace: true })
+  }, [params, setParams])
 
   const [bag] = useRemoteWithFallback(
     () => api.bag(),
@@ -50,7 +61,7 @@ export function Studio() {
   function drop() {
     const id = createZine(title.trim() || 'untitled issue', vibe)
     setOpen(false)
-    navigate(`/edit/${id}`)
+    navigate(editPath(id))
   }
 
   return (
@@ -104,7 +115,7 @@ export function Studio() {
                     }
                     try {
                       const id = importZine(assertZineShape(raw))
-                      navigate(`/edit/${id}`)
+                      navigate(editPath(id))
                     } catch (err) {
                       window.alert(actionError(err, 'That file is not a Zineverse issue.'))
                     }
@@ -136,7 +147,7 @@ export function Studio() {
                 + new issue
               </button>
               {mine.map((z) => (
-                <Link key={z.id} to={`/edit/${z.id}`} className="zine-card">
+                <Link key={z.id} to={editPath(z.id)} className="zine-card">
                   <Halftone src={coverSrc(z)} alt="" className="cover" />
                   <div className="body">
                     <h3>{z.title}</h3>
