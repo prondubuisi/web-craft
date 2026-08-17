@@ -1,14 +1,14 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.5.7)_
+_Last reviewed: 2026-08-17 (1.5.8)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.5.7`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.5.8`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
 
 Public repo: https://github.com/prondubuisi/web-craft  
 Live demo: https://prondubuisi.github.io/web-craft/  
-git-flow: `main` / `develop`, tags `0.1.0` … `1.5.7`.
+git-flow: `main` / `develop`, tags `0.1.0` … `1.5.8`.
 
 Routes (from `src/App.tsx`):
 
@@ -67,7 +67,7 @@ Product features from `docs/IMPROVEMENTS.md` rounds 1–6 are implemented as of 
 
 ## Suggested Next Steps
 
-The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). **1.5.1** shipped `docs/ARCHITECTURE_PLAN.md` Round 2's correctness/security tier: server-side `assertBlocks` validation on API upsert and corpse-chain pages, batched stream/jam/archive decoration, and Pages/Fly deploys gated on lint/test/build. **1.5.2** ships Round 2 item 8: Preview loads `/z/:id` through `useRemote`. **1.5.3** ships items 9–14. **1.5.4** names create as make/new; drop stays publish. **1.5.5** sends cover make through `/studio?new=1`. **1.5.6** applies that vibe in studio create mode. **1.5.7** paints studio on first paint and remembers the cover vibe. Three piles and five answer forms stay.
+The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the consolidation observation (`docs/sg4.md`). **1.5.1** shipped `docs/ARCHITECTURE_PLAN.md` Round 2's correctness/security tier: server-side `assertBlocks` validation on API upsert and corpse-chain pages, batched stream/jam/archive decoration, and Pages/Fly deploys gated on lint/test/build. **1.5.2** ships Round 2 item 8: Preview loads `/z/:id` through `useRemote`. **1.5.3** ships items 9–14. **1.5.4** names create as make/new; drop stays publish. **1.5.5** sends cover make through `/studio?new=1`. **1.5.6** applies that vibe in studio create mode. **1.5.7** paints studio on first paint and remembers the cover vibe. **1.5.8** opens every named resource from Help and scene hops; empty lanes hop to another resource. Three piles and five answer forms stay.
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
