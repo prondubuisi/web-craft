@@ -22,6 +22,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(apply, undefined, () => ({
     ...loadState(),
     online: false,
+    apiReady: false,
     session: null,
   }))
   const stateRef = useRef(state)

@@ -20,9 +20,11 @@ They disagree on *first cut*, not on destination. sg1 starts with chrome and cov
 
 ## Status
 
-Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. The sg3 safety pass is **1.4.5**: `mergeZines`, `assertZineShape`, reducer invariants, and the client catch sweep. **1.4.6** drops leftover local demo copies that are not yours (two `sunday market` rows with different ids). **1.4.7** is chrome: MAIL and studio modals close with Escape, the phone nav wraps, and the topbar has its own Playwright suite.
+Readable slice and maker-depth shipped in **1.4.0**. Auth, `social/` split, checkout-into-bag, reader INK, and the 60 Playwright stories shipped in **1.4.1**. Fly leftover-schema fix is **1.4.2**. Playwright in CI is **1.4.3** (sg3 item 3). Hook/provider split and Actions v5 are **1.4.4**. The sg3 safety pass is **1.4.5**: `mergeZines`, `assertZineShape`, reducer invariants, and the client catch sweep. **1.4.6** drops leftover local demo copies that are not yours (two `sunday market` rows with different ids). **1.4.7** is chrome: MAIL and studio modals close with Escape, the phone nav wraps, and the topbar has its own Playwright suite. **1.4.8** waits for health before calling the API down.
 
 **Still open from sg3 (safety, not features):** none as a dedicated pass. Server `req.json()` parse-or-null stays; leftover `catch {}` in storage/share/api are parse fallbacks, not user actions.
+
+**Honesty:** first paint says `checking` until `/api/health` returns. `local` / `API offline` only after a failed check — Pages no longer lies while Fly is waking up.
 
 Insert is an upsert; uniqueness is asserted on the result, not as a collision error.
 

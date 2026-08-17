@@ -5,6 +5,7 @@ import type { computeBadges } from '../lib/seed'
 
 export type Store = AppState & {
   online: boolean
+  apiReady: boolean
   session: Session | null
   badges: ReturnType<typeof computeBadges>
   createZine: (title: string, vibe: VibeId) => string
