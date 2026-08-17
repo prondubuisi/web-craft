@@ -8,7 +8,7 @@ import { loadCork, saveCork } from '../lib/social'
 import type { CorkPin } from '../lib/types'
 import { createBlock } from '../lib/widgets'
 import { isMine } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Cork() {
   const { session, online, profile, zines, setBlocks } = useZines()

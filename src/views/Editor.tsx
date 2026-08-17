@@ -11,7 +11,7 @@ import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../l
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
 import { issuePath, slugify } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 type Snap = { title: string; vibe: VibeId; blocks: Block[] }
 type Sheet = 'tray' | 'inspect' | 'more' | null

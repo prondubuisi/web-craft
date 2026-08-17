@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import { addLocalComment, loadLocalComments } from '../lib/social'
 import type { Comment } from '../lib/types'
 import { profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 import { ComicButton } from './Chrome'
 
 export function Comments({

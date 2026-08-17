@@ -1,15 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
-import { api, apiHealth, type Session } from '../lib/api'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
+import { api, apiHealth } from '../lib/api'
 import { uid } from '../lib/id'
 import { computeBadges } from '../lib/seed'
 import {
@@ -20,40 +10,12 @@ import {
   saveLocalNotices,
 } from '../lib/social'
 import { loadState, saveState } from '../lib/storage'
-import type { AppState, Block, Notice, Profile, VibeId, Zine } from '../lib/types'
+import type { Notice, VibeId, Zine } from '../lib/types'
 import { createBlock } from '../lib/widgets'
 import { demoJams, jamForPublish } from '../lib/jam'
 import { fingerprint, isMine } from '../lib/zine'
 import { apply } from './reducer'
-
-type Store = AppState & {
-  online: boolean
-  session: Session | null
-  badges: ReturnType<typeof computeBadges>
-  createZine: (title: string, vibe: VibeId) => string
-  patchZine: (id: string, patch: Partial<Zine>) => void
-  setBlocks: (id: string, blocks: Block[]) => void
-  deleteZine: (id: string) => void
-  likeZine: (id: string) => void
-  remixZine: (id: string, source?: Zine) => Promise<string | null>
-  importZine: (source: Zine) => string
-  publishZine: (
-    id: string,
-    dropsAt?: number,
-    opts?: { visibility?: 'public' | 'unlisted'; password?: string; shareKey?: string; chain?: boolean },
-  ) => void
-  recordView: (id: string) => void
-  renameProfile: (name: string) => void
-  resetStudio: () => void
-  zineById: (id: string) => Zine | undefined
-  notices: Notice[]
-  signIn: (name: string, password: string, mode: 'login' | 'register') => Promise<void>
-  signOut: () => Promise<void>
-  toggleFollow: (handle: string) => Promise<boolean>
-  markNoticesRead: () => void
-}
-
-const Ctx = createContext<Store | null>(null)
+import { Ctx, type Store } from './ctx'
 
 export function ZineProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(apply, undefined, () => ({
@@ -128,7 +90,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [refreshNotices])
 
   const createZine = useCallback(
     (title: string, vibe: VibeId) => {
@@ -397,14 +359,4 @@ export function ZineProvider({ children }: { children: ReactNode }) {
   }, [state, notices, createZine, remixZine, importZine, queueUpsert, signIn, signOut, refreshNotices])
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
-}
-
-export function useZines(): Store {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error('useZines must be used inside ZineProvider')
-  return ctx
-}
-
-export function useProfile(): Profile {
-  return useZines().profile
 }

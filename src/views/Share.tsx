@@ -5,7 +5,7 @@ import { ComicButton, Halftone, Topbar } from '../components/Chrome'
 import { decodeShare, payloadToZine } from '../lib/share'
 import { useCountdown } from '../lib/useCountdown'
 import { coverSrc } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export function Share() {
   const { hash } = useLocation()

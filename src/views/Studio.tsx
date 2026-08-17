@@ -7,7 +7,7 @@ import { useRemote } from '../lib/useRemote'
 import { loadBag } from '../lib/social'
 import type { BadgeId, BagItem, VibeId, Zine } from '../lib/types'
 import { coverSrc, isDropLive, isMine, profilePath, seriesLabel } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 const ALL_BADGES = Object.keys(BADGE_META) as BadgeId[]
 

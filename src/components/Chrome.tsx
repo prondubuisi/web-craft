@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 import type { BadgeId, VibeId } from '../lib/types'
 import { BADGE_META } from '../lib/seed'
 import { noticeCopy } from '../lib/social'

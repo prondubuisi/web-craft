@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import { loadReviews, upsertReview } from '../lib/social'
 import type { Review } from '../lib/types'
 import { profilePath } from '../lib/zine'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 import { ComicButton } from './Chrome'
 
 export function Reviews({

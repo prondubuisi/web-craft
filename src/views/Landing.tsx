@@ -5,7 +5,7 @@ import { ComicButton, Halftone, LocalNote, Topbar } from '../components/Chrome'
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 import type { VibeId } from '../lib/types'
 
 export function Landing() {

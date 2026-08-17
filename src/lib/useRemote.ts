@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useZines } from '../store/ZineContext'
+import { useZines } from '../store/useZines'
 
 export type RemoteState<T> = {
   data: T | null

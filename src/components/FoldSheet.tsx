@@ -33,12 +33,12 @@ function Mini({ block }: { block: Block }) {
 export function FoldSheet({ zine }: { zine: Zine }) {
   const cells = imposeSheet(paginateZine(zine))
   const [qr, setQr] = useState('')
+  const foldUrl = appHref(issuePath(zine))
   useEffect(() => {
-    const url = appHref(issuePath(zine))
-    void QRCode.toString(url, { type: 'svg', margin: 0, width: 96 })
+    void QRCode.toString(foldUrl, { type: 'svg', margin: 0, width: 96 })
       .then(setQr)
       .catch(() => setQr(''))
-  }, [zine.id, zine.shareKey, zine.visibility])
+  }, [foldUrl])
   return (
     <section className="fold-sheet" aria-label="Fold-and-staple sheet">
       {cells.map((cell) => (

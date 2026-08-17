@@ -4,7 +4,9 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
-## 1.4.3 — 2026-08-17
+## 1.4.4 — 2026-08-17
+
+Store hooks live in `useZines.ts` so `ZineContext` only exports the provider. GitHub Actions use checkout/setup-node v5. Lint is clean. STATUS and sg match the 1.4.x line.
 
 CI runs the Playwright user-story suite. Playwright starts `npm run dev` when `CI` is set; locally it still reuses a running server.
 
