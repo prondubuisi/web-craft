@@ -4,6 +4,8 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+## 1.6.0 — 2026-08-18
+
 `src/lib/contract.ts` now names request and response types for every current `/api` route. Client `api.ts` methods `satisfies` those bodies; every `server/routes` module (and health / publish) returns a typed payload. Upsert no longer answers with a null zine if the row is missing after write.
 
 Ghost buttons on the reader and in modals use ink on paper instead of cream-on-cream.
