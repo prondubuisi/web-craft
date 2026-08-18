@@ -5,13 +5,16 @@ import { BottomSheet, ComicButton, VibePicks } from '../components/Chrome'
 import { DropModal } from '../components/DropModal'
 import { EditorMeta } from '../components/EditorMeta'
 import { Inspector } from '../components/Inspector'
+import { Tray } from '../components/Tray'
 import { actionError } from '../lib/catch'
 import { cutoutImage } from '../lib/cutout'
 import { appHref } from '../lib/paths'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { useHistory } from '../lib/useHistory'
-import { WIDGETS, contentsFrom, createBlock } from '../lib/widgets'
+import { matchSample, typeForSample } from '../lib/samples'
+import { applyBag } from '../lib/widgetLang'
+import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -40,6 +43,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [slash, setSlash] = useState('')
   const [slashOpen, setSlashOpen] = useState(false)
+  const [slashPick, setSlashPick] = useState(0)
   const [mode, setMode] = useState<PreviewMode>('page')
   const [trayOpen, setTrayOpen] = useState(true)
   const [sheet, setSheet] = useState<Sheet>(null)
@@ -48,15 +52,27 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const [dragId, setDragId] = useState<string | null>(null)
   const textTimer = useRef<number>(0)
   const textDirty = useRef(false)
+  const slashRef = useRef<HTMLInputElement>(null)
   const { remember, undo, redo } = useHistory(zine)
 
   const selectedBlock = zine.blocks.find((b) => b.id === selected)
 
   const slashHits = useMemo(() => {
-    const q = slash.replace(/^\//, '').toLowerCase()
-    return WIDGETS.filter(
-      (w) => w.slash.includes(q) || w.label.toLowerCase().includes(q) || w.type.includes(q),
-    )
+    const widgets = matchWidget(slash).map((w) => ({
+      kind: 'widget' as const,
+      key: `w-${w.type}`,
+      title: `/${w.slash} — ${w.label}`,
+      detail: w.attrs.join(' · '),
+      type: w.type,
+    }))
+    const scraps = matchSample(slash).map((sample) => ({
+      kind: 'sample' as const,
+      key: `s-${sample.label}`,
+      title: `/${sample.label}`,
+      detail: sample.attrs.join(' · '),
+      sample,
+    }))
+    return [...widgets, ...scraps]
   }, [slash])
 
   function update(next: Block[], record = true) {
@@ -64,8 +80,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     setBlocks(zine.id, next)
   }
 
-  function insert(type: BlockType) {
-    const block = type === 'contents' ? contentsFrom(zine.blocks) : createBlock(type, zine.vibe)
+  function insertBlock(block: Block) {
     const idx = zine.blocks.findIndex((b) => b.id === selected)
     const next =
       idx >= 0
@@ -73,8 +88,27 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         : [...zine.blocks, block]
     update(next)
     setSelected(block.id)
-    setSlashOpen(false)
+    setSlash('')
+    setSlashPick(0)
     setSheet(null)
+  }
+
+  function insert(type: BlockType) {
+    const block = type === 'contents' ? contentsFrom(zine.blocks) : createBlock(type, zine.vibe)
+    insertBlock(block)
+  }
+
+  function plantSample(sample: ReturnType<typeof matchSample>[number]) {
+    const selectedFits =
+      selectedBlock && sample.attrs.some((attr) => widgetByType(selectedBlock.type).attrs.includes(attr))
+    if (selectedFits && selectedBlock) {
+      update(zine.blocks.map((b) => (b.id === selectedBlock.id ? applyBag(b, sample.bag) : b)))
+      setSlash('')
+      setSlashPick(0)
+      setSlashOpen(false)
+      return
+    }
+    insertBlock(applyBag(createBlock(typeForSample(sample), zine.vibe), sample.bag))
   }
 
   function remove(blockId: string) {
@@ -162,7 +196,11 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         block.text = 'cut this out'
         block.rotation = -3
       }
-      const next = [...zine.blocks, block]
+      const idx = zine.blocks.findIndex((b) => b.id === selected)
+      const next =
+        idx >= 0
+          ? [...zine.blocks.slice(0, idx + 1), block, ...zine.blocks.slice(idx + 1)]
+          : [...zine.blocks, block]
       update(next)
       setSelected(block.id)
       setSheet(null)
@@ -185,6 +223,27 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     }
     setDragId(null)
   }
+
+  useEffect(() => {
+    if (slashOpen && slash === '') slashRef.current?.focus()
+  }, [slashOpen, slash])
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const fromItems = [...(e.clipboardData?.items ?? [])]
+        .find((item) => item.type.startsWith('image/'))
+        ?.getAsFile()
+      const fromFiles = [...(e.clipboardData?.files ?? [])].find((file) => file.type.startsWith('image/'))
+      const file = fromItems ?? fromFiles
+      if (!file) return
+      e.preventDefault()
+      void snapSticker(file)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  })
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -210,7 +269,54 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       if (e.key === '/' && !typing) {
         e.preventDefault()
         setSlash('')
+        setSlashPick(0)
         setSlashOpen(true)
+      }
+      if (selected && !typing && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.altKey) {
+        e.preventDefault()
+        move(selected, e.key === 'ArrowUp' ? -1 : 1)
+        return
+      }
+      if (
+        zine.scatter &&
+        selected &&
+        !typing &&
+        !e.altKey &&
+        !meta &&
+        (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+      ) {
+        const i = zine.blocks.findIndex((b) => b.id === selected)
+        const block = i >= 0 ? zine.blocks[i] : undefined
+        if (block && (block.type === 'sticker' || block.type === 'hero')) {
+          e.preventDefault()
+          const step = e.shiftKey ? 6 : 2
+          const x0 = block.x ?? (i % 3) * 28 + 6
+          const y0 = block.y ?? Math.floor(i / 3) * 26 + 8
+          const x = Math.max(
+            2,
+            Math.min(68, x0 + (e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0)),
+          )
+          const y = Math.max(
+            2,
+            Math.min(72, y0 + (e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0)),
+          )
+          update(zine.blocks.map((item) => (item.id === selected ? { ...item, x, y } : item)))
+          return
+        }
+      }
+      if (selected && !typing && meta && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        duplicate(selected)
+        return
+      }
+      if (selected && !typing && (e.key === '[' || e.key === ']')) {
+        const block = zine.blocks.find((b) => b.id === selected)
+        if (block?.type === 'sticker') {
+          e.preventDefault()
+          const rotation = Math.max(-8, Math.min(8, block.rotation + (e.key === ']' ? 0.8 : -0.8)))
+          update(zine.blocks.map((item) => (item.id === selected ? { ...item, rotation } : item)))
+          return
+        }
       }
       if (e.key === 'Escape') {
         setSlashOpen(false)
@@ -272,7 +378,17 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           <ComicButton className="small" onClick={() => undo()}>
             Undo
           </ComicButton>
-          <ComicButton className="small" onClick={() => setSlashOpen(true)}>
+          <ComicButton className="small" onClick={() => redo()}>
+            Redo
+          </ComicButton>
+          <ComicButton
+            className="small"
+            onClick={() => {
+              setSlash('')
+              setSlashPick(0)
+              setSlashOpen(true)
+            }}
+          >
             / add
           </ComicButton>
           <ComicButton className="small cyan" onClick={() => navigate(`/z/${zine.id}`)}>
@@ -297,28 +413,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                 ×
               </button>
             </div>
-            <div className="tray-grid">
-              {WIDGETS.map((w) => (
-                <button key={w.type} className="tray-item" onClick={() => insert(w.type)}>
-                  <span className="glyph">{w.glyph}</span>
-                  /{w.slash}
-                </button>
-              ))}
-              <label className="tray-item" style={{ cursor: 'pointer' }}>
-                <span className="glyph">✂</span>
-                snap
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  hidden
-                  onChange={(e) => {
-                    void snapSticker(e.target.files?.[0])
-                    e.target.value = ''
-                  }}
-                />
-              </label>
-            </div>
+            <Tray onInsert={insert} onSnap={(f) => void snapSticker(f)} />
           </aside>
         ) : (
           <button className="comic-btn small desktop-only" style={{ margin: 8 }} onClick={() => setTrayOpen(true)}>
@@ -326,14 +421,28 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           </button>
         )}
 
-        <div className="canvas-wrap" onClick={() => setSelected(null)}>
+        <div
+          className="canvas-wrap"
+          onClick={() => {
+            setSelected(null)
+            setSlashOpen(false)
+          }}
+        >
           <article
             className={`zine-page ${mode}${zine.scatter ? ' scatter' : ''}`}
             onClick={(e) => e.stopPropagation()}
             onDragOver={(e) => {
-              if (zine.scatter) e.preventDefault()
+              if (e.dataTransfer?.types.includes('Files') || zine.scatter) e.preventDefault()
             }}
-            onDrop={zine.scatter ? onPageDrop : undefined}
+            onDrop={(e) => {
+              const file = [...(e.dataTransfer?.files ?? [])].find((row) => row.type.startsWith('image/'))
+              if (file) {
+                e.preventDefault()
+                void snapSticker(file)
+                return
+              }
+              if (zine.scatter) onPageDrop(e)
+            }}
           >
             {zine.blocks.length === 0 ? (
               <p className="empty-hint">
@@ -360,6 +469,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                 onClick={(e) => {
                   e.stopPropagation()
                   setSelected(block.id)
+                  setSlashOpen(false)
                 }}
                 onDragOver={(e) => {
                   if (!zine.scatter) e.preventDefault()
@@ -385,6 +495,19 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                     +
                   </button>
                   <button
+                    className="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelected(block.id)
+                      setSlash('')
+                      setSlashPick(0)
+                      setSlashOpen(true)
+                    }}
+                    aria-label="Add below"
+                  >
+                    /
+                  </button>
+                  <button
                     className="icon-btn mobile-only"
                     onClick={() => setSheet('inspect')}
                     aria-label="Inspect"
@@ -404,7 +527,13 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         <aside className="inspector desktop-only">
           <div className="kicker">INSPECTOR</div>
           {selectedBlock ? (
-            <Inspector block={selectedBlock} onChange={patchBlock} onCommit={remember} />
+            <Inspector
+              block={selectedBlock}
+              onChange={patchBlock}
+              onCommit={remember}
+              pageBlocks={zine.blocks}
+              vibe={zine.vibe}
+            />
           ) : (
             <div>
               <p className="hand">nothing selected.</p>
@@ -444,34 +573,19 @@ function EditorCanvas({ zine }: { zine: Zine }) {
 
       {sheet === 'tray' ? (
         <BottomSheet title="widget tray" onClose={() => setSheet(null)}>
-          <div className="tray-grid sheet-grid">
-            {WIDGETS.map((w) => (
-              <button key={w.type} className="tray-item" onClick={() => insert(w.type)}>
-                <span className="glyph">{w.glyph}</span>
-                /{w.slash}
-              </button>
-            ))}
-            <label className="tray-item" style={{ cursor: 'pointer' }}>
-              <span className="glyph">✂</span>
-              snap
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                hidden
-                onChange={(e) => {
-                  void snapSticker(e.target.files?.[0])
-                  e.target.value = ''
-                }}
-              />
-            </label>
-          </div>
+          <Tray onInsert={insert} onSnap={(f) => void snapSticker(f)} className="tray-grid sheet-grid" />
         </BottomSheet>
       ) : null}
 
       {sheet === 'inspect' && selectedBlock ? (
         <BottomSheet title="inspect" onClose={() => setSheet(null)}>
-          <Inspector block={selectedBlock} onChange={patchBlock} onCommit={remember} />
+          <Inspector
+            block={selectedBlock}
+            onChange={patchBlock}
+            onCommit={remember}
+            pageBlocks={zine.blocks}
+            vibe={zine.vibe}
+          />
         </BottomSheet>
       ) : null}
 
@@ -491,6 +605,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             <ComicButton className="small" onClick={() => undo()}>
               Undo
             </ComicButton>
+            <ComicButton className="small" onClick={() => redo()}>
+              Redo
+            </ComicButton>
             <ComicButton className="small cyan" onClick={() => navigate(`/z/${zine.id}`)}>
               Preview
             </ComicButton>
@@ -504,18 +621,43 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       {slashOpen ? (
         <div className="slash" style={{ left: 16, bottom: 96 }}>
           <input
+            ref={slashRef}
             autoFocus
             value={slash}
-            placeholder="/sticker /halftone /panel"
-            onChange={(e) => setSlash(e.target.value)}
+            placeholder="/photo /set /sticker"
+            aria-label="Slash insert"
+            onChange={(e) => {
+              setSlash(e.target.value)
+              setSlashPick(0)
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && slashHits[0]) insert(slashHits[0].type)
+              if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setSlashPick((i) => Math.min(i + 1, Math.max(0, slashHits.length - 1)))
+              }
+              if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setSlashPick((i) => Math.max(i - 1, 0))
+              }
+              if (e.key === 'Enter' && slashHits[slashPick]) {
+                const hit = slashHits[slashPick]
+                if (hit.kind === 'widget') insert(hit.type)
+                else plantSample(hit.sample)
+              }
               if (e.key === 'Escape') setSlashOpen(false)
             }}
           />
-          {slashHits.map((w, i) => (
-            <button key={w.type} className={i === 0 ? 'on' : ''} onClick={() => insert(w.type)}>
-              /{w.slash} — {w.label}
+          {slashHits.map((hit, i) => (
+            <button
+              key={hit.key}
+              className={i === slashPick ? 'on' : ''}
+              onClick={() => {
+                if (hit.kind === 'widget') insert(hit.type)
+                else plantSample(hit.sample)
+              }}
+            >
+              {hit.title}
+              <span className="meta-line"> {hit.detail}</span>
             </button>
           ))}
         </div>

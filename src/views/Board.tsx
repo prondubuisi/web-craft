@@ -119,17 +119,20 @@ export function Board() {
             void post()
           }}
         >
-          <div className="filter-bar">
-            {(['trade', 'collab', 'feedback'] as const).map((id) => (
-              <button
-                key={id}
-                type="button"
-                className={`tray-item ${postKind === id ? 'on' : ''}`}
-                onClick={() => setPostKind(id)}
-              >
-                {id}
-              </button>
-            ))}
+          <div className="kind-picker">
+            <span className="issue-chip">posting as</span>
+            <div className="kind-picker-row" role="group" aria-label="posting as">
+              {(['trade', 'collab', 'feedback'] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`tray-item ${postKind === id ? 'on' : ''}`}
+                  onClick={() => setPostKind(id)}
+                >
+                  {id}
+                </button>
+              ))}
+            </div>
           </div>
           <textarea
             value={body}

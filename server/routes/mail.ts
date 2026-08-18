@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
+import type { MailSendBody, MailSendResponse, MailThreadResponse, MailThreadsResponse } from '../../src/lib/contract.ts'
+import type { VibeId } from '../../src/lib/types.ts'
 import type { Db } from '../db.ts'
 import { currentUser } from '../http.ts'
 import { notify } from '../services/notify.ts'
@@ -51,7 +53,8 @@ export function registerMail(app: Hono, db: Db) {
         prev.unread += 1
       }
     }
-    return c.json({ threads: [...map.values()] })
+    const payload: MailThreadsResponse = { threads: [...map.values()] }
+    return c.json(payload)
   })
 
   app.get('/api/mail/:name', (c) => {
@@ -82,7 +85,7 @@ export function registerMail(app: Hono, db: Db) {
       vibe?: string | null
     }[]
     db.prepare('UPDATE letters SET read = 1 WHERE to_id = ? AND from_id = ?').run(user.id, other.id)
-    return c.json({
+    const payload: MailThreadResponse = {
       handle: other.name,
       letters: rows.map((row) => ({
         id: row.id,
@@ -92,23 +95,24 @@ export function registerMail(app: Hono, db: Db) {
         read: Boolean(row.read),
         createdAt: row.created_at,
         postcard: Boolean(row.postcard),
-        vibe: row.vibe ?? undefined,
+        vibe: (row.vibe ?? undefined) as VibeId | undefined,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/mail', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<MailSendBody> | null
     const name = String(body?.to ?? '')
       .trim()
       .toLowerCase()
       .replace(/^@/, '')
     const postcard = Boolean(body?.postcard)
     const vibe = ['miles', 'gwen', 'peni', 'ham', 'noir'].includes(String(body?.vibe ?? ''))
-      ? String(body.vibe)
-      : null
+      ? (String(body.vibe) as VibeId)
+      : undefined
     const text = String(body?.body ?? '')
       .trim()
       .slice(0, postcard ? 140 : 400)
@@ -122,14 +126,14 @@ export function registerMail(app: Hono, db: Db) {
     const now = Date.now()
     db.prepare(
       'INSERT INTO letters (id, from_id, to_id, body, read, created_at, postcard, vibe) VALUES (?, ?, ?, ?, 0, ?, ?, ?)',
-    ).run(id, user.id, other.id, text, now, postcard ? 1 : 0, vibe)
+    ).run(id, user.id, other.id, text, now, postcard ? 1 : 0, vibe ?? null)
     notify(db, {
       recipientId: other.id,
       actorId: user.id,
       kind: 'mail',
       body: postcard ? `postcard:${text.slice(0, 60)}` : text.slice(0, 80),
     })
-    return c.json({
+    const payload: MailSendResponse = {
       letter: {
         id,
         from: `@${user.name}`,
@@ -140,6 +144,7 @@ export function registerMail(app: Hono, db: Db) {
         postcard,
         vibe,
       },
-    })
+    }
+    return c.json(payload)
   })
 }

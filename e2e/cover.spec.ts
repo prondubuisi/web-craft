@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import {
   clickIncludes,
   clickText,
@@ -6,6 +6,7 @@ import {
   forceOffline,
   fresh,
   GLOSSARY,
+  HEALTH_MS,
 } from './helpers'
 
 test.describe('A. first visit / readable chrome', () => {
@@ -43,13 +44,13 @@ test.describe('A. first visit / readable chrome', () => {
     expect(nav).not.toMatch(/\bBoard\b/)
     expect(nav).not.toMatch(/\bFest\b/)
     expect(nav).not.toMatch(/\bDesk\b/)
-    await expect(page.locator('.brand small')).toHaveText(/local|api live|@/i, { timeout: 15_000 })
+    await expect(page.locator('.brand small')).toHaveText(/local|api live|@/i, { timeout: HEALTH_MS })
   })
 
   test('3 offline honesty vs live scene links', async ({ page }) => {
     await forceOffline(page)
     await page.goto('/')
-    await expect(page.locator('.local-note')).toContainText(/Local studio/i, { timeout: 15_000 })
+    await expect(page.locator('.local-note')).toContainText(/Local studio/i, { timeout: HEALTH_MS })
     await expect(page.locator('.local-note a')).toHaveAttribute('href', /help/)
     await page.goto('/explore')
     await expect(page.locator('.scene-links')).toHaveCount(0)
@@ -104,6 +105,8 @@ test.describe('A. first visit / readable chrome', () => {
     for (const term of GLOSSARY) {
       await expect(page.locator('dt', { hasText: new RegExp(`^${term}$`, 'i') })).toBeVisible()
     }
+    const short = page.locator('.help-entry', { has: page.locator('dt', { hasText: /^issue$/i }) })
+    await expect.poll(async () => (await short.boundingBox())?.height ?? 999).toBeLessThan(180)
     await page.getByRole('link', { name: 'Open the studio' }).first().click()
     await expect(page).toHaveURL(/\/studio/)
     await page.goto('/help')
@@ -112,6 +115,41 @@ test.describe('A. first visit / readable chrome', () => {
     await page.goto('/help')
     await page.getByRole('link', { name: 'Open the board' }).click()
     await expect(page).toHaveURL(/\/board/)
+  })
+
+  test('5b help hops every named resource and leaves silent terms unlinked', async ({ page }) => {
+    const hops: { go: string; url: RegExp }[] = [
+      { go: 'Pick a vibe', url: /\/$|\/index/ },
+      { go: 'Open the fest', url: /\/fest/ },
+      { go: 'Open the desk', url: /\/cork/ },
+      { go: 'Open letters', url: /\/mail/ },
+      { go: 'Your bag lives in studio', url: /\/studio/ },
+      { go: 'Claim in the studio', url: /\/studio/ },
+    ]
+    for (const hop of hops) {
+      await page.goto('/help')
+      await page.getByRole('link', { name: hop.go }).click()
+      await expect(page).toHaveURL(hop.url)
+    }
+    await page.goto('/help')
+    for (const term of ['snapshot', 'blurb', 'margin', 'dedication', 'tear-out', 'b-side', 'corpse']) {
+      const entry = page.locator('.help-entry', { has: page.locator('dt', { hasText: new RegExp(`^${term}$`, 'i') }) })
+      await expect(entry.locator('a')).toHaveCount(0)
+    }
+  })
+
+  test('5c help cards stay short on a phone; primer cells keep their floor', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/help')
+    const issue = page.locator('.help-entry', { has: page.locator('dt', { hasText: /^issue$/i }) })
+    await expect(issue).toHaveCSS('min-height', /^(0px|auto)$/)
+    const snapshot = page.locator('.help-entry', { has: page.locator('dt', { hasText: /^snapshot$/i }) })
+    await expect(snapshot).toHaveCSS('min-height', /^(0px|auto)$/)
+    await page.goto('/')
+    const primer = page.locator('.primer .comic-cell').first()
+    await expect(primer).toBeVisible()
+    const primerMin = await primer.evaluate((el) => parseFloat(getComputedStyle(el).minHeight))
+    expect(primerMin).toBeGreaterThanOrEqual(180)
   })
 
   test('6 404 recovery links work', async ({ page }) => {
@@ -168,32 +206,48 @@ test.describe('A. first visit / readable chrome', () => {
     await expect(page.getByRole('heading', { name: 'One finished issue' })).toHaveCount(0)
   })
 
-  test('nav chrome is on every top-level route', async ({ page }) => {
-    for (const path of ['/', '/studio', '/help', '/explore', '/board', '/fest', '/cork', '/mail']) {
-      await page.goto(path)
-      const nav = page.locator('.nav-links')
+  test('nav chrome is on cover, studio, and stream', async ({ page }) => {
+    await page.goto('/')
+    const nav = page.locator('.nav-links')
+    const assertChrome = async () => {
       await expect(nav.getByRole('link', { name: 'Cover', exact: true })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Studio', exact: true })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Stream', exact: true })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Help', exact: true })).toBeVisible()
       expect(await nav.innerText()).not.toMatch(/\bBoard\b/)
     }
+    await assertChrome()
+    await nav.getByRole('link', { name: 'Studio', exact: true }).click()
+    await expect(page).toHaveURL(/\/studio/)
+    await assertChrome()
+    await nav.getByRole('link', { name: 'Stream', exact: true }).click()
+    await expect(page).toHaveURL(/\/explore/)
+    await assertChrome()
   })
 
-  test('MAIL wire hot unread then marks read', async ({ page }) => {
+  test('MAIL first visit is quiet and still has the wire', async ({ page }) => {
     await page.goto('/')
     const mail = page.getByRole('button', { name: /new notices|Notices/i })
-    await expect(mail).toHaveClass(/hot/)
-    await expect(page.locator('.inbox-count')).toBeVisible()
+    await expect(mail).not.toHaveClass(/hot/)
+    await expect(page.locator('.inbox-count')).toHaveCount(0)
     await mail.click()
     const panel = page.locator('[role="dialog"][aria-label="Notices"]')
     await expect(panel).toBeVisible()
     await expect(panel.locator('li').first()).toBeVisible()
-    await expect(page.locator('.inbox-btn.hot')).toHaveCount(0)
     await page.keyboard.press('Escape')
     await expect(panel).toBeHidden()
+    await page.evaluate(() => {
+      const raw = localStorage.getItem('zineverse.notices.v1')
+      const notices = raw ? (JSON.parse(raw) as { read?: boolean }[]) : []
+      if (notices[0]) notices[0].read = false
+      localStorage.setItem('zineverse.notices.v1', JSON.stringify(notices))
+    })
+    await page.reload()
+    await expect(mail).toHaveClass(/hot/)
+    await expect(page.locator('.inbox-count')).toBeVisible()
     await mail.click()
     await expect(panel).toBeVisible()
+    await expect(page.locator('.inbox-btn.hot')).toHaveCount(0)
     await page.getByRole('button', { name: 'close' }).click()
     await expect(panel).toBeHidden()
   })

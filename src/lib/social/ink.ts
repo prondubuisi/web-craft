@@ -70,7 +70,7 @@ function demoNotices(): Notice[] {
       actor: '@wobble',
       zineId: undefined,
       zineTitle: 'after hours / bushwick',
-      read: false,
+      read: true,
       createdAt: now - 40 * 60_000,
     },
     {
@@ -78,7 +78,7 @@ function demoNotices(): Notice[] {
       kind: 'drop',
       actor: '@inkstain',
       zineTitle: 'midnight run',
-      read: false,
+      read: true,
       createdAt: now - 12 * 60_000,
     },
     {

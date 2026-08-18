@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
+import type { CorkResponse, CorkSaveBody, OkBody } from '../../src/lib/contract.ts'
 import type { Db } from '../db.ts'
 import { currentUser } from '../http.ts'
 
@@ -10,7 +11,7 @@ export function registerCork(app: Hono, db: Db) {
     const rows = db
       .prepare('SELECT id, text, x, y, rotation, src FROM cork_pins WHERE user_id = ? ORDER BY created_at')
       .all(user.id) as { id: string; text: string; x: number; y: number; rotation: number; src: string | null }[]
-    return c.json({
+    const payload: CorkResponse = {
       pins: rows.map((row) => ({
         id: row.id,
         text: row.text,
@@ -19,13 +20,14 @@ export function registerCork(app: Hono, db: Db) {
         rotation: row.rotation,
         src: row.src ?? undefined,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.put('/api/cork', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<CorkSaveBody> | null
     const pins = Array.isArray(body?.pins) ? body.pins : []
     db.prepare('DELETE FROM cork_pins WHERE user_id = ?').run(user.id)
     const insert = db.prepare(
@@ -44,6 +46,7 @@ export function registerCork(app: Hono, db: Db) {
         now,
       )
     }
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 }

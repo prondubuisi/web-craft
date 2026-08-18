@@ -1,18 +1,14 @@
 import { randomUUID } from 'node:crypto'
+import type { PublishBody } from '../../src/lib/contract.ts'
 import type { Block, Zine } from '../../src/lib/types.ts'
 import { hashPassword } from '../auth.ts'
 import { getZineRow, rowToZine, type Db, type UserRow, type ZineRow } from '../db.ts'
 import { jamForLive } from './jams.ts'
 import { notify } from './notify.ts'
 
-export type PublishInput = {
-  dropsAt?: number
-  visibility?: string
-  password?: string
-  chain?: boolean
-}
+export type PublishInput = PublishBody
 
-export function publishZine(db: Db, user: UserRow, row: ZineRow, input: PublishInput): Zine {
+export function publishZine(db: Db, user: UserRow, row: ZineRow, input: PublishBody): Zine {
   const dropsAt = Number(input.dropsAt ?? Date.now())
   const visibility = input.visibility === 'unlisted' ? 'unlisted' : 'public'
   const shareKey =

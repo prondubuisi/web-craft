@@ -31,6 +31,24 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
     go: 'Open the studio',
   },
   {
+    term: 'type',
+    body: 'What a block is. Change it in the inspector. Shared cuts carry over — heading ink becomes quote ink, a sticker photo becomes a hero photo.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'cut',
+    body: 'The parts a widget is made of: ink, photo, tape, cut, pin, set, cite, holes. Slash /photo or the tray cut row finds every recipe that uses that part. Not a vibe and not a new widget.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'sample',
+    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. City ink plus a miles photo makes a sticker.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
     term: 'scatter',
     body: 'An optional page layout. Stickers and heroes sit free on the spread instead of in a stack. Drag the handle to pin them. Linear blocks stay the default.',
     to: '/studio',

@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test'
-import { clickIncludes, clickText, expectNoPageErrors, fresh } from './helpers'
+import { expect, test } from './fixtures'
+import { clickIncludes, clickText, expectNoPageErrors, fresh, requireApi } from './helpers'
 
 test.describe('D. stream, jam, archive', () => {
   test.beforeEach(async ({ page }) => {
@@ -20,22 +20,54 @@ test.describe('D. stream, jam, archive', () => {
       )
       .toBe(true)
     await page.getByLabel('Search the stream').fill('')
-    await page.locator('.filter-bar .tray-item', { hasText: 'Peni' }).click()
+    await page.getByRole('group', { name: 'vibe' }).getByRole('button', { name: /Peni/i }).click()
     await expect
       .poll(async () =>
         (await page.locator('.zine-card .meta-line').allTextContents()).every((t) => /peni/i.test(t)),
       )
       .toBe(true)
-    await page.locator('.filter-bar .tray-item', { hasText: 'all' }).click()
-    await page.locator('.filter-bar .tray-item', { hasText: 'likes' }).click()
+    await page.getByRole('group', { name: 'lane' }).getByRole('button', { name: /^all$/i }).click()
+    await page.getByRole('group', { name: 'sort' }).getByRole('button', { name: /^likes$/i }).click()
     await expect(page.locator('.zine-card').first()).toBeVisible()
-    await page.locator('.filter-bar .tray-item', { hasText: 'remixes' }).click()
+    await page.getByRole('group', { name: 'sort' }).getByRole('button', { name: /^remixes$/i }).click()
     await expect(page.locator('.zine-card').first()).toBeVisible()
-    const tag = page.locator('.filter-bar .tray-item', { hasText: '#' }).first()
+    const tag = page.getByRole('group', { name: 'tags' }).getByRole('button').first()
     if (await tag.count()) {
       await tag.click()
       await expect(page.locator('.zine-card').first()).toBeVisible()
     }
+  })
+
+  test('25b stream filters sit in lane vibe sort tag clusters', async ({ page }) => {
+    await page.goto('/explore')
+    const lane = page.getByRole('group', { name: 'lane' })
+    const vibe = page.getByRole('group', { name: 'vibe' })
+    const sort = page.getByRole('group', { name: 'sort' })
+    await expect(lane.getByRole('button', { name: /^watching$/i })).toBeVisible()
+    await expect(vibe.getByRole('button', { name: /Miles/i })).toBeVisible()
+    await expect(sort.getByRole('button', { name: /^new$/i })).toBeVisible()
+    const tags = page.getByRole('group', { name: 'tags' })
+    if (await tags.count()) {
+      await expect(tags.getByRole('button').first()).toContainText('#')
+    }
+    const peni = vibe.getByRole('button', { name: /Peni/i })
+    await peni.click()
+    await expect(peni).toHaveClass(/on/)
+    const bg = await peni.evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).not.toMatch(/rgb\(255,\s*255,\s*255\)/)
+    const laneBox = await lane.boundingBox()
+    const vibeBox = await vibe.boundingBox()
+    const sortBox = await sort.boundingBox()
+    expect(laneBox && vibeBox && sortBox).toBeTruthy()
+    const beside = (a: { x: number; width: number; y: number; height: number }, b: typeof a) =>
+      b.x >= a.x + a.width - 2 || b.y >= a.y + a.height - 2
+    expect(beside(laneBox!, vibeBox!)).toBe(true)
+    expect(beside(vibeBox!, sortBox!)).toBe(true)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(lane).toBeVisible()
+    await expect(vibe).toBeVisible()
+    await expect(sort).toBeVisible()
   })
 
   test('26 lanes: watching empty, jam, archive', async ({ page }) => {
@@ -78,13 +110,10 @@ test.describe('D. stream, jam, archive', () => {
   })
 
   test('30 scene hop when API is up', async ({ page }) => {
+    await requireApi(page)
     await page.goto('/explore')
     const scene = page.locator('.scene-links')
-    try {
-      await expect(scene).toBeVisible({ timeout: 6_000 })
-    } catch {
-      test.skip(true, 'API offline — no scene links')
-    }
+    await expect(scene).toBeVisible({ timeout: 6_000 })
     await scene.getByRole('link', { name: 'Board' }).click()
     await expect(page.locator('main')).toContainText(/board|trade/i)
     await page.goto('/explore')
