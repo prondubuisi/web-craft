@@ -240,7 +240,9 @@ export function Preview() {
               </div>
               {chainInvite && social.chainPrev ? (
                 <div className="chain-peek">
-                  <div className="issue-chip">EXQUISITE CORPSE · last page only</div>
+                  <div className="issue-chip">
+                    EXQUISITE CORPSE{social.chainTurn ? ` · page ${social.chainTurn}` : ''} · last page only
+                  </div>
                   {social.chainPrev.map((block) => (
                     <div key={block.id} className="block">
                       <BlockView block={block} />

@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (29 `*.test.ts` files, 219 tests, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, `src/lib/widgetLang.test.ts`, `src/lib/samples.test.ts`, `src/lib/seed.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 90 tests, `workers: 4` locally / `2` in CI, each worker on its own isolated API + SQLite (`e2e/fixtures.ts`). Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/sg7.md` (Studio enjoyment pass — empty-state copy, `.stream-item` hover, modal/sheet motion; items 1–4 shipped), `docs/sg8.md` (speculative widget-feature catalog, explicitly not a round — nothing queued), `docs/ISSUES.md` (suite bottlenecks for later amendments).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/sg7.md` (Studio enjoyment pass — empty-state copy, `.stream-item` hover, modal/sheet motion; items 1–4 shipped), `docs/sg8.md` (speculative widget-feature catalog, explicitly not a round — shuffle button shipped, rest not queued), `docs/sg9.md` (data-model maintainability note — JSON-column helper shipped; field descriptor and table-driven blocks still plan only), `docs/sg10.md` (async-collaboration polish — chain page number and compilation cap notice shipped; remix dead-link fix flagged, not shipped), `docs/ISSUES.md` (suite bottlenecks for later amendments).
 
 ## Access & Security Review
 
@@ -71,7 +71,7 @@ The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the con
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
-**Open engineering backlog:** none from `docs/ARCHITECTURE_PLAN.md` Round 2. `contract.ts` now covers every current `/api` route (request + response). Incremental: add types when a new route appears; `0004_` on the next schema change.
+**Open engineering backlog:** none from `docs/ARCHITECTURE_PLAN.md` Round 2. `contract.ts` now covers every current `/api` route (request + response). Incremental: add types when a new route appears; `0004_` on the next schema change. `docs/sg9.md` §3 shipped (`parseJsonColumn`); §1–2 stay plan only.
 
 **§8 done:** `Preview.tsx` loads `/z/:id` through `useRemote`, same online gate as the other views. Passphrase unlock still overlays the fetched issue.
 

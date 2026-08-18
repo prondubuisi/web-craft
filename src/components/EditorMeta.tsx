@@ -11,6 +11,8 @@ export function EditorMeta({
   zines: Zine[]
   patchZine: (id: string, patch: Partial<Zine>) => void
 }) {
+  const compEligible = zines.filter((item) => item.id !== zine.id && isPublicDrop(item))
+
   return (
     <div className="editor-meta no-print">
       <input
@@ -91,27 +93,25 @@ export function EditorMeta({
         </button>
       </div>
       <div className="vibe-picks" aria-label="Compilation">
-        {zines
-          .filter((item) => item.id !== zine.id && isPublicDrop(item))
-          .slice(0, 8)
-          .map((item) => {
-            const on = (zine.includes ?? []).some((row) => row.zineId === item.id)
-            return (
-              <button
-                key={item.id}
-                className={`tray-item ${on ? 'on' : ''}`}
-                onClick={() => {
-                  const includes = on
-                    ? (zine.includes ?? []).filter((row) => row.zineId !== item.id)
-                    : [...(zine.includes ?? []), { zineId: item.id, title: item.title, owner: item.owner }]
-                  patchZine(zine.id, { includes })
-                }}
-              >
-                + {item.title}
-              </button>
-            )
-          })}
+        {compEligible.slice(0, 8).map((item) => {
+          const on = (zine.includes ?? []).some((row) => row.zineId === item.id)
+          return (
+            <button
+              key={item.id}
+              className={`tray-item ${on ? 'on' : ''}`}
+              onClick={() => {
+                const includes = on
+                  ? (zine.includes ?? []).filter((row) => row.zineId !== item.id)
+                  : [...(zine.includes ?? []), { zineId: item.id, title: item.title, owner: item.owner }]
+                patchZine(zine.id, { includes })
+              }}
+            >
+              + {item.title}
+            </button>
+          )
+        })}
       </div>
+      {compEligible.length > 8 ? <p className="serif">8 of {compEligible.length} public issues shown.</p> : null}
     </div>
   )
 }

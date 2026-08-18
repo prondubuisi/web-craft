@@ -45,6 +45,7 @@ export function useIssueSocial(opts: {
   const [polls, setPolls] = useState<Record<string, PollTally>>({})
   const [stats, setStats] = useState<PageStat[]>([])
   const [chainPrev, setChainPrev] = useState<Block[] | null>(null)
+  const [chainTurn, setChainTurn] = useState<number | null>(null)
   const [chainText, setChainText] = useState('the next fold.')
   const [chainMsg, setChainMsg] = useState('')
   const [bagged, setBagged] = useState(false)
@@ -138,8 +139,14 @@ export function useIssueSocial(opts: {
     if (!id || !chainInvite || !online) return
     void api
       .chainPeek(id, chainInvite)
-      .then((res) => setChainPrev(res.previous))
-      .catch(() => setChainPrev(null))
+      .then((res) => {
+        setChainPrev(res.previous)
+        setChainTurn(res.turn)
+      })
+      .catch(() => {
+        setChainPrev(null)
+        setChainTurn(null)
+      })
   }, [id, chainInvite, online])
 
   function vote(blockId: string, option: number, optionCount: number) {
@@ -283,6 +290,7 @@ export function useIssueSocial(opts: {
     polls,
     stats,
     chainPrev,
+    chainTurn,
     chainText,
     setChainText,
     chainMsg,

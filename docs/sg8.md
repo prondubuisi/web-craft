@@ -46,7 +46,7 @@ This is the interesting category: ideas that don't need a new `BlockType` *or* a
 
 - **More samples.** Already the cheapest lever that exists — six new ones landed two turns ago (`gif diff`, `pixel bloom`, `chroma tear`, `static color`, `peni`, `ham`) with zero new mechanic, zero new file beyond the data itself. More could land the same way, any time, without this being "a round."
 - **More attrs in the `ATTRS` union.** Structurally just as cheap as more samples — `AttrId` is a closed string union with one array (`ATTRS`) and one filter function (`widgetsWithAttr`) touching it. A new cut (e.g., `sound`, distinct from `tape`) is additive, not a new mechanic. Not proposing a specific one — just noting the ceiling here is high before anything counts as "widget 18."
-- **A "combine everything that fits" one-click shuffle** on the inspector's Samples row, instead of clicking each sample individually. This is UI sugar over `combineBags`, which already does exactly this when given every matching sample's bag — arguably not a new mechanic at all, just a button. Closest thing on this whole list to "could ship without reopening anything."
+- **A "combine everything that fits" one-click shuffle** on the inspector's Samples row, instead of clicking each sample individually. This is UI sugar over `combineBags`, which already does exactly this when given every matching sample's bag — arguably not a new mechanic at all, just a button. **Shipped** — closest thing on this whole list to "could ship without reopening anything," and it did.
 
 ## Not now
 

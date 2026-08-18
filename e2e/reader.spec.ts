@@ -188,6 +188,7 @@ test.describe('C. reader — /z/:id', () => {
     await other.goto(path!)
     if (await other.locator('.chain-peek').count()) {
       await expect(other.locator('.chain-peek')).toContainText(/last page only/i)
+      await expect(other.locator('.chain-peek .issue-chip')).toContainText(/page \d+/i)
       await expect(other.locator('textarea[placeholder="add the next page"]')).toBeVisible()
       await other.getByRole('button', { name: 'Pass it on' }).click()
     } else {
