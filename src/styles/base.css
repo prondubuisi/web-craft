@@ -558,6 +558,12 @@ p {
   background: color-mix(in oklab, var(--panel) 88%, black);
   border: 3px solid var(--ink);
   padding: 0.5rem;
+  transition: background-color 140ms var(--ease), border-color 140ms var(--ease);
+}
+
+.stream-item:hover {
+  background: color-mix(in oklab, var(--panel) 78%, black);
+  border-color: var(--accent-2);
 }
 
 .stream-item .mini {
@@ -568,7 +574,12 @@ p {
   .glitch-block,
   .comic-btn,
   .zine-card,
-  .vibe-card {
+  .vibe-card,
+  .stream-item,
+  .modal-back,
+  .modal,
+  .sheet-back,
+  .sheet {
     animation: none;
     transition: none;
   }

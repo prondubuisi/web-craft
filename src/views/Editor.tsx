@@ -12,8 +12,8 @@ import { appHref } from '../lib/paths'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { useHistory } from '../lib/useHistory'
-import { matchSample, typeForSample } from '../lib/samples'
-import { applyBag } from '../lib/widgetLang'
+import { linkBag, matchSample, typeForSample } from '../lib/samples'
+import { applyBag, type AttrBag } from '../lib/widgetLang'
 import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
 import { issuePath, slugify } from '../lib/zine'
 import { useZines } from '../store/useZines'
@@ -38,7 +38,7 @@ export function Editor() {
 }
 
 function EditorCanvas({ zine }: { zine: Zine }) {
-  const { patchZine, setBlocks, publishZine, deleteZine, zines } = useZines()
+  const { patchZine, setBlocks, publishZine, deleteZine, zines, session } = useZines()
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
   const [slash, setSlash] = useState('')
@@ -96,6 +96,13 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   function insert(type: BlockType) {
     const block = type === 'contents' ? contentsFrom(zine.blocks) : createBlock(type, zine.vibe)
     insertBlock(block)
+  }
+
+  function linkSampleOnPage(bag: AttrBag) {
+    update(linkBag(zine.blocks, bag))
+    setSlash('')
+    setSlashPick(0)
+    setSlashOpen(false)
   }
 
   function plantSample(sample: ReturnType<typeof matchSample>[number]) {
@@ -397,6 +404,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           <ComicButton className="small pink" onClick={() => setDropOpen(true)}>
             {zine.published ? 'Dropped' : 'Drop issue'}
           </ComicButton>
+          {!zine.published && zine.blocks.length > 0 ? (
+            <span className="drop-ready hand">A heading and a picture is a page. Drop when it feels like one.</span>
+          ) : null}
         </div>
         <button className="icon-btn mobile-only" onClick={() => setSheet('more')} aria-label="More">
           ☰
@@ -413,7 +423,12 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                 ×
               </button>
             </div>
-            <Tray onInsert={insert} onSnap={(f) => void snapSticker(f)} />
+            <Tray
+              onInsert={insert}
+              onSnap={(f) => void snapSticker(f)}
+              onPlantSample={plantSample}
+              onLinkSample={(sample) => linkSampleOnPage(sample.bag)}
+            />
           </aside>
         ) : (
           <button className="comic-btn small desktop-only" style={{ margin: 8 }} onClick={() => setTrayOpen(true)}>
@@ -446,8 +461,8 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           >
             {zine.blocks.length === 0 ? (
               <p className="empty-hint">
-                type / for a sticker, or snap a photo. cork scraps paste in. when it feels like a page,
-                Drop issue.
+                type / for a sticker, or snap a photo. cork scraps paste in. A heading and a picture
+                is enough — then Drop issue.
               </p>
             ) : null}
             {zine.blocks.map((block, i) => (
@@ -531,6 +546,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               block={selectedBlock}
               onChange={patchBlock}
               onCommit={remember}
+              onLinkBag={linkSampleOnPage}
               pageBlocks={zine.blocks}
               vibe={zine.vibe}
             />
@@ -573,7 +589,13 @@ function EditorCanvas({ zine }: { zine: Zine }) {
 
       {sheet === 'tray' ? (
         <BottomSheet title="widget tray" onClose={() => setSheet(null)}>
-          <Tray onInsert={insert} onSnap={(f) => void snapSticker(f)} className="tray-grid sheet-grid" />
+          <Tray
+            onInsert={insert}
+            onSnap={(f) => void snapSticker(f)}
+            onPlantSample={plantSample}
+            onLinkSample={(sample) => linkSampleOnPage(sample.bag)}
+            className="tray-grid sheet-grid"
+          />
         </BottomSheet>
       ) : null}
 
@@ -583,6 +605,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             block={selectedBlock}
             onChange={patchBlock}
             onCommit={remember}
+            onLinkBag={linkSampleOnPage}
             pageBlocks={zine.blocks}
             vibe={zine.vibe}
           />
@@ -612,9 +635,12 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               Preview
             </ComicButton>
             <ComicButton className="small pink" onClick={() => setDropOpen(true)}>
-              Drop
+              {zine.published ? 'Dropped' : 'Drop'}
             </ComicButton>
           </div>
+          {!zine.published && zine.blocks.length > 0 ? (
+            <p className="hand">A heading and a picture is a page. Drop when it feels like one.</p>
+          ) : null}
         </BottomSheet>
       ) : null}
 
@@ -624,7 +650,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             ref={slashRef}
             autoFocus
             value={slash}
-            placeholder="/photo /set /sticker"
+            placeholder="/city /photo · page links the scrap"
             aria-label="Slash insert"
             onChange={(e) => {
               setSlash(e.target.value)
@@ -642,30 +668,50 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               if (e.key === 'Enter' && slashHits[slashPick]) {
                 const hit = slashHits[slashPick]
                 if (hit.kind === 'widget') insert(hit.type)
+                else if (e.shiftKey) linkSampleOnPage(hit.sample.bag)
                 else plantSample(hit.sample)
               }
               if (e.key === 'Escape') setSlashOpen(false)
             }}
           />
-          {slashHits.map((hit, i) => (
-            <button
-              key={hit.key}
-              className={i === slashPick ? 'on' : ''}
-              onClick={() => {
-                if (hit.kind === 'widget') insert(hit.type)
-                else plantSample(hit.sample)
-              }}
-            >
-              {hit.title}
-              <span className="meta-line"> {hit.detail}</span>
-            </button>
-          ))}
+          {slashHits.map((hit, i) =>
+            hit.kind === 'sample' ? (
+              <div key={hit.key} className={`slash-row ${i === slashPick ? 'on' : ''}`}>
+                <button
+                  type="button"
+                  className={i === slashPick ? 'on' : ''}
+                  onClick={() => plantSample(hit.sample)}
+                >
+                  {hit.title}
+                  <span className="meta-line"> {hit.detail}</span>
+                </button>
+                <button
+                  type="button"
+                  className="slash-page"
+                  aria-label={`same scrap on the page: ${hit.sample.label}`}
+                  onClick={() => linkSampleOnPage(hit.sample.bag)}
+                >
+                  page
+                </button>
+              </div>
+            ) : (
+              <button
+                key={hit.key}
+                className={i === slashPick ? 'on' : ''}
+                onClick={() => insert(hit.type)}
+              >
+                {hit.title}
+                <span className="meta-line"> {hit.detail}</span>
+              </button>
+            ),
+          )}
         </div>
       ) : null}
 
       {dropOpen ? (
         <DropModal
           zine={zine}
+          local={!session}
           onClose={() => setDropOpen(false)}
           onDrop={(when, opts) => {
             const shareKey =
@@ -683,9 +729,24 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               void copyText(url)
               setCopied('Unlisted link copied. Not on the stream.')
             } else {
-              setCopied(when > Date.now() ? 'Scheduled. NEXT ISSUE is live on the stream.' : 'Issue dropped.')
+              const packed = tryEncodeShare(zine)
+              if (packed.ok) {
+                const url = `${appHref('/s')}#${packed.token}`
+                void copyText(url)
+                setCopied(
+                  when > Date.now()
+                    ? 'Scheduled. Snapshot copied.'
+                    : 'Dropped. Snapshot copied.',
+                )
+              } else {
+                setCopied(
+                  when > Date.now()
+                    ? `Scheduled. ${packed.reason}`
+                    : `Dropped. ${packed.reason}`,
+                )
+              }
             }
-            window.setTimeout(() => setCopied(null), 2600)
+            window.setTimeout(() => setCopied(null), 3200)
           }}
           onCopy={share}
           onExport={() => downloadJson(`${slugify(zine.title)}.zine.json`, zine)}

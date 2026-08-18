@@ -3,9 +3,10 @@ import { actionError } from '../lib/catch'
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
-import { samplesFor } from '../lib/samples'
+import { canHoldBag, samplesFor } from '../lib/samples'
 import { readFileAsDataUrl, readImageAsDataUrl } from '../lib/share'
 import type { Block, VibeId } from '../lib/types'
+import type { AttrBag } from '../lib/widgetLang'
 import { applyBag, combineBags, retarget, widgetsWithAttr } from '../lib/widgetLang'
 import { ATTRS, LANES, WIDGETS, contentsFrom, widgetByType, type AttrId } from '../lib/widgets'
 
@@ -13,12 +14,14 @@ export function Inspector({
   block,
   onChange,
   onCommit,
+  onLinkBag,
   pageBlocks = [],
   vibe = 'miles',
 }: {
   block: Block
   onChange: (next: Block, recordHistory?: boolean) => void
   onCommit?: () => void
+  onLinkBag?: (bag: AttrBag) => void
   pageBlocks?: Block[]
   vibe?: VibeId
 }) {
@@ -122,6 +125,24 @@ export function Inspector({
           </div>
         ),
       )}
+      {samplePicks.length > 0 && onLinkBag
+        ? (() => {
+            const bag = combineBags(samplePicks.map((idx) => samples[idx].bag))
+            const linked = pageBlocks.filter((item) => canHoldBag(item.type, bag)).length
+            if (linked < 2) return null
+            return (
+              <button
+                type="button"
+                className="comic-btn small"
+                style={{ marginTop: 10 }}
+                aria-label="same scrap on the page"
+                onClick={() => onLinkBag(bag)}
+              >
+                same scrap on the page · {linked}
+              </button>
+            )
+          })()
+        : null}
       {block.type === 'heading' ? (
         <>
           <label>Size</label>

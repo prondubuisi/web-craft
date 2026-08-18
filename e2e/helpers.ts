@@ -233,6 +233,7 @@ export async function dropNow(page: Page) {
   await expect(page.locator('[role="dialog"]')).toBeVisible()
   await clickText(page, 'Drop now')
   await expect(page.locator('.drop-toast')).toContainText(/dropped/i)
+  await expect(page.locator('.drop-toast')).toContainText(/snapshot/i)
 }
 
 export async function readIssue(page: Page, title: string | RegExp) {

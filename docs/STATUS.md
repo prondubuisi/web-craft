@@ -46,7 +46,7 @@ Routes (from `src/App.tsx`):
 
 **Testing:** Vitest + happy-dom (27 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, `src/lib/widgetLang.test.ts`, `src/lib/samples.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 82 tests, `workers: 4` locally / `2` in CI, each worker on its own isolated API + SQLite (`e2e/fixtures.ts`). Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
-**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/ISSUES.md` (suite bottlenecks for later amendments).
+**Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/sg7.md` (Studio enjoyment pass — empty-state copy, `.stream-item` hover, modal/sheet motion; plan only, not shipped), `docs/sg8.md` (speculative widget-feature catalog, explicitly not a round — nothing queued), `docs/ISSUES.md` (suite bottlenecks for later amendments).
 
 ## Access & Security Review
 
@@ -88,6 +88,10 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a sev
 **§14 done:** shared `.github/actions/setup`, `setup-flyctl@v1`, no `allowScripts`, Playwright browser cache keyed on the Playwright version.
 
 **Open from `docs/sg6.md`:** items 1–5 shipped (ghost contrast; Board `kind-picker`; Profile vibe once; Help card height; Stream filter clusters). Seeded first-visit mail arrives already read.
+
+**Leftover-rule polish (unreleased):** `starterPage` plants the vibe photo + grain scrap on Make / New issue. Drop copy treats a heading and a picture as enough. A public drop copies the snapshot as the next step. Local desks are told the drop stays in this browser. Cover Remixes after hours without a handle. A sample can link across the page (`linkBag`) so one scrap paints every widget that shares those cuts. Slash and the tray expose the same page chip.
+
+**Open from `docs/sg7.md`:** items 1–4 shipped (empty wall; quiet stream; stream-item hover; modal/sheet motion).
 
 **Suite bottlenecks** live in `docs/ISSUES.md`. Items 1–10 shipped — nothing open.
 

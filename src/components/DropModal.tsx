@@ -5,12 +5,14 @@ import { ComicButton, Modal } from './Chrome'
 
 export function DropModal({
   zine,
+  local,
   onClose,
   onDrop,
   onCopy,
   onExport,
 }: {
   zine: Zine
+  local?: boolean
   onClose: () => void
   onDrop: (when: number, opts: { visibility: Visibility; password?: string; chain?: boolean }) => void
   onCopy: (kind: 'local' | 'snapshot') => void
@@ -32,9 +34,14 @@ export function DropModal({
   return (
     <Modal title="drop this issue" onClose={onClose}>
       <p className="serif">
-        A public drop hits the stream. An unlisted drop is a secret link. A year or a decade is a
-        time capsule — write to someone who is not here yet.
+        A heading and a picture is enough. A public drop hits the stream. An unlisted drop is a
+        secret link. A year or a decade is a time capsule — write to someone who is not here yet.
       </p>
+      {local ? (
+        <p className="hand" style={{ margin: '0.6rem 0 0' }}>
+          This drop lives in this browser until you claim a handle. Snapshot is the pass.
+        </p>
+      ) : null}
       <div className="vibe-picks" style={{ marginTop: 12 }}>
         <button
           className={`tray-item ${visibility === 'public' ? 'on' : ''}`}
@@ -84,16 +91,17 @@ export function DropModal({
         ))}
       </div>
       {zine.published ? (
-        <p className="hand" style={{ margin: '0.8rem 0' }}>
-          {zine.visibility === 'unlisted' ? 'already unlisted.' : 'already on the stream.'}
+        <p className="hand" style={{ margin: '0.8rem 0 0' }}>
+          {zine.visibility === 'unlisted' ? 'already unlisted.' : 'already on the stream.'} Copy the
+          snapshot to pass it.
         </p>
       ) : null}
       <div className="cta-row" style={{ marginTop: 12 }}>
-        <ComicButton className="small" onClick={() => onCopy('local')}>
-          Copy studio link
-        </ComicButton>
         <ComicButton className="small cyan" onClick={() => onCopy('snapshot')}>
           Copy snapshot link
+        </ComicButton>
+        <ComicButton className="small ghost" onClick={() => onCopy('local')}>
+          Copy studio link
         </ComicButton>
         <ComicButton className="small ghost" onClick={onExport}>
           Export JSON

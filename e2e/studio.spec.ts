@@ -2,6 +2,7 @@ import { expect, test, workerHeader } from './fixtures'
 import {
   clickIncludes,
   clickText,
+  dropNow,
   expectNoPageErrors,
   FIXTURES,
   forceOffline,
@@ -25,6 +26,16 @@ test.describe('B. maker — studio and editor', () => {
   test('8 create from studio modal', async ({ page }) => {
     await openNewIssue(page, 'scatter hop')
     await expect(page.locator('.zine-page')).toBeVisible()
+    await expect(page.locator('.heading-xl')).toContainText('scatter hop')
+    const hero = page.locator('.hero-shot')
+    await expect(hero.locator('img')).toHaveAttribute('src', /miles|gwen|peni|ham|noir|collage/)
+    const vars = await hero.evaluate((el) => {
+      const style = getComputedStyle(el)
+      return { halftone: style.getPropertyValue('--halftone').trim(), aber: style.getPropertyValue('--aber').trim() }
+    })
+    expect(vars.halftone).toBe('0.55')
+    expect(vars.aber).toBe('10px')
+    await expect(page.locator('.drop-ready')).toContainText(/heading and a picture/i)
   })
 
   test('8b new issue modal closes with Escape and close', async ({ page }) => {
@@ -38,6 +49,34 @@ test.describe('B. maker — studio and editor', () => {
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'close' }).click()
     await expect(dialog).toBeHidden()
+  })
+
+  test('8c empty wall copy after deleting yours', async ({ page }) => {
+    await page.goto('/studio')
+    const mine = page.locator('a.zine-card')
+    while ((await mine.count()) > 0) {
+      await mine.first().click()
+      await page.getByRole('button', { name: /Delete issue/i }).click()
+      await expect(page).toHaveURL(/\/studio/)
+    }
+    await expect(page.locator('.studio')).toContainText(/empty wall/i)
+    await expect(page.getByRole('button', { name: '+ new issue' })).toBeVisible()
+  })
+
+  test('8d stream cards lift on hover and new-issue modal rises', async ({ page }) => {
+    await page.goto('/studio')
+    const item = page.locator('.stream-item').first()
+    await expect(item).toBeVisible()
+    const motion = await item.evaluate((el) => {
+      const style = getComputedStyle(el)
+      return { transition: style.transitionProperty, hoverBorder: '' }
+    })
+    expect(motion.transition).toMatch(/background-color|border-color/)
+    await clickIncludes(page, 'New issue')
+    const dialog = page.getByRole('dialog', { name: 'new issue' })
+    await expect(dialog).toBeVisible()
+    const anim = await dialog.evaluate((el) => getComputedStyle(el).animationName)
+    expect(anim).toMatch(/rise-in/)
   })
 
   test('9 slash tray inserts every widget then undo', async ({ page }) => {
@@ -279,6 +318,60 @@ test.describe('B. maker — studio and editor', () => {
     expect(vars.aber).toBe('13px')
   })
 
+  test('10i same scrap links city ink across the starter page', async ({ page }) => {
+    await openNewIssue(page, 'link hop')
+    await page.locator('.block').filter({ has: page.locator('.heading-xl') }).first().click()
+    await page.getByLabel('ink samples').getByRole('button', { name: 'city', exact: true }).click()
+    await page.getByRole('button', { name: /same scrap on the page/i }).click()
+    await expect(page.locator('.heading-xl')).toContainText(/the city prints itself wrong on purpose/i)
+    await expect(page.locator('.sticker-block')).toContainText(/the city prints itself wrong on purpose/i)
+    await expect(page.locator('figcaption')).toContainText(/the city prints itself wrong on purpose/i)
+  })
+
+  test('10j photo scrap links onto hero and sticker, not the title', async ({ page }) => {
+    await openNewIssue(page, 'photo hop')
+    await page.locator('.block').filter({ has: page.locator('.sticker-block') }).first().click()
+    await page.getByLabel('photo samples').getByRole('button', { name: 'collage', exact: true }).click()
+    await page.getByRole('button', { name: /same scrap on the page/i }).click()
+    await expect(page.locator('.heading-xl')).toContainText('photo hop')
+    await expect(page.locator('.hero-shot img')).toHaveAttribute('src', /collage-hero/)
+    await expect(page.locator('.sticker-block img')).toHaveAttribute('src', /collage-hero/)
+  })
+
+  test('10k cover remix then link a scrap and drop', async ({ page }) => {
+    await page.goto('/')
+    await clickIncludes(page, 'Remix after hours')
+    await expect(page.locator('.title-input')).toHaveValue(/remix/i)
+    await page.locator('.block').filter({ has: page.locator('.heading-xl, .heading-lg, .heading-md') }).first().click()
+    await page.getByLabel('ink samples').getByRole('button', { name: 'city', exact: true }).click()
+    await page.getByRole('button', { name: /same scrap on the page/i }).click()
+    await expect(page.locator('.heading-xl, .heading-lg, .heading-md').first()).toContainText(
+      /the city prints itself wrong on purpose/i,
+    )
+    await dropNow(page)
+  })
+
+  test('10l slash page chip links a scrap across the starter page', async ({ page }) => {
+    await openNewIssue(page, 'slash link')
+    await page.evaluate(() => document.activeElement?.blur())
+    await page.keyboard.press('/')
+    await page.locator('.slash input').fill('city')
+    await expect(page.locator('.slash-row.on')).toContainText('/city')
+    await page.getByRole('button', { name: 'same scrap on the page: city' }).click()
+    await expect(page.locator('.heading-xl')).toContainText(/the city prints itself wrong on purpose/i)
+    await expect(page.locator('.sticker-block')).toContainText(/the city prints itself wrong on purpose/i)
+  })
+
+  test('10m tray scrap page chip links from the cut filter', async ({ page }) => {
+    await openNewIssue(page, 'tray link')
+    const cuts = page.locator('.tray [aria-label="cut"]')
+    await cuts.getByRole('button', { name: 'ink', exact: true }).click()
+    await expect(page.locator('.tray .tray-lane-label', { hasText: /^scraps$/i })).toBeVisible()
+    await page.locator('.tray').getByRole('button', { name: 'same scrap on the page: city' }).click()
+    await expect(page.locator('.heading-xl')).toContainText(/the city prints itself wrong on purpose/i)
+    await expect(page.locator('.sticker-block')).toContainText(/the city prints itself wrong on purpose/i)
+  })
+
   test('11 editor meta, finish, scatter, compilation', async ({ page }) => {
     await openNewIssue(page, 'meta hop')
     await page.getByLabel('Tags').fill('diary, protest')
@@ -374,8 +467,10 @@ test.describe('B. maker — studio and editor', () => {
     await expect(modal.getByRole('button', { name: 'Copy studio link' })).toBeVisible()
     await expect(modal.getByRole('button', { name: 'Copy snapshot link' })).toBeVisible()
     await expect(modal.getByRole('button', { name: 'Export JSON' })).toBeVisible()
+    await expect(modal).toContainText(/this browser until you claim a handle/i)
     await clickText(page, 'Drop now')
     await expect(page.locator('.drop-toast')).toContainText(/dropped/i)
+    await expect(page.locator('.drop-toast')).toContainText(/snapshot/i)
     await clickText(page, 'Preview')
     await expect(page.locator('.preview-page')).toBeVisible()
 

@@ -4,6 +4,16 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 ## Unreleased
 
+Make / New issue plants the vibe photo and the grain scrap on the first hero so Open the page already looks like collage. A heading and a picture is treated as a finished page. After Drop, the snapshot copies as the next step. The drop modal says a local desk stays in this browser until you claim a handle.
+
+The cover’s finished issue now has Remix next to Read. After hours is the other person before anyone claims a handle.
+
+Inspector samples can link across the page: same scrap on the page plants overlapping cuts on every widget that can hold them. Slash Shift+Enter does the same. No new block type. Playwright 10i–10k cover the link, the photo-only link, and remix → link → drop.
+
+Slash and the tray now share that link. A sample hit has a page chip. Filter the tray by a cut and scraps appear; page plants the scrap on every widget that can hold it. Stories 10l and 10m.
+
+`docs/sg7.md` shipped: empty studio wall and quiet community stream get a line; stream cards tint on hover; modals rise and sheets slide up, carved out of reduced-motion.
+
 ## 1.6.0 — 2026-08-18
 
 `src/lib/contract.ts` now names request and response types for every current `/api` route. Client `api.ts` methods `satisfies` those bodies; every `server/routes` module (and health / publish) returns a typed payload. Upsert no longer answers with a null zine if the row is missing after write.
