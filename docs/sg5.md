@@ -12,7 +12,7 @@ The file’s leftover rule: a next idea has to help someone **finish a first iss
 | Share | Reader + drop modal | Print, fold sheet, snapshot (refuses fat photos out loud) |
 | Find one | Sample issue + Stream + Claim studio | Remix the seeded `after hours`; mail/board/fest need a handle |
 
-Help already says **drop = publish**. Primer cell 1 says **Make an issue**. The cover and studio still label *create* as Drop. That is the lie.
+Help already says **drop = publish**. Primer cell 1 says **Make an issue**. Cover and studio create buttons say make / new as of 1.5.4. Editor **Drop issue** stays — that one is publish.
 
 ## What 1.5.x should actually do
 

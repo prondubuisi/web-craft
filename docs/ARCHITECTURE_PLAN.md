@@ -24,7 +24,7 @@ Items **8–14** are done. Round 2 is complete.
 4. Code splitting on routes — done
 5. Split `global.css` by domain + add a CSS lint step — done
 6. Formalize the "online-only feature" data-fetch pattern — done
-7. Shared client/server request-response types — done (incremental; auth/board/fest + `api.ts`)
+7. Shared client/server request-response types — done (all current `/api` routes + request bodies; `api.ts` and `server/routes` both import `src/lib/contract.ts`)
 8. Adopt `useRemote` in the one view that still bypasses it — done
 9. Extract the duplicated "remote + local fallback" merge into a shared hook — done
 10. Split `Editor.tsx`'s six concerns, starting with undo/redo — done (undo/redo only)

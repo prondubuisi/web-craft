@@ -36,7 +36,7 @@ Routes (from `src/App.tsx`):
 - `src/lib/` — types, widgets, storage, share (`social/` bag mail archive run ink scene), api, jam, fest, fold, cutout, tags
 - `src/store/` — `ZineContext.tsx` (provider) + `useZines.ts` + `ctx.ts` + `reducer.ts`
 - `server/` — Hono app (`app.ts` mounts `routes/`), SQLite (`db.ts` + `migrations/`), services, auth (`scrypt`), community seed
-- `src/lib/contract.ts` — shared request/response types
+- `src/lib/contract.ts` — shared request/response types for every current `/api` route
 - `src/lib/useRemote.ts` — online-only fetch hook
 - `src/styles/` — tokens/base/editor/reader/board/mail/jam/fest/cork/print
 
@@ -44,7 +44,7 @@ Routes (from `src/App.tsx`):
 
 **Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build + Playwright e2e.
 
-**Testing:** Vitest + happy-dom (26 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, `src/lib/widgetLang.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 78 tests. Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
+**Testing:** Vitest + happy-dom (27 `*.test.ts` files, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, `src/lib/widgetLang.test.ts`, `src/lib/samples.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 82 tests, `workers: 4` locally / `2` in CI, each worker on its own isolated API + SQLite (`e2e/fixtures.ts`). Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
 
 **Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/ISSUES.md` (suite bottlenecks for later amendments).
 
@@ -71,7 +71,7 @@ The 1.4.x support pass is complete as of **1.4.8**. **1.5.0** shipped as the con
 
 Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a seventh round of mechanics. Do not merge bag / shelf / archive.
 
-**Open engineering backlog:** none from `docs/ARCHITECTURE_PLAN.md` Round 2. Incremental only when touching a file: `contract.ts` for that route; `0004_` on the next schema change.
+**Open engineering backlog:** none from `docs/ARCHITECTURE_PLAN.md` Round 2. `contract.ts` now covers every current `/api` route (request + response). Incremental: add types when a new route appears; `0004_` on the next schema change.
 
 **§8 done:** `Preview.tsx` loads `/z/:id` through `useRemote`, same online gate as the other views. Passphrase unlock still overlays the fetched issue.
 
@@ -89,6 +89,6 @@ Feature list: none open from `docs/IMPROVEMENTS.md` (frozen). Do not start a sev
 
 **Open from `docs/sg6.md`:** items 1–5 shipped (ghost contrast; Board `kind-picker`; Profile vibe once; Help card height; Stream filter clusters). Seeded first-visit mail arrives already read.
 
-**Suite bottlenecks** live in `docs/ISSUES.md` (live run 2026-08-18: 74 passed / 1.6 min). Not a feature list.
+**Suite bottlenecks** live in `docs/ISSUES.md`. Items 1–10 shipped — nothing open.
 
 `FLY_API_TOKEN` and `VITE_API_URL` are set. Hosted API is `https://zineverse-api.fly.dev`.
