@@ -402,6 +402,29 @@
   font: inherit;
 }
 
+.stream-filters {
+  row-gap: 0.7rem;
+}
+
+.stream-filters .filter-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.stream-filters .filter-cluster + .filter-cluster {
+  padding-left: 0.75rem;
+  border-left: 2px solid color-mix(in oklab, var(--paper) 34%, transparent);
+}
+
+.stream-filters .filter-cluster .tray-item .glyph {
+  display: inline;
+  font-size: 0.85rem;
+  margin: 0 0.2rem 0 0;
+  vertical-align: -0.05em;
+}
+
 .comments {
   margin-top: 1.8rem;
   padding-top: 1.1rem;

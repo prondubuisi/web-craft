@@ -107,7 +107,7 @@ export function Explore() {
             </div>
           </div>
         </div>
-        <div className="filter-bar">
+        <div className="filter-bar stream-filters">
           <input
             type="search"
             value={q}
@@ -115,60 +115,77 @@ export function Explore() {
             onChange={(e) => setQ(e.target.value)}
             aria-label="Search the stream"
           />
-          <button
-            className={`tray-item ${lane === 'all' && vibe === 'all' ? 'on' : ''}`}
-            onClick={() => {
-              setLane('all')
-              setVibe('all')
-            }}
-          >
-            all
-          </button>
-          <button
-            className={`tray-item ${lane === 'following' ? 'on' : ''}`}
-            onClick={() => setLane('following')}
-          >
-            watching
-          </button>
-          <button
-            className={`tray-item ${lane === 'jam' ? 'on' : ''}`}
-            onClick={() => setLane('jam')}
-          >
-            jam
-          </button>
-          <button
-            className={`tray-item ${lane === 'archive' ? 'on' : ''}`}
-            onClick={() => setLane('archive')}
-          >
-            archive
-          </button>
-          {VIBES.map((v) => (
+          <div className="filter-cluster" role="group" aria-label="lane">
             <button
-              key={v.id}
-              className={`tray-item ${vibe === v.id ? 'on' : ''}`}
-              onClick={() => setVibe(v.id)}
+              className={`tray-item ${lane === 'all' && vibe === 'all' ? 'on' : ''}`}
+              onClick={() => {
+                setLane('all')
+                setVibe('all')
+              }}
             >
-              {v.name}
+              all
             </button>
-          ))}
-          {(['new', 'likes', 'remixes'] as const).map((key) => (
             <button
-              key={key}
-              className={`tray-item ${sort === key ? 'on' : ''}`}
-              onClick={() => setSort(key)}
+              className={`tray-item ${lane === 'following' ? 'on' : ''}`}
+              onClick={() => setLane('following')}
             >
-              {key}
+              watching
             </button>
-          ))}
-          {tags.map((name) => (
             <button
-              key={name}
-              className={`tray-item ${tag === name ? 'on' : ''}`}
-              onClick={() => setTag(tag === name ? '' : name)}
+              className={`tray-item ${lane === 'jam' ? 'on' : ''}`}
+              onClick={() => setLane('jam')}
             >
-              #{name}
+              jam
             </button>
-          ))}
+            <button
+              className={`tray-item ${lane === 'archive' ? 'on' : ''}`}
+              onClick={() => setLane('archive')}
+            >
+              archive
+            </button>
+          </div>
+          <div className="filter-cluster" role="group" aria-label="vibe">
+            {VIBES.map((v) => (
+              <button
+                key={v.id}
+                className={`tray-item ${vibe === v.id ? 'on' : ''}`}
+                onClick={() => setVibe(v.id)}
+                style={{
+                  outline: vibe === v.id ? '3px solid var(--ink)' : undefined,
+                  background: vibe === v.id ? v.palette[2] : '#fff',
+                }}
+              >
+                <span className="glyph" style={{ color: v.palette[0] }}>
+                  ●
+                </span>
+                {v.name}
+              </button>
+            ))}
+          </div>
+          <div className="filter-cluster" role="group" aria-label="sort">
+            {(['new', 'likes', 'remixes'] as const).map((key) => (
+              <button
+                key={key}
+                className={`tray-item ${sort === key ? 'on' : ''}`}
+                onClick={() => setSort(key)}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+          {tags.length ? (
+            <div className="filter-cluster" role="group" aria-label="tags">
+              {tags.map((name) => (
+                <button
+                  key={name}
+                  className={`tray-item ${tag === name ? 'on' : ''}`}
+                  onClick={() => setTag(tag === name ? '' : name)}
+                >
+                  #{name}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="zine-wall">
           {published.map((z) => (

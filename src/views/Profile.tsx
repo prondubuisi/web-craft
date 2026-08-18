@@ -209,7 +209,7 @@ export function Profile() {
                     <h3>{z.title}</h3>
                     <div className="meta-line">
                       {seriesLabel(z) ? <span>{seriesLabel(z)}</span> : null}
-                      <span>{byline(z) !== z.owner ? byline(z) : z.vibe}</span>
+                      {byline(z) !== z.owner ? <span>{byline(z)}</span> : null}
                       <span>{z.vibe}</span>
                       <span>{isDropLive(z) ? `${z.likes} likes` : 'sealed'}</span>
                       <span>{z.remixes} remixes</span>

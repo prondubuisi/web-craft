@@ -35,6 +35,7 @@ import {
   loadSeriesWatch,
   toggleSit,
   swapLocalListing,
+  removeLocalListing,
 } from './social'
 
 function memoryStorage(): Storage {
@@ -86,9 +87,10 @@ describe('local polls', () => {
 })
 
 describe('local notices', () => {
-  it('seeds an inbox and marks it read', () => {
+  it('seeds an inbox already read', () => {
     const inbox = loadLocalNotices()
     expect(inbox.length).toBeGreaterThan(0)
+    expect(inbox.every((item) => item.read)).toBe(true)
     expect(noticeCopy(inbox[0]!)).toContain(inbox[0]!.actor)
     const read = markLocalNoticesRead()
     expect(read.every((item) => item.read)).toBe(true)
@@ -100,6 +102,17 @@ describe('local board', () => {
     const pin = addLocalListing('rio', 'trade', 'toner for rain')
     expect(pin.kind).toBe('trade')
     expect(loadLocalListings()[0]?.body).toBe('toner for rain')
+  })
+
+  it('keeps kind, caps the body, and can pull the pin', () => {
+    const pin = addLocalListing('rio', 'feedback', 'x'.repeat(400), { zineTitle: 'issue 13' })
+    expect(pin.kind).toBe('feedback')
+    expect(pin.body).toHaveLength(280)
+    expect(pin.zineTitle).toBe('issue 13')
+    expect(pin.author).toBe('@rio')
+    const next = removeLocalListing(pin.id)
+    expect(next.some((item) => item.id === pin.id)).toBe(false)
+    expect(loadLocalListings().some((item) => item.id === pin.id)).toBe(false)
   })
 })
 
@@ -206,6 +219,12 @@ describe('library loans', () => {
 })
 
 describe('pen pal mail', () => {
+  it('seeds a demo thread already read', () => {
+    const threads = listThreads('you')
+    expect(threads.length).toBeGreaterThan(0)
+    expect(threads.every((row) => row.unread === 0)).toBe(true)
+  })
+
   it('threads letters between two handles', () => {
     sendLetter('you', '@yuzu', 'save me a bow')
     sendLetter('@yuzu', 'you', 'already packed')
