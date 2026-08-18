@@ -1,4 +1,5 @@
 import type { Hono } from 'hono'
+import type { JamListResponse, JamOneResponse } from '../../src/lib/contract.ts'
 import { isJamLive, liveJam } from '../../src/lib/jam.ts'
 import { dropIsLive, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { listJams } from '../services/jams.ts'
@@ -6,7 +7,8 @@ import { decorateMany } from '../services/zines.ts'
 
 export function registerJam(app: Hono, db: Db) {
   app.get('/api/jams', (c) => {
-    return c.json({ jams: listJams(db), live: liveJam(listJams(db)) ?? null })
+    const payload: JamListResponse = { jams: listJams(db), live: liveJam(listJams(db)) ?? null }
+    return c.json(payload)
   })
 
   app.get('/api/jams/:id', (c) => {
@@ -20,10 +22,11 @@ export function registerJam(app: Hono, db: Db) {
          ORDER BY COALESCE(z.drops_at, z.updated_at) DESC`,
       )
       .all(jam.id) as ZineRow[]
-    return c.json({
+    const payload: JamOneResponse = {
       jam,
       live: isJamLive(jam),
       zines: decorateMany(db, rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) }))),
-    })
+    }
+    return c.json(payload)
   })
 }

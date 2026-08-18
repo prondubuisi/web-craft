@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import type { HealthResponse } from '../src/lib/contract.ts'
 import { refreshDemoDrop, seedCommunity } from './community.ts'
 import type { Db } from './db.ts'
 import { registerArchive } from './routes/archive.ts'
@@ -30,7 +31,8 @@ export function createApp(db: Db) {
 
   app.get('/api/health', (c) => {
     refreshDemoDrop(db)
-    return c.json({ ok: true })
+    const payload: HealthResponse = { ok: true }
+    return c.json(payload)
   })
 
   registerAuth(app, db)

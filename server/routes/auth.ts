@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
-import type { AuthOk, MeResponse } from '../../src/lib/contract.ts'
+import type { AuthBody, AuthOk, MeResponse, OkBody } from '../../src/lib/contract.ts'
 import {
   createSession,
   destroySession,
@@ -32,7 +32,7 @@ function tooMany(retryAfter: number) {
 
 export function registerAuth(app: Hono, db: Db) {
   app.post('/api/auth/register', async (c) => {
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<AuthBody> | null
     const name = String(body?.name ?? '').trim().toLowerCase()
     const password = String(body?.password ?? '')
     const key = clientKey(requestIp(c), name, 'register')
@@ -57,7 +57,7 @@ export function registerAuth(app: Hono, db: Db) {
   })
 
   app.post('/api/auth/login', async (c) => {
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<AuthBody> | null
     const name = String(body?.name ?? '').trim().toLowerCase()
     const password = String(body?.password ?? '')
     const key = clientKey(requestIp(c), name, 'login')
@@ -81,7 +81,8 @@ export function registerAuth(app: Hono, db: Db) {
   app.post('/api/auth/logout', (c) => {
     destroySession(db, readToken(c))
     c.header('Set-Cookie', `${COOKIE}=; Path=/; Max-Age=0`)
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.get('/api/auth/me', (c) => {

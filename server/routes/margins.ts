@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
+import type { MarginBody, MarginOneResponse, MarginsResponse } from '../../src/lib/contract.ts'
 import { getZineRow, type Db } from '../db.ts'
 import { currentUser } from '../http.ts'
 
@@ -20,7 +21,7 @@ export function registerMargins(app: Hono, db: Db) {
       created_at: number
       author_name: string
     }[]
-    return c.json({
+    const payload: MarginsResponse = {
       notes: rows.map((item) => ({
         id: item.id,
         zineId: item.zine_id,
@@ -29,7 +30,8 @@ export function registerMargins(app: Hono, db: Db) {
         body: item.body,
         createdAt: item.created_at,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/margins', async (c) => {
@@ -37,7 +39,7 @@ export function registerMargins(app: Hono, db: Db) {
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     const row = getZineRow(db, c.req.param('id'))
     if (!row || !row.published) return c.json({ error: 'Cannot mark that' }, 404)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<MarginBody> | null
     const text = String(body?.body ?? '').trim().slice(0, 160)
     const blockId = String(body?.blockId ?? '')
     if (!text || !blockId) return c.json({ error: 'Need a block and a note' }, 400)
@@ -51,8 +53,9 @@ export function registerMargins(app: Hono, db: Db) {
       text,
       now,
     )
-    return c.json({
+    const payload: MarginOneResponse = {
       note: { id, zineId: row.id, blockId, author: `@${user.name}`, body: text, createdAt: now },
-    })
+    }
+    return c.json(payload)
   })
 }

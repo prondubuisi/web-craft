@@ -1,5 +1,20 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
+import type {
+  ChainAddBody,
+  ChainAddResponse,
+  ChainPeekResponse,
+  LikeResponse,
+  OkBody,
+  PageHitBody,
+  PagesResponse,
+  PublishBody,
+  UnlockBody,
+  ViewsResponse,
+  ZineListResponse,
+  ZineOneResponse,
+  ZineWriteResponse,
+} from '../../src/lib/contract.ts'
 import type { Block, VibeId, Zine } from '../../src/lib/types.ts'
 import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
 import { liveJam } from '../../src/lib/jam.ts'
@@ -30,7 +45,8 @@ export function registerZines(app: Hono, db: Db) {
     }
     if (c.req.query('following') === '1') {
       if (!user) {
-        return c.json({ zines: [] })
+        const payload: ZineListResponse = { zines: [] }
+        return c.json(payload)
       }
       where.push('z.owner_id IN (SELECT followee_id FROM follows WHERE follower_id = ?)')
       params.push(user.id)
@@ -42,7 +58,10 @@ export function registerZines(app: Hono, db: Db) {
     }
     if (c.req.query('jam') === '1') {
       const jam = liveJam(listJams(db))
-      if (!jam) return c.json({ zines: [] })
+      if (!jam) {
+        const payload: ZineListResponse = { zines: [] }
+        return c.json(payload)
+      }
       where.push('z.jam_id = ?')
       params.push(jam.id)
     }
@@ -70,13 +89,14 @@ export function registerZines(app: Hono, db: Db) {
          ORDER BY ${order}`,
       )
       .all(...params) as ZineRow[]
-    return c.json({
+    const payload: ZineListResponse = {
       zines: decorateMany(
         db,
         rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) && row.owner_id !== user?.id })),
         user?.id,
       ),
-    })
+    }
+    return c.json(payload)
   })
 
   app.get('/api/zines', (c) => {
@@ -90,7 +110,8 @@ export function registerZines(app: Hono, db: Db) {
          ORDER BY z.updated_at DESC`,
       )
       .all(user.id) as ZineRow[]
-    return c.json({ zines: rows.map((row) => rowToZine(row, { includeSecret: true })) })
+    const payload: ZineListResponse = { zines: rows.map((row) => rowToZine(row, { includeSecret: true })) }
+    return c.json(payload)
   })
 
   app.get('/api/zines/:id', (c) => {
@@ -100,35 +121,37 @@ export function registerZines(app: Hono, db: Db) {
     const gate = accessZine(row, user?.id, c.req.query('k'))
     if (!gate.ok) return c.json({ error: gate.reason }, 404)
     const hide = gate.sealed || gate.locked
-    return c.json({
+    const payload: ZineOneResponse = {
       zine: decorate(db, rowToZine(row, { hideBlocks: hide, includeSecret: row.owner_id === user?.id })),
       sealed: gate.sealed,
       locked: gate.locked,
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/unlock', async (c) => {
     const user = currentUser(db, c)
     const row = getZineRow(db, c.req.param('id'))
     if (!row) return c.json({ error: 'missing issue' }, 404)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<UnlockBody> | null
     const key = String(body?.k ?? c.req.query('k') ?? '')
     const password = String(body?.password ?? '')
     const gate = accessZine(row, user?.id, key, false)
     if (!gate.ok) return c.json({ error: gate.reason }, 404)
     if (!row.pass_hash || !row.pass_salt) {
-      return c.json({
+      const payload: ZineOneResponse = {
         zine: rowToZine(row, { includeSecret: row.owner_id === user?.id }),
         sealed: !dropIsLive(row),
         locked: false,
-      })
+      }
+      return c.json(payload)
     }
     if (!verifyPassword(password, row.pass_hash, row.pass_salt)) {
       return c.json({ error: 'Wrong passphrase' }, 401)
     }
     const live = dropIsLive(row) || row.owner_id === user?.id || Boolean(row.share_key && key === row.share_key && !row.published)
     const draftOk = !row.published && row.share_key === key
-    return c.json({
+    const payload: ZineOneResponse = {
       zine: rowToZine(row, {
         hideBlocks: row.published && !dropIsLive(row) && row.owner_id !== user?.id,
         includeSecret: row.owner_id === user?.id,
@@ -137,7 +160,8 @@ export function registerZines(app: Hono, db: Db) {
       locked: false,
       draft: draftOk,
       live,
-    })
+    }
+    return c.json(payload)
   })
 
   app.put('/api/zines/:id', async (c) => {
@@ -211,7 +235,9 @@ export function registerZines(app: Hono, db: Db) {
       id,
     )
     const row = getZineRow(db, id)
-    return c.json({ zine: row ? rowToZine(row, { includeSecret: true }) : null })
+    if (!row) return c.json({ error: 'missing issue' }, 500)
+    const payload: ZineWriteResponse = { zine: rowToZine(row, { includeSecret: true }) }
+    return c.json(payload)
   })
 
   app.delete('/api/zines/:id', (c) => {
@@ -233,7 +259,8 @@ export function registerZines(app: Hono, db: Db) {
     db.prepare('DELETE FROM claims WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM loans WHERE zine_id = ?').run(row.id)
     db.prepare('DELETE FROM zines WHERE id = ?').run(row.id)
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/publish', async (c) => {
@@ -241,8 +268,9 @@ export function registerZines(app: Hono, db: Db) {
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     const row = getZineRow(db, c.req.param('id'))
     if (!row || row.owner_id !== user.id) return c.json({ error: 'Not your issue' }, 403)
-    const body = await c.req.json().catch(() => ({}))
-    return c.json({ zine: publishZine(db, user, row, body ?? {}) })
+    const body = ((await c.req.json().catch(() => ({}))) ?? {}) as PublishBody
+    const payload: ZineWriteResponse = { zine: publishZine(db, user, row, body) }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/like', (c) => {
@@ -260,14 +288,19 @@ export function registerZines(app: Hono, db: Db) {
       notify(db, { recipientId: row.owner_id, actorId: user.id, kind: 'like', zineId: row.id, body: row.title })
     }
     const next = getZineRow(db, row.id)!
-    return c.json({ liked: !liked, likes: next.likes })
+    const payload: LikeResponse = { liked: !liked, likes: next.likes }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/view', (c) => {
     const row = getZineRow(db, c.req.param('id'))
-    if (!row || !dropIsLive(row)) return c.json({ views: row?.views ?? 0 })
+    if (!row || !dropIsLive(row)) {
+      const payload: ViewsResponse = { views: row?.views ?? 0 }
+      return c.json(payload)
+    }
     db.prepare('UPDATE zines SET views = views + 1 WHERE id = ?').run(row.id)
-    return c.json({ views: row.views + 1 })
+    const payload: ViewsResponse = { views: row.views + 1 }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/remix', (c) => {
@@ -287,34 +320,40 @@ export function registerZines(app: Hono, db: Db) {
     db.prepare('UPDATE users SET remix_points = remix_points + 1 WHERE id = ?').run(user.id)
     notify(db, { recipientId: row.owner_id, actorId: user.id, kind: 'remix', zineId: row.id, body: source.title })
     const copy = getZineRow(db, copyId)!
-    return c.json({ zine: rowToZine(copy) })
+    const payload: ZineWriteResponse = { zine: rowToZine(copy) }
+    return c.json(payload)
   })
 
   app.get('/api/zines/:id/pages', (c) => {
     const user = currentUser(db, c)
     const row = getZineRow(db, c.req.param('id'))
     if (!row) return c.json({ error: 'missing issue' }, 404)
-    if (row.owner_id !== user?.id) return c.json({ pages: [] })
+    if (row.owner_id !== user?.id) {
+      const payload: PagesResponse = { pages: [] }
+      return c.json(payload)
+    }
     const pages = db
       .prepare('SELECT page, views, dwell_ms FROM page_stats WHERE zine_id = ? ORDER BY page')
       .all(row.id) as { page: number; views: number; dwell_ms: number }[]
-    return c.json({
+    const payload: PagesResponse = {
       pages: pages.map((p) => ({ page: p.page, views: p.views, dwellMs: p.dwell_ms })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/pages', async (c) => {
     const row = getZineRow(db, c.req.param('id'))
-    if (!row || !dropIsLive(row)) return c.json({ ok: true })
-    const body = await c.req.json().catch(() => null)
+    const ok: OkBody = { ok: true }
+    if (!row || !dropIsLive(row)) return c.json(ok)
+    const body = (await c.req.json().catch(() => null)) as Partial<PageHitBody> | null
     const page = Number(body?.page)
     const dwell = Math.max(0, Math.min(120000, Number(body?.dwellMs ?? 0)))
-    if (!Number.isInteger(page) || page < 1 || page > 12) return c.json({ ok: true })
+    if (!Number.isInteger(page) || page < 1 || page > 12) return c.json(ok)
     db.prepare(
       `INSERT INTO page_stats (zine_id, page, views, dwell_ms) VALUES (?, ?, 1, ?)
        ON CONFLICT(zine_id, page) DO UPDATE SET views = views + 1, dwell_ms = dwell_ms + excluded.dwell_ms`,
     ).run(row.id, page, dwell)
-    return c.json({ ok: true })
+    return c.json(ok)
   })
 
   app.get('/api/zines/:id/chain', (c) => {
@@ -324,14 +363,15 @@ export function registerZines(app: Hono, db: Db) {
     }
     const blocks = JSON.parse(row.blocks_json) as Block[]
     const previous = blocks.slice(-2)
-    return c.json({ previous, turn: blocks.length })
+    const payload: ChainPeekResponse = { previous, turn: blocks.length }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/chain', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     const row = getZineRow(db, c.req.param('id'))
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<ChainAddBody> | null
     const invite = String(body?.invite ?? '')
     if (!row || !row.chain_open || row.chain_key !== invite) {
       return c.json({ error: 'that corpse is closed' }, 404)
@@ -353,6 +393,7 @@ export function registerZines(app: Hono, db: Db) {
       Date.now(),
       row.id,
     )
-    return c.json({ invite: nextInvite, turn: blocks.length })
+    const payload: ChainAddResponse = { invite: nextInvite, turn: blocks.length }
+    return c.json(payload)
   })
 }

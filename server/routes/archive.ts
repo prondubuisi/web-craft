@@ -1,4 +1,5 @@
 import type { Hono } from 'hono'
+import type { ArchiveResponse, NominateResponse } from '../../src/lib/contract.ts'
 import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
 import { dropIsLive, getZineRow, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { currentUser } from '../http.ts'
@@ -16,7 +17,10 @@ export function registerArchive(app: Hono, db: Db) {
          ORDER BY (SELECT COUNT(*) FROM nominations n WHERE n.zine_id = z.id) DESC`,
       )
       .all(ARCHIVE_THRESHOLD) as ZineRow[]
-    return c.json({ zines: decorateMany(db, rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) }))) })
+    const payload: ArchiveResponse = {
+      zines: decorateMany(db, rows.map((row) => rowToZine(row, { hideBlocks: !dropIsLive(row) }))),
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/nominate', (c) => {
@@ -46,6 +50,7 @@ export function registerArchive(app: Hono, db: Db) {
       }
     }
     const noms = nomCount(db, row.id)
-    return c.json({ noms, archived: noms >= ARCHIVE_THRESHOLD, mine: !existing })
+    const payload: NominateResponse = { noms, archived: noms >= ARCHIVE_THRESHOLD, mine: !existing }
+    return c.json(payload)
   })
 }

@@ -1,6 +1,23 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
-import type { Block, PollBlock } from '../../src/lib/types.ts'
+import type {
+  CommentBody,
+  CommentOneResponse,
+  CommentsResponse,
+  FollowResponse,
+  NoticesResponse,
+  OkBody,
+  PollsResponse,
+  PollVoteBody,
+  PollVoteResponse,
+  ProfilePatchBody,
+  ProfilePatchResponse,
+  ProfileResponse,
+  StudioMeResponse,
+  WatchSeriesBody,
+  WatchSeriesResponse,
+} from '../../src/lib/contract.ts'
+import type { Block, PollBlock, VibeId } from '../../src/lib/types.ts'
 import { normalizeScene } from '../../src/lib/fest.ts'
 import { dropIsLive, getZineRow, rowToComment, rowToNotice, rowToZine, type CommentRow, type Db, type UserRow, type ZineRow } from '../db.ts'
 import { currentUser } from '../http.ts'
@@ -11,17 +28,19 @@ export function registerSocial(app: Hono, db: Db) {
   app.get('/api/users/me', (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    return c.json({ name: user.name, bio: user.bio ?? '', remixPoints: user.remix_points })
+    const payload: StudioMeResponse = { name: user.name, bio: user.bio ?? '', remixPoints: user.remix_points }
+    return c.json(payload)
   })
 
   app.patch('/api/users/me', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<ProfilePatchBody> | null
     const bio = String(body?.bio ?? '').slice(0, 200)
     const scene = normalizeScene(typeof body?.scene === 'string' ? body.scene : user.scene) ?? ''
     db.prepare('UPDATE users SET bio = ?, scene = ? WHERE id = ?').run(bio, scene, user.id)
-    return c.json({ name: user.name, bio, scene })
+    const payload: ProfilePatchResponse = { name: user.name, bio, scene }
+    return c.json(payload)
   })
 
   app.get('/api/users/:name', (c) => {
@@ -42,7 +61,7 @@ export function registerSocial(app: Hono, db: Db) {
     const followedByMe = Boolean(
       viewer && db.prepare('SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?').get(viewer.id, user.id),
     )
-    return c.json({
+    const payload: ProfileResponse = {
       name: user.name,
       bio: user.bio ?? '',
       scene: user.scene ?? '',
@@ -78,11 +97,12 @@ export function registerSocial(app: Hono, db: Db) {
         title: row.title,
         owner: `@${row.owner_name}`,
         note: row.note,
-        vibe: row.vibe,
+        vibe: row.vibe as VibeId,
       })),
       stamps: listStamps(db, user.id),
       table: tableFor(db, user.id),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/users/:name/follow', (c) => {
@@ -95,11 +115,13 @@ export function registerSocial(app: Hono, db: Db) {
     const existing = db.prepare('SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?').get(viewer.id, target.id)
     if (existing) {
       db.prepare('DELETE FROM follows WHERE follower_id = ? AND followee_id = ?').run(viewer.id, target.id)
-      return c.json({ following: false })
+      const payload: FollowResponse = { following: false }
+      return c.json(payload)
     }
     db.prepare('INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)').run(viewer.id, target.id, Date.now())
     notify(db, { recipientId: target.id, actorId: viewer.id, kind: 'follow' })
-    return c.json({ following: true })
+    const payload: FollowResponse = { following: true }
+    return c.json(payload)
   })
 
   app.get('/api/notices', (c) => {
@@ -125,14 +147,16 @@ export function registerSocial(app: Hono, db: Db) {
       read: number
       created_at: number
     }[]
-    return c.json({ notices: rows.map(rowToNotice) })
+    const payload: NoticesResponse = { notices: rows.map(rowToNotice) }
+    return c.json(payload)
   })
 
   app.post('/api/notices/read', (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     db.prepare('UPDATE notices SET read = 1 WHERE user_id = ?').run(user.id)
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.get('/api/zines/:id/comments', (c) => {
@@ -142,7 +166,8 @@ export function registerSocial(app: Hono, db: Db) {
     const gate = accessZine(row, user?.id, c.req.query('k'))
     if (!gate.ok) return c.json({ error: gate.reason }, 404)
     if (gate.sealed || gate.locked) {
-      return c.json({ comments: [] })
+      const payload: CommentsResponse = { comments: [] }
+      return c.json(payload)
     }
     const rows = db
       .prepare(
@@ -152,7 +177,8 @@ export function registerSocial(app: Hono, db: Db) {
          ORDER BY c.created_at ASC`,
       )
       .all(row.id) as CommentRow[]
-    return c.json({ comments: rows.map(rowToComment) })
+    const payload: CommentsResponse = { comments: rows.map(rowToComment) }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/comments', async (c) => {
@@ -160,7 +186,7 @@ export function registerSocial(app: Hono, db: Db) {
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     const row = getZineRow(db, c.req.param('id'))
     if (!row || !dropIsLive(row)) return c.json({ error: 'Cannot write on that issue' }, 404)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<CommentBody> | null
     const text = String(body?.body ?? '').trim().slice(0, 280)
     if (text.length < 1) return c.json({ error: 'Write something first' }, 400)
     const id = randomUUID()
@@ -173,9 +199,10 @@ export function registerSocial(app: Hono, db: Db) {
       now,
     )
     notify(db, { recipientId: row.owner_id, actorId: user.id, kind: 'comment', zineId: row.id, body: row.title })
-    return c.json({
+    const payload: CommentOneResponse = {
       comment: { id, zineId: row.id, author: `@${user.name}`, body: text, createdAt: now },
-    })
+    }
+    return c.json(payload)
   })
 
   app.get('/api/zines/:id/polls', (c) => {
@@ -185,9 +212,11 @@ export function registerSocial(app: Hono, db: Db) {
       return c.json({ error: 'missing issue' }, 404)
     }
     if (row.published && !dropIsLive(row) && row.owner_id !== user?.id) {
-      return c.json({ polls: {} })
+      const payload: PollsResponse = { polls: {} }
+      return c.json(payload)
     }
-    return c.json({ polls: pollTallies(db, row, user?.id) })
+    const payload: PollsResponse = { polls: pollTallies(db, row, user?.id) }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/polls/:blockId', async (c) => {
@@ -197,7 +226,7 @@ export function registerSocial(app: Hono, db: Db) {
     if (!row || !dropIsLive(row)) return c.json({ error: 'Cannot vote on that' }, 404)
     const block = pollBlock(row, c.req.param('blockId'))
     if (!block) return c.json({ error: 'No poll there' }, 404)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<PollVoteBody> | null
     const option = Number(body?.option)
     if (!Number.isInteger(option) || option < 0 || option >= block.options.length) {
       return c.json({ error: 'Pick a real option' }, 400)
@@ -207,13 +236,16 @@ export function registerSocial(app: Hono, db: Db) {
        VALUES (?, ?, ?, ?)
        ON CONFLICT(user_id, zine_id, block_id) DO UPDATE SET option_idx = excluded.option_idx`,
     ).run(user.id, row.id, block.id, option)
-    return c.json(pollTallies(db, row, user.id)[block.id])
+    const tally = pollTallies(db, row, user.id)[block.id]
+    if (!tally) return c.json({ error: 'No poll there' }, 404)
+    const payload: PollVoteResponse = tally
+    return c.json(payload)
   })
 
   app.post('/api/series/watch', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<WatchSeriesBody> | null
     const series = String(body?.series ?? '')
       .trim()
       .toLowerCase()
@@ -222,10 +254,12 @@ export function registerSocial(app: Hono, db: Db) {
     const existing = db.prepare('SELECT 1 FROM series_watches WHERE user_id = ? AND series = ?').get(user.id, series)
     if (existing) {
       db.prepare('DELETE FROM series_watches WHERE user_id = ? AND series = ?').run(user.id, series)
-      return c.json({ watching: false })
+      const payload: WatchSeriesResponse = { watching: false }
+      return c.json(payload)
     }
     db.prepare('INSERT INTO series_watches (user_id, series, created_at) VALUES (?, ?, ?)').run(user.id, series, Date.now())
-    return c.json({ watching: true })
+    const payload: WatchSeriesResponse = { watching: true }
+    return c.json(payload)
   })
 }
 
