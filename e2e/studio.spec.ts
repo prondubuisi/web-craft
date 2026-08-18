@@ -52,10 +52,12 @@ test.describe('B. maker — studio and editor', () => {
   })
 
   test('8c empty wall copy after deleting yours', async ({ page }) => {
-    await page.goto('/studio')
-    const mine = page.locator('a.zine-card')
-    while ((await mine.count()) > 0) {
-      await mine.first().click()
+    for (let i = 0; i < 20; i++) {
+      await page.goto('/studio')
+      const card = page.locator('.zine-wall a.zine-card').first()
+      if ((await card.count()) === 0) break
+      await card.click()
+      await expect(page.locator('.title-input')).toBeVisible()
       await page.getByRole('button', { name: /Delete issue/i }).click()
       await expect(page).toHaveURL(/\/studio/)
     }
@@ -67,16 +69,14 @@ test.describe('B. maker — studio and editor', () => {
     await page.goto('/studio')
     const item = page.locator('.stream-item').first()
     await expect(item).toBeVisible()
-    const motion = await item.evaluate((el) => {
-      const style = getComputedStyle(el)
-      return { transition: style.transitionProperty, hoverBorder: '' }
-    })
-    expect(motion.transition).toMatch(/background-color|border-color/)
+    // toHaveCSS auto-retries against getComputedStyle, unlike a one-shot
+    // evaluate() — needed under parallel workers where CSS can apply a beat
+    // after the element itself becomes visible.
+    await expect(item).toHaveCSS('transition-property', /background-color|border-color/)
     await clickIncludes(page, 'New issue')
     const dialog = page.getByRole('dialog', { name: 'new issue' })
     await expect(dialog).toBeVisible()
-    const anim = await dialog.evaluate((el) => getComputedStyle(el).animationName)
-    expect(anim).toMatch(/rise-in/)
+    await expect(dialog).toHaveCSS('animation-name', /rise-in/)
   })
 
   test('9 slash tray inserts every widget then undo', async ({ page }) => {
