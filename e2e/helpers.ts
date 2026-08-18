@@ -3,8 +3,10 @@
  * Assumes `npm run dev` is already serving http://127.0.0.1:5173
  * (Vite + the SQLite API proxied from :8787).
  */
-import { expect, type Page } from '@playwright/test'
+import { expect, test, type Browser, type Page } from '@playwright/test'
 import { join } from 'node:path'
+import type { BlockType } from '../src/lib/types'
+import { WIDGETS as WIDGET_DEFS } from '../src/lib/widgets'
 
 const errors = new WeakMap<Page, string[]>()
 
@@ -19,6 +21,9 @@ export const GLOSSARY = [
   'drop',
   'snapshot',
   'snap',
+  'type',
+  'cut',
+  'sample',
   'scatter',
   'remix',
   'bag',
@@ -38,25 +43,33 @@ export const GLOSSARY = [
   'handle',
 ] as const
 
-export const WIDGETS: { slash: string; sel: string }[] = [
-  { slash: 'heading', sel: '.heading-xl' },
-  { slash: 'sticker', sel: '.sticker-block' },
-  { slash: 'halftone', sel: '.hero-shot' },
-  { slash: 'panel', sel: '.grid-block' },
-  { slash: 'scribble', sel: '.divider' },
-  { slash: 'sfx', sel: '.sfx-block' },
-  { slash: 'glitch', sel: '.glitch-block' },
-  { slash: 'stack', sel: '.stack-block' },
-  { slash: 'quote', sel: '.quote-block' },
-  { slash: 'poll', sel: '.poll-block' },
-  { slash: 'tape', sel: '.audio-block' },
-  { slash: 'strip', sel: '.strip-block' },
-  { slash: 'colophon', sel: '.colophon-block' },
-  { slash: 'blackout', sel: '.blackout-block' },
-  { slash: 'toc', sel: '.contents-block' },
-  { slash: 'insert', sel: '.insert-block' },
-  { slash: 'reply', sel: '.reply-block' },
-]
+/** Rendered block selector per widget type — the one thing WidgetDef can't tell us. */
+const SELECTORS: Record<BlockType, string> = {
+  heading: '.heading-xl',
+  sticker: '.sticker-block',
+  hero: '.hero-shot',
+  grid: '.grid-block',
+  divider: '.divider',
+  sfx: '.sfx-block',
+  glitch: '.glitch-block',
+  stack: '.stack-block',
+  quote: '.quote-block',
+  poll: '.poll-block',
+  audio: '.audio-block',
+  strip: '.strip-block',
+  colophon: '.colophon-block',
+  blackout: '.blackout-block',
+  contents: '.contents-block',
+  insert: '.insert-block',
+  reply: '.reply-block',
+}
+
+// Derived from the app's own widget list (src/lib/widgets.ts) so the tray
+// and its e2e coverage can't silently drift apart.
+export const WIDGETS: { slash: string; sel: string }[] = WIDGET_DEFS.map((w) => ({
+  slash: w.slash,
+  sel: SELECTORS[w.type],
+}))
 
 export async function fresh(page: Page) {
   const bucket: string[] = []
@@ -122,7 +135,9 @@ export async function clickIncludes(page: Page, text: string) {
 }
 
 export async function forceOffline(page: Page) {
-  await page.route('**/api/**', (route) => route.abort())
+  await page.route('**/api/**', (route) =>
+    route.fulfill({ status: 503, contentType: 'application/json', body: '{"ok":false}' }),
+  )
 }
 
 export async function apiIsUp(page: Page): Promise<boolean> {
@@ -138,12 +153,22 @@ export async function waitForStudioMode(page: Page) {
   await expect(page.locator('.studio-head .issue-chip').first()).toBeVisible()
 }
 
+/** Health is local and fast; CI keeps the long Fly-wake ceiling. */
+export const HEALTH_MS = process.env.CI ? 15_000 : 4_000
+
+export async function requireApi(page: Page) {
+  if (await apiIsUp(page)) return
+  if (process.env.CI) throw new Error('API must be up in CI')
+  test.skip(true, 'API offline')
+}
+
 export async function claimHandle(page: Page, handle?: string): Promise<string | null> {
   await page.goto('/studio')
   const claim = page.getByRole('button', { name: /Claim studio|API offline|Checking API/i })
   await expect(claim).toBeVisible()
-  await expect(claim).not.toHaveText(/Checking API/i, { timeout: 15_000 })
+  await expect(claim).not.toHaveText(/Checking API/i, { timeout: HEALTH_MS })
   if (!(await claim.isEnabled()) || /offline/i.test((await claim.innerText()) ?? '')) {
+    if (process.env.CI) throw new Error('API must be up in CI')
     return null
   }
   await claim.click()
@@ -157,6 +182,35 @@ export async function claimHandle(page: Page, handle?: string): Promise<string |
 
 export function uniqueHandle() {
   return `pw${Date.now().toString(36).slice(-5)}${Math.random().toString(36).slice(2, 5)}`
+}
+
+export async function requireHandle(page: Page, handle?: string): Promise<string> {
+  const name = await claimHandle(page, handle)
+  if (name) return name
+  test.skip(true, 'API offline')
+  return ''
+}
+
+/**
+ * `worker` must be the same `x-e2e-worker` value the primary context routes
+ * with (see e2e/fixtures.ts) — any context made directly from `browser`
+ * bypasses the `context` fixture that sets it automatically, and would
+ * otherwise land on the wrong worker's isolated backend.
+ */
+export async function routedContext(browser: Browser, worker: string) {
+  const ctx = await browser.newContext()
+  await ctx.route('**/api/**', (route) => {
+    route.continue({ headers: { ...route.request().headers(), 'x-e2e-worker': worker } })
+  })
+  return ctx
+}
+
+export async function openSecondDesk(browser: Browser, worker: string) {
+  const ctx = await routedContext(browser, worker)
+  const page = await ctx.newPage()
+  await fresh(page)
+  const handle = await requireHandle(page)
+  return { ctx, page, handle }
 }
 
 export async function openNewIssue(page: Page, title: string) {

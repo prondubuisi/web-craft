@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, workerHeader } from './fixtures'
 import {
   clickIncludes,
   clickText,
@@ -10,6 +10,7 @@ import {
   insertSlash,
   openNewIssue,
   readIssue,
+  routedContext,
 } from './helpers'
 
 test.describe('C. reader — /z/:id', () => {
@@ -162,7 +163,7 @@ test.describe('C. reader — /z/:id', () => {
     await expect(page.getByLabel('Blurbs')).toHaveCount(0)
   })
 
-  test('24 corpse invite shows last page only when API is up', async ({ page, browser }) => {
+  test('24 corpse invite shows last page only when API is up', async ({ page, browser, workerApiPort }) => {
     await openNewIssue(page, 'chain hop')
     await clickIncludes(page, 'Drop issue')
     await page.locator('[role="dialog"] .tray-item', { hasText: 'exquisite corpse' }).click()
@@ -181,7 +182,7 @@ test.describe('C. reader — /z/:id', () => {
     })
     const path = copied.match(/\/z\/[^?\s]+(?:\?chain=[^&\s]+)?/)?.[0]
     test.skip(!path, 'clipboard did not yield a corpse link')
-    const ctx = await browser.newContext()
+    const ctx = await routedContext(browser, workerHeader(workerApiPort))
     const other = await ctx.newPage()
     await fresh(other)
     await other.goto(path!)

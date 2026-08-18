@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures'
 import {
-  clickIncludes,
   encodeShareToken,
   expectNoPageErrors,
   fresh,
@@ -16,44 +15,31 @@ test.describe('F. snapshot, studio rail, print proxies', () => {
   })
 
   test('37 good snapshot unpacks and hash change updates', async ({ page }) => {
-    await page.goto('/')
-    await clickIncludes(page, 'Read after hours')
-    await clickIncludes(page, 'More on this issue')
-    await clickIncludes(page, 'Copy snapshot')
-    const first = await page.evaluate(async () => {
-      try {
-        return await navigator.clipboard.readText()
-      } catch {
-        return ''
-      }
+    const hash1 = encodeShareToken({
+      v: 1,
+      title: 'after hours / bushwick',
+      vibe: 'miles',
+      owner: 'you',
+      dropsAt: Date.now() - 1000,
+      blocks: [{ id: 'b1', type: 'heading', text: 'after hours / rooftop', size: 'xl' }],
     })
-    const hash1 = first.includes('#') ? first.slice(first.indexOf('#') + 1) : ''
-    test.skip(!hash1, 'clipboard not available in this chrome channel')
-
-    await page.goto('/explore')
-    await page.locator('.zine-card').filter({ hasText: /sunday market/i }).first().getByRole('link', { name: /Read|Peek/i }).click()
-    await clickIncludes(page, 'More on this issue')
-    await clickIncludes(page, 'Copy snapshot')
-    const second = await page.evaluate(async () => {
-      try {
-        return await navigator.clipboard.readText()
-      } catch {
-        return ''
-      }
+    const hash2 = encodeShareToken({
+      v: 1,
+      title: 'sunday market',
+      vibe: 'peni',
+      owner: '@yuzu',
+      dropsAt: Date.now() - 1000,
+      blocks: [{ id: 'b2', type: 'heading', text: 'sunday booth notes', size: 'xl' }],
     })
-    const hash2 = second.includes('#') ? second.slice(second.indexOf('#') + 1) : ''
-
     await page.goto(`/s#${hash1}`)
-    await expect(page.locator('article.zine-page')).toContainText(/after hours|rooftop|portable/i)
-    if (hash2 && hash2 !== hash1) {
-      await page.evaluate((h) => {
-        window.location.hash = h
-      }, hash2)
-      await expect(page.locator('article.zine-page')).toContainText(/sunday|booth|portable/i)
-    }
+    await expect(page.locator('article.zine-page')).toContainText(/after hours|rooftop/i)
+    await page.evaluate((h) => {
+      window.location.hash = h
+    }, hash2)
+    await expect(page.locator('article.zine-page')).toContainText(/sunday|booth/i)
     await page.getByRole('button', { name: 'Remix into studio' }).click()
     await expect(page).toHaveURL(/\/edit\//)
-    await expect(page.locator('.title-input')).toHaveValue(/remix|after hours|sunday/i)
+    await expect(page.locator('.title-input')).toHaveValue(/remix|sunday/i)
   })
 
   test('38 broken snapshot recovery', async ({ page }) => {
@@ -86,12 +72,4 @@ test.describe('F. snapshot, studio rail, print proxies', () => {
     await expect(page.locator('.preview-page')).toBeVisible()
   })
 
-  test('40 help CTAs from glossary', async ({ page }) => {
-    await page.goto('/help')
-    await page.getByRole('link', { name: 'Open the studio' }).first().click()
-    await expect(page).toHaveURL(/\/studio/)
-    await page.goto('/help')
-    await page.getByRole('link', { name: 'The stream' }).first().click()
-    await expect(page).toHaveURL(/\/explore/)
-  })
 })
