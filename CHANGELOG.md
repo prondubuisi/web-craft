@@ -18,6 +18,18 @@ Claim studio is ghost on the desk; New issue stays the loud button. An empty wat
 
 Reset demo now includes two studio toolkit issues: **the kit** walks all 17 widgets (samples, cuts, bind lane, a compilation slip of after hours) and **scatter floor** is an unpublished ham page with pinned scraps. Cover after hours is unchanged. An older saved studio is offered those two issues once, without wiping the desk. Cover and Help **Open the kit** open the issue itself. Help **Open scatter floor** opens the pinned draft.
 
+Open the kit still edits the walkthrough. The editor says remix it to keep the original; Remix this kit forks a draft and leaves the seed on the wall. Studio cards tagged toolkit show a kit chip. An empty wall mentions reset demo.
+
+A remix names the original. The editor and reader say remix of {title} and hop back when that issue is still on the desk. Studio cards mark remixes. Help already said credit stays — now the page does.
+
+Drop prints the page from the modal. Fold sheet stays on Preview. Print CSS hides the editor chrome so the issue is what comes out. Studio puts toolkit walkthroughs after your issues and says so.
+
+After hours and ghost notes are seeded the same way as the kit. Opening them from the wall offers Remix this page so the cover sample stays. Seeded cards sit at the end; yours come first.
+
+More scraps in the existing library: leftover ink (drop when, heading picture, print pass, hold the click), cites (the margin, stranger on the L, this browser), sets (cover toc, pick link drop), cuts (lg, scribble, speed, three), pin positions for scatter, and vowels out holes. No tape scrap — there is no audio file. No new block type.
+
+`docs/sg9.md` §3: `parseJsonColumn` is the one helper for tags and includes on a zine row. A bad page JSON still fails loud. §2: `zineFields.ts` is the edition list for row mapping and PUT extras. §1: `blockRecipes.ts` is the one table for create, harvest, apply, and validate.
+
 ## 1.6.0 — 2026-08-18
 
 `src/lib/contract.ts` now names request and response types for every current `/api` route. Client `api.ts` methods `satisfies` those bodies; every `server/routes` module (and health / publish) returns a typed payload. Upsert no longer answers with a null zine if the row is missing after write.

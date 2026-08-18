@@ -1,74 +1,11 @@
-import type {
-  Block,
-  BlockType,
-  FinishId,
-  VibeId,
-  Visibility,
-  Zine,
-} from './types'
+import type { Block, BlockType, VibeId, Visibility, Zine } from './types'
 import { VIBES } from './vibes'
+import { FINISH_IDS } from './zineFields'
+import { BLOCK_RECIPES, BLOCK_TYPES } from './blockRecipes'
+import { assertStringList, bool, fail, isRecord, nonempty, num, oneOf, optional, str } from './check'
 
 const VIBE_IDS = new Set<string>(VIBES.map((v) => v.id))
-const BLOCK_TYPES = new Set<string>([
-  'heading',
-  'sticker',
-  'hero',
-  'grid',
-  'divider',
-  'sfx',
-  'glitch',
-  'stack',
-  'quote',
-  'poll',
-  'audio',
-  'strip',
-  'colophon',
-  'blackout',
-  'contents',
-  'insert',
-  'reply',
-])
-
-function fail(path: string, expected: string): never {
-  throw new Error(`${path} must be ${expected}`)
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function str(value: unknown, path: string): string {
-  if (typeof value !== 'string') fail(path, 'a string')
-  return value
-}
-
-function nonempty(value: unknown, path: string): string {
-  const next = str(value, path)
-  if (!next.trim()) fail(path, 'a non-empty string')
-  return next
-}
-
-function num(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) fail(path, 'a finite number')
-  return value
-}
-
-function bool(value: unknown, path: string): boolean {
-  if (typeof value !== 'boolean') fail(path, 'a boolean')
-  return value
-}
-
-function oneOf<T extends string>(value: unknown, allowed: readonly T[], path: string): T {
-  if (typeof value !== 'string' || !allowed.includes(value as T)) {
-    fail(path, allowed.join(', '))
-  }
-  return value as T
-}
-
-function optional<T>(value: unknown, path: string, read: (next: unknown, path: string) => T): T | undefined {
-  if (value === undefined) return undefined
-  return read(value, path)
-}
+const BLOCK_TYPE_SET = new Set<string>(BLOCK_TYPES)
 
 function assertVibe(value: unknown, path = 'vibe'): VibeId {
   if (typeof value !== 'string' || !VIBE_IDS.has(value)) {
@@ -77,157 +14,12 @@ function assertVibe(value: unknown, path = 'vibe'): VibeId {
   return value as VibeId
 }
 
-function assertStringList(value: unknown, path: string): string[] {
-  if (!Array.isArray(value)) fail(path, 'an array of strings')
-  return value.map((item, i) => str(item, `${path}[${i}]`))
-}
-
-function assertNumberList(value: unknown, path: string): number[] {
-  if (!Array.isArray(value)) fail(path, 'an array of numbers')
-  return value.map((item, i) => num(item, `${path}[${i}]`))
-}
-
 function assertBlock(value: unknown, path: string): Block {
   if (!isRecord(value)) fail(path, 'an object')
   const id = nonempty(value.id, `${path}.id`)
   const type = str(value.type, `${path}.type`)
-  if (!BLOCK_TYPES.has(type)) fail(`${path}.type`, 'a known widget')
-  const kind = type as BlockType
-  switch (kind) {
-    case 'heading':
-      return {
-        id,
-        type: kind,
-        text: str(value.text, `${path}.text`),
-        size: oneOf(value.size, ['xl', 'lg', 'md'] as const, `${path}.size`),
-      }
-    case 'sticker':
-      return {
-        id,
-        type: kind,
-        text: str(value.text, `${path}.text`),
-        rotation: num(value.rotation, `${path}.rotation`),
-        src: optional(value.src, `${path}.src`, str),
-        x: optional(value.x, `${path}.x`, num),
-        y: optional(value.y, `${path}.y`, num),
-      }
-    case 'hero':
-      return {
-        id,
-        type: kind,
-        src: str(value.src, `${path}.src`),
-        caption: str(value.caption, `${path}.caption`),
-        density: num(value.density, `${path}.density`),
-        split: num(value.split, `${path}.split`),
-        x: optional(value.x, `${path}.x`, num),
-        y: optional(value.y, `${path}.y`, num),
-      }
-    case 'grid':
-      if (!Array.isArray(value.panels)) fail(`${path}.panels`, 'an array')
-      return {
-        id,
-        type: kind,
-        layout: oneOf(value.layout, ['two', 'three', 'asymmetric'] as const, `${path}.layout`),
-        panels: value.panels.map((panel, i) => {
-          const p = `${path}.panels[${i}]`
-          if (!isRecord(panel)) fail(p, 'an object')
-          return {
-            text: str(panel.text, `${p}.text`),
-            fill: str(panel.fill, `${p}.fill`),
-            src: optional(panel.src, `${p}.src`, str),
-          }
-        }),
-      }
-    case 'divider':
-      return {
-        id,
-        type: kind,
-        style: oneOf(value.style, ['scribble', 'speed', 'zip'] as const, `${path}.style`),
-      }
-    case 'sfx':
-      return { id, type: kind, word: str(value.word, `${path}.word`) }
-    case 'glitch':
-      return { id, type: kind, text: str(value.text, `${path}.text`) }
-    case 'stack':
-      if (!Array.isArray(value.cards)) fail(`${path}.cards`, 'an array')
-      return {
-        id,
-        type: kind,
-        cards: value.cards.map((card, i) => {
-          const p = `${path}.cards[${i}]`
-          if (!isRecord(card)) fail(p, 'an object')
-          return { title: str(card.title, `${p}.title`), body: str(card.body, `${p}.body`) }
-        }),
-      }
-    case 'quote':
-      return {
-        id,
-        type: kind,
-        text: str(value.text, `${path}.text`),
-        cite: str(value.cite, `${path}.cite`),
-      }
-    case 'poll':
-      return {
-        id,
-        type: kind,
-        question: str(value.question, `${path}.question`),
-        options: assertStringList(value.options, `${path}.options`),
-      }
-    case 'audio':
-      return {
-        id,
-        type: kind,
-        src: str(value.src, `${path}.src`),
-        caption: str(value.caption, `${path}.caption`),
-      }
-    case 'strip':
-      if (!Array.isArray(value.panels)) fail(`${path}.panels`, 'an array')
-      return {
-        id,
-        type: kind,
-        panels: value.panels.map((panel, i) => {
-          const p = `${path}.panels[${i}]`
-          if (!isRecord(panel)) fail(p, 'an object')
-          return { text: str(panel.text, `${p}.text`), src: optional(panel.src, `${p}.src`, str) }
-        }),
-      }
-    case 'colophon':
-      return {
-        id,
-        type: kind,
-        edition: str(value.edition, `${path}.edition`),
-        press: str(value.press, `${path}.press`),
-        place: str(value.place, `${path}.place`),
-        thanks: str(value.thanks, `${path}.thanks`),
-      }
-    case 'blackout':
-      return {
-        id,
-        type: kind,
-        text: str(value.text, `${path}.text`),
-        hidden: assertNumberList(value.hidden, `${path}.hidden`),
-      }
-    case 'contents':
-      if (!Array.isArray(value.lines)) fail(`${path}.lines`, 'an array')
-      return {
-        id,
-        type: kind,
-        lines: value.lines.map((line, i) => {
-          const p = `${path}.lines[${i}]`
-          if (!isRecord(line)) fail(p, 'an object')
-          return { label: str(line.label, `${p}.label`) }
-        }),
-      }
-    case 'insert':
-      return {
-        id,
-        type: kind,
-        title: str(value.title, `${path}.title`),
-        text: str(value.text, `${path}.text`),
-      }
-    case 'reply':
-      return { id, type: kind, prompt: str(value.prompt, `${path}.prompt`) }
-  }
+  if (!BLOCK_TYPE_SET.has(type)) fail(`${path}.type`, 'a known widget')
+  return BLOCK_RECIPES[type as BlockType].validate(value, id, path)
 }
 
 export function assertBlocks(value: unknown): Block[] {
@@ -246,7 +38,7 @@ function extras(raw: Record<string, unknown>): Partial<Zine> {
   if ('passHash' in raw) next.passHash = str(raw.passHash, 'passHash')
   if ('tags' in raw) next.tags = assertStringList(raw.tags, 'tags')
   if ('finish' in raw) {
-    next.finish = oneOf(raw.finish, ['clean', 'riso', 'grain'] as const satisfies readonly FinishId[], 'finish')
+    next.finish = oneOf(raw.finish, FINISH_IDS, 'finish')
   }
   if ('series' in raw) next.series = str(raw.series, 'series')
   if ('issueNo' in raw) next.issueNo = num(raw.issueNo, 'issueNo')

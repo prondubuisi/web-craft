@@ -1,8 +1,11 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import Database from 'better-sqlite3'
-import type { Block, Comment, FinishId, Listing, ListingKind, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
+import type { Block, Comment, Listing, ListingKind, Notice, NoticeKind, VibeId, Zine } from '../src/lib/types.ts'
+import { editionFromRow } from '../src/lib/zineFields.ts'
 import { migrate } from './migrate.ts'
+
+export { parseJsonColumn } from '../src/lib/zineFields.ts'
 
 export type Db = Database.Database
 
@@ -99,32 +102,10 @@ export function rowToZine(row: ZineRow, opts?: { hideBlocks?: boolean; includeSe
     visibility: row.visibility === 'unlisted' ? 'unlisted' : 'public',
     hasPass: Boolean(row.pass_hash),
     shareKey: opts?.includeSecret ? (row.share_key ?? undefined) : undefined,
-    tags: (() => {
-      try {
-        return JSON.parse(row.tags_json || '[]') as string[]
-      } catch {
-        return []
-      }
-    })(),
-    finish: (['clean', 'riso', 'grain'].includes(row.finish) ? row.finish : 'clean') as FinishId,
+    ...editionFromRow(row),
     chainOpen: Boolean(row.chain_open),
     chainKey: opts?.includeSecret ? (row.chain_key ?? undefined) : undefined,
-    series: row.series || undefined,
-    issueNo: row.issue_no ?? undefined,
-    penName: row.pen_name || undefined,
     jamId: row.jam_id ?? undefined,
-    bSide: row.b_side || undefined,
-    editionSize: row.edition_size || undefined,
-    errata: row.errata || undefined,
-    dedication: row.dedication || undefined,
-    includes: (() => {
-      try {
-        return JSON.parse(row.includes_json || '[]') as { zineId: string; title: string; owner: string }[]
-      } catch {
-        return []
-      }
-    })(),
-    scatter: Boolean(row.scatter),
   }
 }
 

@@ -18,9 +18,8 @@ import type {
 import type { Block, VibeId, Zine } from '../../src/lib/types.ts'
 import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
 import { liveJam } from '../../src/lib/jam.ts'
-import { normalizeTags } from '../../src/lib/tags.ts'
-import { normalizeIssueNo, normalizeSeries } from '../../src/lib/zine.ts'
 import { assertBlocks } from '../../src/lib/shape.ts'
+import { EDITION_UPDATE_SQL, editionFromWrite, editionWriteParams } from '../../src/lib/zineFields.ts'
 import { verifyPassword } from '../auth.ts'
 import { dropIsLive, getZineRow, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { currentUser, VIBES } from '../http.ts'
@@ -205,35 +204,8 @@ export function registerZines(app: Hono, db: Db) {
       created_at: existing?.created_at ?? now,
       updated_at: now,
     })
-    const tags = normalizeTags(Array.isArray(body.tags) ? body.tags : [])
-    const finish = ['clean', 'riso', 'grain'].includes(String(body.finish ?? ''))
-      ? String(body.finish)
-      : (existing?.finish ?? 'clean')
-    const series = normalizeSeries(typeof body.series === 'string' ? body.series : existing?.series) ?? ''
-    const issueNo = normalizeIssueNo(body.issueNo ?? existing?.issue_no) ?? null
-    const penName = String(body.penName ?? existing?.pen_name ?? '').trim().slice(0, 48)
-    const bSide = String(body.bSide ?? existing?.b_side ?? '').trim().slice(0, 280)
-    const editionSize = Math.max(0, Math.min(999, Number(body.editionSize ?? existing?.edition_size ?? 0) || 0))
-    const errata = String(body.errata ?? existing?.errata ?? '').trim().slice(0, 200)
-    const includes = Array.isArray(body.includes) ? body.includes.slice(0, 12) : []
-    const dedication = String(body.dedication ?? existing?.dedication ?? '').trim().slice(0, 120)
-    const scatter = body.scatter ?? Boolean(existing?.scatter)
-    db.prepare(
-      'UPDATE zines SET tags_json = ?, finish = ?, series = ?, issue_no = ?, pen_name = ?, b_side = ?, edition_size = ?, errata = ?, includes_json = ?, dedication = ?, scatter = ? WHERE id = ?',
-    ).run(
-      JSON.stringify(tags),
-      finish,
-      series,
-      issueNo,
-      penName,
-      bSide,
-      editionSize,
-      errata,
-      JSON.stringify(includes),
-      dedication,
-      scatter ? 1 : 0,
-      id,
-    )
+    const edition = editionFromWrite(body, existing)
+    db.prepare(EDITION_UPDATE_SQL).run(...editionWriteParams(edition, id))
     const row = getZineRow(db, id)
     if (!row) return c.json({ error: 'missing issue' }, 500)
     const payload: ZineWriteResponse = { zine: rowToZine(row, { includeSecret: true }) }
