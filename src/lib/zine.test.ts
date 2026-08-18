@@ -13,6 +13,7 @@ import {
   isToolkitSeed,
   isSeededDemo,
   remixCreditPath,
+  REMIX_MISSING_HOP,
   sourceOfRemix,
   isVibeId,
   issuePath,
@@ -177,6 +178,7 @@ describe('profiles', () => {
     expect(sourceOfRemix([fork], fork)).toBeUndefined()
     expect(remixCreditPath(src)).toBe('/z/k')
     expect(remixCreditPath(zine({ id: 's', title: 'scatter floor', published: false }))).toBe('/edit/s')
+    expect(REMIX_MISSING_HOP).toEqual({ to: '/explore', go: 'try the stream' })
   })
 
   it('reads studio create mode from the query', () => {

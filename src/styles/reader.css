@@ -293,6 +293,13 @@ button.blackout-word.hid {
   box-shadow: 5px 6px 0 var(--ink);
   padding: 0.85rem 1rem;
   transform: rotate(-0.8deg);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 10px,
+    color-mix(in srgb, var(--ink) 12%, transparent) 10px,
+    color-mix(in srgb, var(--ink) 12%, transparent) 12px
+  );
 }
 .insert-block {
   background: var(--accent-3);

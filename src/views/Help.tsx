@@ -46,7 +46,7 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'sample',
-    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. Same scrap on the page plants those cuts on every widget that can hold them. The tray lists scraps when you filter a cut. Slash /city then page does the same. City ink plus a miles photo makes a sticker. The kit on the studio wall walks every widget once.',
+    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. Same scrap on the page plants those cuts on every widget that can hold them. The tray lists scraps when you filter a cut. Slash /city then page does the same. City ink plus a miles photo makes a sticker. Craft scraps — stapler, fold sheet, still wet — sit in the same library. The kit on the studio wall walks every widget once.',
     to: '/studio',
     go: 'Open the studio',
   },

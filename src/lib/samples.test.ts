@@ -60,6 +60,11 @@ describe('samples', () => {
     expect(SAMPLES.some((s) => s.label === 'cover toc' && s.attrs.includes('set'))).toBe(true)
     expect(SAMPLES.some((s) => s.label === 'corner pin' && s.attrs.includes('pin'))).toBe(true)
     expect(SAMPLES.some((s) => s.label === 'vowels out' && s.attrs.includes('holes'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'rooftop' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'confession' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'stapler' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'fold sheet' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'kitchen table' && s.attrs.includes('cite'))).toBe(true)
   })
 
   it('covers every cut except tape, which has no audio file', () => {
@@ -156,6 +161,8 @@ describe('samples', () => {
     if (heading?.type !== 'heading') throw new Error('expected heading')
     expect(heading.text).toBe('rooftop hours')
     expect(sticker?.type).toBe('sticker')
+    if (sticker?.type !== 'sticker') throw new Error('expected sticker')
+    expect(sticker.rotation).toBe(2.4)
     if (hero?.type !== 'hero') throw new Error('expected hero')
     expect(hero.src).toBe('/art/peni.jpg')
     expect(hero.density).toBe(0.55)

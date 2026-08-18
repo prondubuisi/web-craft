@@ -21,6 +21,11 @@ export const SAMPLES: Sample[] = [
   { label: 'heading picture', attrs: ['ink'], bag: { ink: 'a heading and a picture is enough' } },
   { label: 'print pass', attrs: ['ink'], bag: { ink: 'print it. pass it.' } },
   { label: 'hold the click', attrs: ['ink'], bag: { ink: 'hold for the click. no tape loaded.' } },
+  { label: 'rooftop', attrs: ['ink'], bag: { ink: 'this page is a rooftop. stay as long as you want.' } },
+  { label: 'soft chaos', attrs: ['ink'], bag: { ink: 'watercolor over chrome. do not dry.' } },
+  { label: 'kill-switch', attrs: ['ink'], bag: { ink: 'cute with a kill-switch.' } },
+  { label: 'wobble', attrs: ['ink'], bag: { ink: 'primary colors only. opinions optional.' } },
+  { label: 'confession', attrs: ['ink'], bag: { ink: 'it rained like a confession.' } },
   {
     label: 'nobody proofreads',
     attrs: ['ink', 'cite'],
@@ -73,6 +78,18 @@ export const SAMPLES: Sample[] = [
   { label: 'redact', attrs: ['holes'], bag: { holes: [1, 3, 7] } },
   { label: 'blank it', attrs: ['holes'], bag: { holes: [0, 2, 4, 6] } },
   { label: 'vowels out', attrs: ['holes'], bag: { holes: [1, 4, 6, 9] } },
+  { label: 'stapler', attrs: ['ink'], bag: { ink: 'bring a stapler. the corner store still has toner.' } },
+  { label: 'still wet', attrs: ['ink'], bag: { ink: 'do not dry. the toner is still wet.' } },
+  { label: 'fold sheet', attrs: ['ink'], bag: { ink: 'fold in half, then quarters. slit the fold.' } },
+  { label: 'kitchen table', attrs: ['cite'], bag: { cite: 'kitchen table riso' } },
+  {
+    label: 'cut glue leave',
+    attrs: ['set'],
+    bag: { items: ['cut', 'glue', 'staple', 'leave'] },
+  },
+  { label: 'hand tilt', attrs: ['cut'], bag: { tilt: 2.4 } },
+  { label: 'staple pin', attrs: ['pin'], bag: { x: 6, y: 8 } },
+  { label: 'tear here', attrs: ['holes'], bag: { holes: [0, 1, 2] } },
 ]
 
 export function samplesFor(type: BlockType): Sample[] {
@@ -140,7 +157,7 @@ export function linkSample(blocks: Block[], sample: Sample): Block[] {
 
 /**
  * First page for Make / New issue. Keeps their title, plants the vibe photo
- * plus the grain scrap on the hero so Open the page already looks like collage.
+ * plus the grain scrap on the hero, and a hand tilt on the sticker.
  */
 export function starterPage(title: string, vibe: VibeId): Block[] {
   const heading: Block = {
@@ -151,9 +168,10 @@ export function starterPage(title: string, vibe: VibeId): Block[] {
   }
   const photo = SAMPLES.find((sample) => sample.label === vibe) ?? SAMPLES.find((sample) => sample.label === 'collage')
   const grain = SAMPLES.find((sample) => sample.label === 'grain')
+  const tilt = SAMPLES.find((sample) => sample.label === 'hand tilt')
   const hero = applyBag(
     createBlock('hero', vibe),
     combineBags([photo?.bag ?? {}, grain?.bag ?? {}]),
   )
-  return [heading, hero, createBlock('sticker', vibe)]
+  return [heading, hero, applyBag(createBlock('sticker', vibe), tilt?.bag ?? {})]
 }

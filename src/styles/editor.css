@@ -334,6 +334,31 @@
   content: '— ';
 }
 
+[data-vibe='miles'] .glitch-block {
+  letter-spacing: 0.08em;
+}
+
+[data-vibe='gwen'] .quote-block {
+  transform: rotate(0.8deg);
+}
+
+[data-vibe='peni'] .sticker-block {
+  border-radius: 28px;
+  border-width: 3px;
+}
+
+[data-vibe='ham'] .sfx-block {
+  transform: rotate(-8deg);
+}
+
+[data-vibe='noir'] .quote-block {
+  background: var(--paper-2);
+}
+
+[data-vibe='noir'] .glitch-block {
+  animation-duration: 2.4s;
+}
+
 .poll-block {
   background: #fff;
   color: var(--ink);

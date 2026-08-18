@@ -4,6 +4,7 @@ import { BlockView } from '../components/Blocks'
 import { BottomSheet, ComicButton, VibePicks } from '../components/Chrome'
 import { DropModal } from '../components/DropModal'
 import { EditorMeta } from '../components/EditorMeta'
+import { RemixCredit } from '../components/RemixCredit'
 import { Inspector } from '../components/Inspector'
 import { Tray } from '../components/Tray'
 import { actionError } from '../lib/catch'
@@ -13,9 +14,9 @@ import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../l
 import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
 import { useHistory } from '../lib/useHistory'
 import { linkBag, matchSample, typeForSample } from '../lib/samples'
-import { applyBag, type AttrBag } from '../lib/widgetLang'
+import { applyBag, restylePageForVibe, type AttrBag } from '../lib/widgetLang'
 import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
-import { editPath, isSeededDemo, isToolkitSeed, issuePath, remixCreditPath, slugify, sourceOfRemix } from '../lib/zine'
+import { editPath, isSeededDemo, isToolkitSeed, issuePath, slugify, sourceOfRemix } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 type Sheet = 'tray' | 'inspect' | 'more' | null
@@ -79,6 +80,13 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   function update(next: Block[], record = true) {
     if (record) remember()
     setBlocks(zine.id, next)
+  }
+
+  function pickVibe(next: VibeId) {
+    if (next === zine.vibe) return
+    remember()
+    setBlocks(zine.id, restylePageForVibe(zine.blocks, zine.vibe, next))
+    patchZine(zine.id, { vibe: next })
   }
 
   function insertBlock(block: Block) {
@@ -370,10 +378,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         <div className="editor-actions desktop-only">
           <select
             value={zine.vibe}
-            onChange={(e) => {
-              remember()
-              patchZine(zine.id, { vibe: e.target.value as VibeId })
-            }}
+            onChange={(e) => pickVibe(e.target.value as VibeId)}
             aria-label="Vibe"
           >
             {(['miles', 'gwen', 'peni', 'ham', 'noir'] as VibeId[]).map((v) => (
@@ -416,14 +421,11 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       <EditorMeta zine={zine} zines={zines} patchZine={patchZine} />
       {zine.remixedFrom ? (
         <p className="serif no-print" style={{ margin: '0.45rem 0.9rem 0' }}>
-          {remixSource ? (
-            <>
-              remix of <Link to={remixCreditPath(remixSource, session?.name)}>{remixSource.title}</Link>
-              . drop when it feels like a page.
-            </>
-          ) : (
-            <>this is a remix. the original is not on this desk.</>
-          )}
+          <RemixCredit
+            source={remixSource}
+            handle={session?.name}
+            after=". drop when it feels like a page."
+          />
         </p>
       ) : isSeededDemo(zine) ? (
         <p className="serif no-print" style={{ margin: '0.45rem 0.9rem 0' }}>
@@ -586,10 +588,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               <label>Vibe</label>
               <VibePicks
                 value={zine.vibe}
-                onChange={(vibe) => {
-                  remember()
-                  patchZine(zine.id, { vibe })
-                }}
+                onChange={pickVibe}
               />
               <label>File</label>
               <ComicButton
@@ -647,10 +646,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           <label>Vibe</label>
           <VibePicks
             value={zine.vibe}
-            onChange={(vibe) => {
-              remember()
-              patchZine(zine.id, { vibe })
-            }}
+            onChange={pickVibe}
           />
           <label>Preview frame</label>
           {modes}

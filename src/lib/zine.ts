@@ -64,6 +64,9 @@ export function remixCreditPath(source: Zine, handle?: string | null): string {
   return issuePath(source)
 }
 
+/** When the parent is not on this desk — never guess /z/:id (unlisted 404s). */
+export const REMIX_MISSING_HOP = { to: '/explore', go: 'try the stream' } as const
+
 export function studioPath(opts?: { new?: boolean; vibe?: VibeId }): string {
   const q = new URLSearchParams()
   if (opts?.new) q.set('new', '1')

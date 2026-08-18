@@ -1,5 +1,5 @@
 import type { Block, BlockType, VibeId } from './types'
-import { artForVibe } from './vibes'
+import { artForVibe, VIBE_VOICE } from './vibes'
 import {
   assertNumberList,
   assertStringList,
@@ -50,9 +50,9 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     }),
   },
   sticker: {
-    create: () => ({
+    create: (vibe) => ({
       type: 'sticker',
-      text: 'this was made by a person, not a template.',
+      text: VIBE_VOICE[vibe].sticker,
       rotation: -2,
     }),
     harvest: (block) => ({ ink: block.text, photo: block.src, tilt: block.rotation, x: block.x, y: block.y }),
@@ -78,7 +78,7 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     create: (vibe) => ({
       type: 'hero',
       src: artForVibe(vibe),
-      caption: 'halftone density up. reality density down.',
+      caption: VIBE_VOICE[vibe].hero,
       density: 0.4,
       split: 6,
     }),
@@ -165,13 +165,13 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     }),
   },
   sfx: {
-    create: () => ({ type: 'sfx', word: 'THWIP!' }),
+    create: (vibe) => ({ type: 'sfx', word: VIBE_VOICE[vibe].sfx }),
     harvest: (block) => ({ ink: block.word }),
     apply: (block, bag) => ({ ...block, word: (bag.ink?.trim() || block.word).slice(0, 32) }),
     validate: (raw, id, path) => ({ id, type: 'sfx', word: str(raw.word, `${path}.word`) }),
   },
   glitch: {
-    create: () => ({ type: 'glitch', text: 'DIMENSIONAL TEAR' }),
+    create: (vibe) => ({ type: 'glitch', text: VIBE_VOICE[vibe].glitch }),
     harvest: (block) => ({ ink: block.text }),
     apply: (block, bag) => ({ ...block, text: bag.ink?.trim() || block.text }),
     validate: (raw, id, path) => ({ id, type: 'glitch', text: str(raw.text, `${path}.text`) }),
@@ -209,10 +209,10 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     },
   },
   quote: {
-    create: () => ({
+    create: (vibe) => ({
       type: 'quote',
-      text: 'if it lines up perfectly, you printed it wrong.',
-      cite: 'the margin',
+      text: VIBE_VOICE[vibe].quote,
+      cite: VIBE_VOICE[vibe].cite,
     }),
     harvest: (block) => ({ ink: block.text, cite: block.cite }),
     apply: (block, bag) => ({
@@ -343,9 +343,9 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     create: () => ({
       type: 'contents',
       lines: [
-        { label: 'cover — enter' },
-        { label: 'page two — tear' },
-        { label: 'back — leave a note' },
+        { label: 'cover — fold' },
+        { label: 'page — staple' },
+        { label: 'back — pass' },
       ],
     }),
     harvest: (block) => ({ items: block.lines.map((line) => line.label) }),
@@ -386,7 +386,7 @@ export const BLOCK_RECIPES: { [K in BlockType]: Recipe<Extract<Block, { type: K 
     }),
   },
   reply: {
-    create: () => ({ type: 'reply', prompt: 'write the maker. tear this out.' }),
+    create: () => ({ type: 'reply', prompt: 'tear this out. mail it back to the desk.' }),
     harvest: (block) => ({ ink: block.prompt }),
     apply: (block, bag) => ({ ...block, prompt: bag.ink?.trim() || block.prompt }),
     validate: (raw, id, path) => ({ id, type: 'reply', prompt: str(raw.prompt, `${path}.prompt`) }),

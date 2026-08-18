@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createBlock, WIDGETS } from './widgets'
-import { applyBag, combineBags, harvest, retarget, widgetsWithAttr } from './widgetLang'
+import { applyBag, combineBags, harvest, restyleForVibe, restylePageForVibe, retarget, widgetsWithAttr } from './widgetLang'
 
 describe('widgetLang', () => {
   it('retargeting to the same type is a no-op', () => {
@@ -64,6 +64,25 @@ describe('widgetLang', () => {
     expect(widgetsWithAttr('holes').map((w) => w.type)).toEqual(['blackout'])
     expect(widgetsWithAttr('tape').map((w) => w.type)).toEqual(['audio'])
     expect(widgetsWithAttr('ink').length).toBeGreaterThan(8)
+  })
+
+  it('restyles default art and ink when the vibe changes, and leaves edits', () => {
+    const hero = createBlock('hero', 'miles')
+    const next = restyleForVibe(hero, 'miles', 'peni')
+    if (next.type !== 'hero') throw new Error('expected hero')
+    expect(next.src).toMatch(/peni/)
+    expect(next.caption).toMatch(/kill-switch/)
+    const edited = restyleForVibe({ ...hero, caption: 'keep this' }, 'miles', 'noir')
+    if (edited.type !== 'hero') throw new Error('expected hero')
+    expect(edited.caption).toBe('keep this')
+    expect(edited.src).toMatch(/noir/)
+    const sticker = createBlock('sticker', 'gwen')
+    if (sticker.type !== 'sticker') throw new Error('expected sticker')
+    sticker.src = '/art/collage-hero.jpg'
+    const kept = restyleForVibe(sticker, 'gwen', 'ham')
+    if (kept.type !== 'sticker') throw new Error('expected sticker')
+    expect(kept.src).toBe('/art/collage-hero.jpg')
+    expect(restylePageForVibe([hero], 'miles', 'miles')[0]).toBe(hero)
   })
 
   it('retargets every widget to every other widget without throwing', () => {

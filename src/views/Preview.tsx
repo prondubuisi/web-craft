@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
 import { ComicButton, Halftone, Topbar } from '../components/Chrome'
+import { RemixCredit } from '../components/RemixCredit'
 import { FoldSheet } from '../components/FoldSheet'
 import { FlipReader } from '../components/FlipReader'
 import { Comments } from '../components/Comments'
@@ -24,7 +25,6 @@ import {
   isMine,
   issuePath,
   profilePath,
-  remixCreditPath,
   sourceOfRemix,
   runLabel,
   seriesLabel,
@@ -243,14 +243,7 @@ export function Preview() {
               </div>
               {zine.remixedFrom ? (
                 <p className="serif" style={{ margin: '-0.3rem 0 0.9rem' }}>
-                  {remixSource ? (
-                    <>
-                      remix of{' '}
-                      <Link to={remixCreditPath(remixSource, session?.name)}>{remixSource.title}</Link>
-                    </>
-                  ) : (
-                    <>this is a remix. the original is not on this desk.</>
-                  )}
+                  <RemixCredit source={remixSource} handle={session?.name} />
                 </p>
               ) : null}
               {chainInvite && social.chainPrev ? (

@@ -436,6 +436,20 @@ test.describe('B. maker — studio and editor', () => {
     ).toBeVisible()
   })
 
+  test('10q changing vibe restyles default art and leaves edits', async ({ page }) => {
+    await openNewIssue(page, 'vibe hop')
+    await page.getByLabel('Vibe').selectOption('miles')
+    await expect(page.locator('.hero-shot img')).toHaveAttribute('src', /miles/)
+    await page.getByLabel('Vibe').selectOption('peni')
+    await expect(page.locator('.hero-shot img')).toHaveAttribute('src', /peni/)
+    await expect(page.locator('.sticker-block')).toContainText(/kill-switch|pass this page/i)
+    await page.locator('.block').filter({ has: page.locator('.heading-xl') }).first().click()
+    await page.getByLabel('ink samples').getByRole('button', { name: 'city', exact: true }).click()
+    await page.getByLabel('Vibe').selectOption('noir')
+    await expect(page.locator('.heading-xl')).toContainText(/the city prints itself wrong on purpose/i)
+    await expect(page.locator('.hero-shot img')).toHaveAttribute('src', /noir/)
+  })
+
   test('11 editor meta, finish, scatter, compilation', async ({ page }) => {
     await openNewIssue(page, 'meta hop')
     await page.getByLabel('Tags').fill('diary, protest')

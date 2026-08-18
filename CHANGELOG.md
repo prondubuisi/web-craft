@@ -30,6 +30,12 @@ More scraps in the existing library: leftover ink (drop when, heading picture, p
 
 `docs/sg9.md` §3: `parseJsonColumn` is the one helper for tags and includes on a zine row. A bad page JSON still fails loud. §2: `zineFields.ts` is the edition list for row mapping and PUT extras. §1: `blockRecipes.ts` is the one table for create, harvest, apply, and validate.
 
+Changing the page vibe restyles default art and default ink that still match the old vibe. New stickers, heroes, sfx, glitch, and quotes speak `VIBE_VOICE`. Five vibe-ink scraps. No sixth vibe. No new block type.
+
+Craft scraps — stapler, still wet, fold sheet, kitchen table, cut glue leave, hand tilt, staple pin, tear here. Bind defaults say fold / staple / pass. Tear-out reads like perforated paper.
+
+Make / New issue tilts the starter sticker with the hand-tilt scrap. A remix whose original is not on this desk hops to the stream instead of a guessed reader link. Editor and reader share that credit line.
+
 ## 1.6.0 — 2026-08-18
 
 `src/lib/contract.ts` now names request and response types for every current `/api` route. Client `api.ts` methods `satisfies` those bodies; every `server/routes` module (and health / publish) returns a typed payload. Upsert no longer answers with a null zine if the row is missing after write.
