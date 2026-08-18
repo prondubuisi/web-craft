@@ -11,7 +11,7 @@ import {
 } from '../lib/social'
 import { loadState, saveState } from '../lib/storage'
 import type { Notice, VibeId, Zine } from '../lib/types'
-import { createBlock } from '../lib/widgets'
+import { starterPage } from '../lib/samples'
 import { demoJams, jamForPublish } from '../lib/jam'
 import { catchBackground } from '../lib/catch'
 import { fingerprint, isMine } from '../lib/zine'
@@ -106,11 +106,7 @@ export function ZineProvider({ children }: { children: ReactNode }) {
         id: uid(),
         title,
         vibe,
-        blocks: [
-          { id: uid(), type: 'heading', text: title, size: 'xl' },
-          createBlock('hero', vibe),
-          createBlock('sticker', vibe),
-        ],
+        blocks: starterPage(title, vibe),
         owner: handle ? `@${handle}` : 'you',
         createdAt: Date.now(),
         updatedAt: Date.now(),

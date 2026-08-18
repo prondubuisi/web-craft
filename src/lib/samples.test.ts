@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { SAMPLES, matchSample, samplesFor, typeForSample } from './samples'
+import {
+  SAMPLES,
+  canHoldBag,
+  linkSample,
+  matchSample,
+  samplesFor,
+  samplesForAttr,
+  starterPage,
+  typeForSample,
+} from './samples'
 import { WIDGETS, createBlock } from './widgets'
 import { applyBag, combineBags } from './widgetLang'
 
@@ -39,6 +48,12 @@ describe('samples', () => {
     expect(next.src).toBe(photo!.bag.photo)
   })
 
+  it('lists scraps for a tray cut', () => {
+    expect(samplesForAttr('ink').every((s) => s.attrs.includes('ink'))).toBe(true)
+    expect(samplesForAttr('photo').some((s) => s.label === 'collage')).toBe(true)
+    expect(samplesForAttr('photo').some((s) => s.label === 'city')).toBe(false)
+  })
+
   it('slash language finds scraps by label and cut', () => {
     expect(matchSample('city').some((s) => s.label === 'city')).toBe(true)
     expect(matchSample('photo').every((s) => s.attrs.includes('photo'))).toBe(true)
@@ -68,6 +83,50 @@ describe('samples', () => {
       expect(sample.bag.split).toBeGreaterThan(0)
       expect(sample.bag.split).toBeLessThanOrEqual(14)
     }
+  })
+
+  it('links city ink onto every starter widget that holds ink', () => {
+    const city = SAMPLES.find((s) => s.label === 'city')
+    expect(city).toBeTruthy()
+    const next = linkSample(starterPage('link hop', 'miles'), city!)
+    const heading = next.find((b) => b.type === 'heading')
+    const hero = next.find((b) => b.type === 'hero')
+    const sticker = next.find((b) => b.type === 'sticker')
+    if (heading?.type !== 'heading' || hero?.type !== 'hero' || sticker?.type !== 'sticker') {
+      throw new Error('expected starter trio')
+    }
+    expect(heading.text).toBe(city!.bag.ink)
+    expect(hero.caption).toBe(city!.bag.ink)
+    expect(sticker.text).toBe(city!.bag.ink)
+    expect(canHoldBag('heading', city!.bag)).toBe(true)
+    expect(canHoldBag('divider', city!.bag)).toBe(false)
+  })
+
+  it('links a photo scrap onto photo widgets and leaves the heading', () => {
+    const collage = SAMPLES.find((s) => s.label === 'collage')
+    expect(collage).toBeTruthy()
+    const next = linkSample(starterPage('photo hop', 'gwen'), collage!)
+    const heading = next.find((b) => b.type === 'heading')
+    const hero = next.find((b) => b.type === 'hero')
+    const sticker = next.find((b) => b.type === 'sticker')
+    if (heading?.type !== 'heading' || hero?.type !== 'hero' || sticker?.type !== 'sticker') {
+      throw new Error('expected starter trio')
+    }
+    expect(heading.text).toBe('photo hop')
+    expect(hero.src).toBe(collage!.bag.photo)
+    expect(sticker.src).toBe(collage!.bag.photo)
+  })
+
+  it('plants the vibe photo and grain scrap on a new issue hero', () => {
+    const [heading, hero, sticker] = starterPage('rooftop hours', 'peni')
+    expect(heading?.type).toBe('heading')
+    if (heading?.type !== 'heading') throw new Error('expected heading')
+    expect(heading.text).toBe('rooftop hours')
+    expect(sticker?.type).toBe('sticker')
+    if (hero?.type !== 'hero') throw new Error('expected hero')
+    expect(hero.src).toBe('/art/peni.jpg')
+    expect(hero.density).toBe(0.55)
+    expect(hero.split).toBe(10)
   })
 
   it('combines a photo with a pixelated cut scrap onto one hero', () => {

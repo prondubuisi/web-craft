@@ -5,14 +5,14 @@ import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../compone
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
-import { rememberVibe, studioPath } from '../lib/zine'
+import { editPath, rememberVibe, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 import type { VibeId } from '../lib/types'
 
 export function Landing() {
   const [vibe, setVibe] = useState<VibeId>('miles')
   const [primer, setPrimer] = useState(() => !primerSeen())
-  const { zines } = useZines()
+  const { zines, remixZine } = useZines()
   const navigate = useNavigate()
   const current = VIBES.find((v) => v.id === vibe)!
   const sample = zines.find((z) => z.published && z.title.toLowerCase().includes('after hours')) ?? zines.find((z) => z.published)
@@ -129,7 +129,8 @@ export function Landing() {
         <section className="section">
           <h2 className="display">One finished issue</h2>
           <p className="serif" style={{ marginBottom: '1rem', maxWidth: 560 }}>
-            {sample.title} — already in your studio. Read it, remix it, or start a blank page.
+            {sample.title} — already in your studio. Read it or remix it here. A handle is only for
+            letters, the board, and a drop that should outlive this browser.
           </p>
           <article className="landing-sample">
             {sample.blocks.slice(0, 4).map((block) => (
@@ -142,6 +143,16 @@ export function Landing() {
             <Link to={`/z/${sample.id}`} className="comic-btn cyan">
               Read {sample.title}
             </Link>
+            <ComicButton
+              className="pink"
+              onClick={() => {
+                void remixZine(sample.id, sample).then((id) => {
+                  if (id) navigate(editPath(id))
+                })
+              }}
+            >
+              Remix {sample.title}
+            </ComicButton>
           </div>
         </section>
       ) : null}

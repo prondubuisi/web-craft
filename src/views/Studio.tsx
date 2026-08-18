@@ -159,6 +159,9 @@ export function Studio() {
 
         <div className="studio-layout">
           <div>
+            {mine.length === 0 ? (
+              <p className="serif">empty wall. + new issue, or pull one in from the stream.</p>
+            ) : null}
             <div className="zine-wall">
               <button className="zine-card new-issue" onClick={() => setOpen(true)}>
                 + new issue
@@ -226,6 +229,9 @@ export function Studio() {
             <h2 className="display" style={{ fontSize: '2.2rem', marginBottom: '0.7rem' }}>
               community stream
             </h2>
+            {stream.length === 0 ? (
+              <p className="serif">quiet stream. nobody near you has dropped yet.</p>
+            ) : null}
             <div className="stream">
               {stream.map((z) => (
                 <article key={z.id} className="stream-item">

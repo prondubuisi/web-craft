@@ -1,6 +1,7 @@
-import type { BlockType } from './types'
-import type { AttrBag } from './widgetLang'
-import { WIDGETS, widgetByType, type AttrId } from './widgets'
+import { uid } from './id'
+import type { Block, BlockType, VibeId } from './types'
+import { applyBag, combineBags, type AttrBag } from './widgetLang'
+import { WIDGETS, createBlock, widgetByType, type AttrId } from './widgets'
 
 export type Sample = { label: string; attrs: AttrId[]; bag: AttrBag }
 
@@ -51,6 +52,10 @@ export function samplesFor(type: BlockType): Sample[] {
   return SAMPLES.filter((sample) => sample.attrs.some((attr) => recipe.attrs.includes(attr)))
 }
 
+export function samplesForAttr(attr: AttrId): Sample[] {
+  return SAMPLES.filter((sample) => sample.attrs.includes(attr))
+}
+
 export function matchSample(query: string): Sample[] {
   const q = query.replace(/^\//, '').toLowerCase()
   if (!q) return SAMPLES
@@ -62,4 +67,65 @@ export function matchSample(query: string): Sample[] {
 /** First recipe that can take every cut on the scrap. */
 export function typeForSample(sample: Sample): BlockType {
   return WIDGETS.find((widget) => sample.attrs.every((attr) => widget.attrs.includes(attr)))?.type ?? 'sticker'
+}
+
+/** Cuts on this bag that a widget recipe can actually hold. */
+export function bagForType(type: BlockType, bag: AttrBag): AttrBag {
+  const attrs = widgetByType(type).attrs
+  const next: AttrBag = {}
+  if (attrs.includes('ink') && bag.ink) next.ink = bag.ink
+  if (attrs.includes('cite') && bag.cite) next.cite = bag.cite
+  if (attrs.includes('photo') && bag.photo) next.photo = bag.photo
+  if (attrs.includes('tape') && bag.tape) next.tape = bag.tape
+  if (attrs.includes('set') && bag.items) next.items = bag.items
+  if (attrs.includes('holes') && bag.holes) next.holes = bag.holes
+  if (attrs.includes('pin')) {
+    if (bag.x !== undefined) next.x = bag.x
+    if (bag.y !== undefined) next.y = bag.y
+  }
+  if (attrs.includes('cut')) {
+    if (bag.size) next.size = bag.size
+    if (bag.tilt !== undefined) next.tilt = bag.tilt
+    if (bag.density !== undefined) next.density = bag.density
+    if (bag.split !== undefined) next.split = bag.split
+    if (bag.style) next.style = bag.style
+    if (bag.layout) next.layout = bag.layout
+  }
+  return next
+}
+
+export function canHoldBag(type: BlockType, bag: AttrBag): boolean {
+  return Object.keys(bagForType(type, bag)).length > 0
+}
+
+/** Plant a scrap on every page widget that shares a cut — no new block type. */
+export function linkBag(blocks: Block[], bag: AttrBag): Block[] {
+  return blocks.map((block) => {
+    const slim = bagForType(block.type, bag)
+    return Object.keys(slim).length ? applyBag(block, slim) : block
+  })
+}
+
+export function linkSample(blocks: Block[], sample: Sample): Block[] {
+  return linkBag(blocks, sample.bag)
+}
+
+/**
+ * First page for Make / New issue. Keeps their title, plants the vibe photo
+ * plus the grain scrap on the hero so Open the page already looks like collage.
+ */
+export function starterPage(title: string, vibe: VibeId): Block[] {
+  const heading: Block = {
+    id: uid(),
+    type: 'heading',
+    text: title.trim() || 'untitled issue',
+    size: 'xl',
+  }
+  const photo = SAMPLES.find((sample) => sample.label === vibe) ?? SAMPLES.find((sample) => sample.label === 'collage')
+  const grain = SAMPLES.find((sample) => sample.label === 'grain')
+  const hero = applyBag(
+    createBlock('hero', vibe),
+    combineBags([photo?.bag ?? {}, grain?.bag ?? {}]),
+  )
+  return [heading, hero, createBlock('sticker', vibe)]
 }

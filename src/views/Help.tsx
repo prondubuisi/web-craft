@@ -16,7 +16,7 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'drop',
-    body: 'Publish. Now, in a minute, or as a time capsule years out. A sealed drop stays folded until the clock hits.',
+    body: 'Publish. A heading and a picture is enough. Now, in a minute, or as a time capsule years out. After drop, the snapshot is the pass. A sealed drop stays folded until the clock hits.',
     to: '/studio',
     go: 'Open the studio',
   },
@@ -44,7 +44,7 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'sample',
-    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. City ink plus a miles photo makes a sticker.',
+    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. Same scrap on the page plants those cuts on every widget that can hold them. The tray lists scraps when you filter a cut. Slash /city then page does the same. City ink plus a miles photo makes a sticker.',
     to: '/studio',
     go: 'Open the studio',
   },
@@ -56,7 +56,7 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'remix',
-    body: 'Fork someone else’s issue and make it yours. Credit stays on the original.',
+    body: 'Fork someone else’s issue and make it yours. Credit stays on the original. The cover remixes after hours without a handle.',
     to: '/explore',
     go: 'The stream',
   },
