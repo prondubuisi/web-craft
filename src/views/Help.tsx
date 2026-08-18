@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { SceneLinks, Topbar } from '../components/Chrome'
+import { editPath, issueByTitle } from '../lib/zine'
+import { useZines } from '../store/useZines'
 
 const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   {
@@ -44,15 +46,15 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'sample',
-    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. Same scrap on the page plants those cuts on every widget that can hold them. The tray lists scraps when you filter a cut. Slash /city then page does the same. City ink plus a miles photo makes a sticker.',
+    body: 'A scrap of ink, photo, set, or another cut. Pick more than one in the inspector — they combine. Same scrap on the page plants those cuts on every widget that can hold them. The tray lists scraps when you filter a cut. Slash /city then page does the same. City ink plus a miles photo makes a sticker. The kit on the studio wall walks every widget once.',
     to: '/studio',
-    go: 'Open the studio',
+    go: 'Open the kit',
   },
   {
     term: 'scatter',
-    body: 'An optional page layout. Stickers and heroes sit free on the spread instead of in a stack. Drag the handle to pin them. Linear blocks stay the default.',
+    body: 'An optional page layout. Stickers and heroes sit free on the spread instead of in a stack. Drag the handle to pin them. Linear blocks stay the default. Scatter floor on the studio wall is a pinned draft.',
     to: '/studio',
-    go: 'Open the studio',
+    go: 'Open scatter floor',
   },
   {
     term: 'remix',
@@ -141,6 +143,14 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
 ]
 
 export function Help() {
+  const { zines } = useZines()
+  const kit = issueByTitle(zines, 'the kit')
+  const floor = issueByTitle(zines, 'scatter floor')
+  const entries = ENTRIES.map((entry) => {
+    if (entry.term === 'sample' && kit) return { ...entry, to: editPath(kit.id), go: 'Open the kit' }
+    if (entry.term === 'scatter' && floor) return { ...entry, to: editPath(floor.id), go: 'Open scatter floor' }
+    return entry
+  })
   return (
     <div data-vibe="miles">
       <Topbar />
@@ -152,7 +162,7 @@ export function Help() {
           explain itself. Nothing here is for sale.
         </p>
         <dl className="help-list">
-          {ENTRIES.map((entry) => (
+          {entries.map((entry) => (
             <div key={entry.term} className="help-entry comic-cell">
               <dt className="hand">{entry.term}</dt>
               <dd className="serif">

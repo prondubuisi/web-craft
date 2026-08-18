@@ -15,6 +15,8 @@ export const SAMPLES: Sample[] = [
   { label: 'diary', attrs: ['ink'], bag: { ink: 'a diary nobody proofread' } },
   { label: 'skrrt', attrs: ['ink'], bag: { ink: 'SKRRT!' } },
   { label: 'signal lost', attrs: ['ink'], bag: { ink: 'SIGNAL LOST' } },
+  { label: 'gutter notes', attrs: ['ink'], bag: { ink: 'the gutter still takes notes' } },
+  { label: 'pass this', attrs: ['ink'], bag: { ink: 'pass this page to someone who is not here yet' } },
   {
     label: 'nobody proofreads',
     attrs: ['ink', 'cite'],
@@ -35,6 +37,7 @@ export const SAMPLES: Sample[] = [
   },
   { label: 'xerox', attrs: ['cite'], bag: { cite: 'the xerox machine' } },
   { label: 'gutter press', attrs: ['cite'], bag: { cite: 'gutter press' } },
+  { label: 'corner store', attrs: ['cite'], bag: { cite: 'the corner store' } },
   { label: 'xl', attrs: ['cut'], bag: { size: 'xl' } },
   { label: 'tilt', attrs: ['cut'], bag: { tilt: -3.2 } },
   { label: 'grain', attrs: ['cut'], bag: { density: 0.55, split: 10 } },

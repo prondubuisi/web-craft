@@ -204,11 +204,11 @@ export function Explore() {
           <p className="serif">
             {lane === 'following' && !session ? (
               <>
-                Watching is a signed-in pile. <Link to="/studio">Claim studio</Link> or stay in{' '}
+                Watching needs a handle. Stay in{' '}
                 <button type="button" className="owner-link" onClick={() => setLane('all')}>
                   the whole stream
                 </button>
-                .
+                , or <Link to="/">remix after hours</Link>. Claim a studio when you want a watch pile.
               </>
             ) : lane === 'following' ? (
               <>

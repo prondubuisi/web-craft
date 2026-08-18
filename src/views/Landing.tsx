@@ -5,7 +5,7 @@ import { ComicButton, Halftone, LocalNote, SceneLinks, Topbar } from '../compone
 import { assetUrl } from '../lib/paths'
 import { dismissPrimer, primerSeen } from '../lib/primer'
 import { VIBES } from '../lib/vibes'
-import { editPath, rememberVibe, studioPath } from '../lib/zine'
+import { editPath, issueByTitle, rememberVibe, studioPath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 import type { VibeId } from '../lib/types'
 
@@ -16,6 +16,7 @@ export function Landing() {
   const navigate = useNavigate()
   const current = VIBES.find((v) => v.id === vibe)!
   const sample = zines.find((z) => z.published && z.title.toLowerCase().includes('after hours')) ?? zines.find((z) => z.published)
+  const kit = issueByTitle(zines, 'the kit')
 
   function start(withVibe: VibeId) {
     rememberVibe(withVibe)
@@ -153,6 +154,9 @@ export function Landing() {
             >
               Remix {sample.title}
             </ComicButton>
+            <Link to={kit ? editPath(kit.id) : '/studio'} className="comic-btn ghost">
+              Open the kit
+            </Link>
           </div>
         </section>
       ) : null}

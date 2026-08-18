@@ -9,6 +9,7 @@ import {
   isMine,
   isPublicDrop,
   editPath,
+  issueByTitle,
   isVibeId,
   issuePath,
   readStudioCreate,
@@ -142,6 +143,12 @@ describe('profiles', () => {
     expect(studioPath({ new: true, vibe: 'peni' })).toBe('/studio?new=1&vibe=peni')
     expect(studioPath({ vibe: 'peni' })).toBe('/studio?vibe=peni')
     expect(editPath('abc')).toBe('/edit/abc')
+  })
+
+  it('finds a demo issue by title', () => {
+    const kit = zine({ id: 'k', title: 'the kit' })
+    expect(issueByTitle([kit, zine({ id: 'a', title: 'after hours / bushwick' })], 'the kit')?.id).toBe('k')
+    expect(issueByTitle([kit], 'scatter floor')).toBeUndefined()
   })
 
   it('reads studio create mode from the query', () => {

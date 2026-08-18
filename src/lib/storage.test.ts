@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { STORAGE_KEY, loadState, normalizeState, resetState, saveState } from './storage'
+import { STORAGE_KEY, TOOLKIT_OFFER_KEY, loadState, normalizeState, resetState, saveState } from './storage'
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>()
@@ -109,6 +109,19 @@ describe('localStorage persistence', () => {
     const fresh = resetState()
     expect(fresh.profile.name).toBe('you')
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  it('offers the kit once on an older saved studio', () => {
+    const stale = loadState()
+    stale.zines = stale.zines.filter((zine) => zine.title !== 'the kit' && zine.title !== 'scatter floor')
+    saveState(stale)
+    localStorage.removeItem(TOOLKIT_OFFER_KEY)
+    const offered = loadState()
+    expect(offered.zines.some((zine) => zine.title === 'the kit')).toBe(true)
+    offered.zines = offered.zines.filter((zine) => zine.title !== 'the kit')
+    saveState(offered)
+    const again = loadState()
+    expect(again.zines.some((zine) => zine.title === 'the kit')).toBe(false)
   })
 
   it('reseeds when stored JSON is corrupt', () => {

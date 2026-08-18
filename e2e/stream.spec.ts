@@ -73,7 +73,7 @@ test.describe('D. stream, jam, archive', () => {
   test('26 lanes: watching empty, jam, archive', async ({ page }) => {
     await page.goto('/explore')
     await clickText(page, 'watching')
-    await expect(page.locator('main')).toContainText(/Nothing in this lane yet|watching/i)
+    await expect(page.locator('main')).toContainText(/remix after hours|watching/i)
     await clickText(page, 'jam')
     await expect(page.locator('main')).toContainText(/sunday market|toner week/i)
     await clickText(page, 'archive')

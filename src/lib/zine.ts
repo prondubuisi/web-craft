@@ -31,6 +31,12 @@ export function editPath(id: string): string {
   return `/edit/${encodeURIComponent(id)}`
 }
 
+export function issueByTitle(zines: Zine[], title: string): Zine | undefined {
+  const q = title.trim().toLowerCase()
+  if (!q) return undefined
+  return zines.find((zine) => zine.title.toLowerCase() === q) ?? zines.find((zine) => zine.title.toLowerCase().includes(q))
+}
+
 export function studioPath(opts?: { new?: boolean; vibe?: VibeId }): string {
   const q = new URLSearchParams()
   if (opts?.new) q.set('new', '1')

@@ -145,7 +145,7 @@ export function Studio() {
                 Sign out
               </ComicButton>
             ) : (
-              <ComicButton className="cyan" disabled={!apiReady || !online} onClick={() => setAuthOpen(true)}>
+              <ComicButton className="ghost" disabled={!apiReady || !online} onClick={() => setAuthOpen(true)}>
                 {!apiReady ? 'Checking API' : online ? 'Claim studio' : 'API offline'}
               </ComicButton>
             )}

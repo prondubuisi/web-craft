@@ -14,6 +14,10 @@ Slash and the tray now share that link. A sample hit has a page chip. Filter the
 
 `docs/sg7.md` shipped: empty studio wall and quiet community stream get a line; stream cards tint on hover; modals rise and sheets slide up, carved out of reduced-motion.
 
+Claim studio is ghost on the desk; New issue stays the loud button. An empty watching lane hops to the whole stream or remix after hours before asking for a handle. Three more scraps — gutter notes, pass this, corner store — land in the existing sample library.
+
+Reset demo now includes two studio toolkit issues: **the kit** walks all 17 widgets (samples, cuts, bind lane, a compilation slip of after hours) and **scatter floor** is an unpublished ham page with pinned scraps. Cover after hours is unchanged. An older saved studio is offered those two issues once, without wiping the desk. Cover and Help **Open the kit** open the issue itself. Help **Open scatter floor** opens the pinned draft.
+
 ## 1.6.0 — 2026-08-18
 
 `src/lib/contract.ts` now names request and response types for every current `/api` route. Client `api.ts` methods `satisfies` those bodies; every `server/routes` module (and health / publish) returns a typed payload. Upsert no longer answers with a null zine if the row is missing after write.

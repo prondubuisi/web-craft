@@ -101,6 +101,10 @@ test.describe('A. first visit / readable chrome', () => {
     await clickIncludes(page, 'Remix after hours')
     await expect(page.locator('.title-input')).toHaveValue(/after hours/i)
     await expect(page.locator('.title-input')).toHaveValue(/remix/i)
+    await page.goto('/')
+    await clickIncludes(page, 'Open the kit')
+    await expect(page).toHaveURL(/\/edit\//)
+    await expect(page.locator('.title-input')).toHaveValue(/the kit/i)
   })
 
   test('5 help glossary lists every term and routes out', async ({ page }) => {
@@ -129,6 +133,8 @@ test.describe('A. first visit / readable chrome', () => {
       { go: 'Open letters', url: /\/mail/ },
       { go: 'Your bag lives in studio', url: /\/studio/ },
       { go: 'Claim in the studio', url: /\/studio/ },
+      { go: 'Open the kit', url: /\/edit\// },
+      { go: 'Open scatter floor', url: /\/edit\// },
     ]
     for (const hop of hops) {
       await page.goto('/help')

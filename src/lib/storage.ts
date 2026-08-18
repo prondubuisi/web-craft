@@ -1,7 +1,8 @@
 import type { AppState } from './types'
-import { createSeed } from './seed'
+import { createSeed, ensureToolkitSeeds } from './seed'
 
 export const STORAGE_KEY = 'zineverse.v1'
+export const TOOLKIT_OFFER_KEY = 'zineverse.toolkit.v1'
 
 export function normalizeState(parsed: unknown): AppState | null {
   if (!parsed || typeof parsed !== 'object') return null
@@ -24,11 +25,28 @@ export function normalizeState(parsed: unknown): AppState | null {
   }
 }
 
+function offerToolkit(state: AppState): AppState {
+  try {
+    if (localStorage.getItem(TOOLKIT_OFFER_KEY)) return state
+    localStorage.setItem(TOOLKIT_OFFER_KEY, '1')
+  } catch {
+    return state
+  }
+  return ensureToolkitSeeds(state)
+}
+
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return createSeed()
-    return normalizeState(JSON.parse(raw)) ?? createSeed()
+    if (!raw) {
+      try {
+        localStorage.setItem(TOOLKIT_OFFER_KEY, '1')
+      } catch {
+        /* private mode */
+      }
+      return createSeed()
+    }
+    return offerToolkit(normalizeState(JSON.parse(raw)) ?? createSeed())
   } catch {
     return createSeed()
   }

@@ -53,9 +53,20 @@ export function computeBadges(
   return badges
 }
 
+const TOOLKIT_TITLES = ['the kit', 'scatter floor']
+
+/** Append missing studio-kit demos. Does not touch issues the maker already has. */
+export function ensureToolkitSeeds(state: AppState): AppState {
+  const have = new Set(state.zines.map((zine) => zine.title.toLowerCase()))
+  const extras = createSeed().zines.filter(
+    (zine) => zine.owner === 'you' && TOOLKIT_TITLES.includes(zine.title.toLowerCase()) && !have.has(zine.title.toLowerCase()),
+  )
+  if (!extras.length) return state
+  return { ...state, zines: [...extras, ...state.zines] }
+}
+
 export function createSeed(): AppState {
-  const mine: Zine[] = [
-    zine({
+  const afterHours = zine({
       ageHours: 20,
       title: 'after hours / bushwick',
       vibe: 'miles',
@@ -102,8 +113,8 @@ export function createSeed(): AppState {
         { id: uid(), type: 'divider', style: 'speed' },
         { id: uid(), type: 'glitch', text: 'YOU ARE HERE' },
       ],
-    }),
-    zine({
+    })
+  const ghostNotes = zine({
       ageHours: 6,
       title: 'ghost notes',
       vibe: 'gwen',
@@ -132,8 +143,167 @@ export function createSeed(): AppState {
         },
         { id: uid(), type: 'divider', style: 'scribble' },
       ],
-    }),
-  ]
+    })
+
+  const theKit = zine({
+    ageHours: 2,
+    title: 'the kit',
+    vibe: 'peni',
+    owner: 'you',
+    views: 18,
+    likes: 4,
+    remixes: 0,
+    published: true,
+    tags: ['toolkit'],
+    finish: 'riso',
+    series: 'studio kit',
+    issueNo: 1,
+    penName: 'the desk',
+    dedication: 'for the first page you have not made yet',
+    includes: [{ zineId: afterHours.id, title: afterHours.title, owner: 'you' }],
+    blocks: [
+      { id: uid(), type: 'heading', text: 'the kit', size: 'xl' },
+      { id: uid(), type: 'sfx', word: 'SKRRT!' },
+      {
+        id: uid(),
+        type: 'hero',
+        src: '/art/peni.jpg',
+        caption: 'the city prints itself wrong on purpose.',
+        density: 0.62,
+        split: 13,
+      },
+      {
+        id: uid(),
+        type: 'sticker',
+        text: 'pass this page to someone who is not here yet',
+        rotation: -3.2,
+        src: '/art/collage-hero.jpg',
+      },
+      {
+        id: uid(),
+        type: 'quote',
+        text: 'nobody proofreads a zine and that is the point.',
+        cite: 'the xerox machine',
+      },
+      {
+        id: uid(),
+        type: 'grid',
+        layout: 'asymmetric',
+        panels: [
+          { text: 'ink', fill: 'var(--accent)' },
+          { text: 'photo', fill: 'var(--accent-2)', src: '/art/peni.jpg' },
+          { text: 'cut', fill: 'var(--accent-3)' },
+        ],
+      },
+      { id: uid(), type: 'divider', style: 'zip' },
+      { id: uid(), type: 'glitch', text: 'SIGNAL LOST' },
+      {
+        id: uid(),
+        type: 'stack',
+        cards: [
+          { title: 'wake', body: 'open the page.' },
+          { title: 'wait', body: 'let the toner sit.' },
+          { title: 'wander', body: 'the gutter still takes notes.' },
+          { title: 'write', body: 'drop when it feels like a page.' },
+        ],
+      },
+      {
+        id: uid(),
+        type: 'poll',
+        question: 'what should the b-side say?',
+        options: ['nothing', 'the truth', 'a dare', 'pass this'],
+      },
+      { id: uid(), type: 'audio', src: '', caption: 'hold for the click. no tape loaded.' },
+      {
+        id: uid(),
+        type: 'strip',
+        panels: [
+          { text: 'pick a scrap' },
+          { text: 'link the page', src: '/art/collage-hero.jpg' },
+          { text: 'drop' },
+          { text: 'pass the snapshot' },
+        ],
+      },
+      {
+        id: uid(),
+        type: 'contents',
+        lines: [
+          { label: 'cover — the kit' },
+          { label: 'page — every widget once' },
+          { label: 'back — colophon' },
+        ],
+      },
+      {
+        id: uid(),
+        type: 'blackout',
+        text: 'if the city prints itself wrong on purpose the gutter still takes notes',
+        hidden: [1, 3, 7],
+      },
+      {
+        id: uid(),
+        type: 'insert',
+        title: 'this fell out',
+        text: 'a show tonight. bring a stapler. the corner store still has toner.',
+      },
+      { id: uid(), type: 'reply', prompt: 'tear this out. mail it back to the desk.' },
+      {
+        id: uid(),
+        type: 'colophon',
+        edition: 'studio kit · first printing',
+        press: 'the xerox machine',
+        place: 'this browser',
+        thanks: 'to after hours, still on the cover',
+      },
+    ],
+  })
+
+  const scatterFloor = zine({
+    ageHours: 1,
+    title: 'scatter floor',
+    vibe: 'ham',
+    owner: 'you',
+    views: 3,
+    likes: 0,
+    remixes: 0,
+    published: false,
+    tags: ['toolkit'],
+    finish: 'grain',
+    scatter: true,
+    blocks: [
+      { id: uid(), type: 'heading', text: 'scatter floor', size: 'lg' },
+      {
+        id: uid(),
+        type: 'hero',
+        src: '/art/ham.jpg',
+        caption: 'pin it where it does not belong.',
+        density: 0.7,
+        split: 5,
+        x: 8,
+        y: 22,
+      },
+      {
+        id: uid(),
+        type: 'sticker',
+        text: 'the gutter still takes notes',
+        rotation: -3.2,
+        src: '/art/collage-hero.jpg',
+        x: 52,
+        y: 18,
+      },
+      {
+        id: uid(),
+        type: 'sticker',
+        text: 'primary colors only. opinions optional.',
+        rotation: 2.4,
+        x: 28,
+        y: 48,
+      },
+      { id: uid(), type: 'divider', style: 'zip' },
+      { id: uid(), type: 'sfx', word: 'POW!' },
+    ],
+  })
+
+  const mine: Zine[] = [afterHours, ghostNotes, theKit, scatterFloor]
 
   const community: Zine[] = [
     zine({

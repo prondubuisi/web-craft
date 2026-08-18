@@ -48,6 +48,12 @@ describe('samples', () => {
     expect(next.src).toBe(photo!.bag.photo)
   })
 
+  it('ships gutter notes, pass this, and corner store scraps', () => {
+    expect(SAMPLES.some((s) => s.label === 'gutter notes' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'pass this' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'corner store' && s.attrs.includes('cite'))).toBe(true)
+  })
+
   it('lists scraps for a tray cut', () => {
     expect(samplesForAttr('ink').every((s) => s.attrs.includes('ink'))).toBe(true)
     expect(samplesForAttr('photo').some((s) => s.label === 'collage')).toBe(true)
