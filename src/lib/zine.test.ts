@@ -10,6 +10,10 @@ import {
   isPublicDrop,
   editPath,
   issueByTitle,
+  isToolkitSeed,
+  isSeededDemo,
+  remixCreditPath,
+  sourceOfRemix,
   isVibeId,
   issuePath,
   readStudioCreate,
@@ -149,6 +153,30 @@ describe('profiles', () => {
     const kit = zine({ id: 'k', title: 'the kit' })
     expect(issueByTitle([kit, zine({ id: 'a', title: 'after hours / bushwick' })], 'the kit')?.id).toBe('k')
     expect(issueByTitle([kit], 'scatter floor')).toBeUndefined()
+  })
+
+  it('marks seeded toolkit pages, not remixed copies', () => {
+    expect(isToolkitSeed(zine({ title: 'the kit', tags: ['toolkit'] }))).toBe(true)
+    expect(isToolkitSeed(zine({ title: 'scatter floor' }))).toBe(true)
+    expect(isToolkitSeed(zine({ title: 'the kit (remix)', tags: ['toolkit'], remixedFrom: 'k' }))).toBe(false)
+    expect(isToolkitSeed(zine({ title: 'after hours / bushwick' }))).toBe(false)
+  })
+
+  it('marks every seeded demo, not a remix or a new issue', () => {
+    expect(isSeededDemo(zine({ title: 'after hours / bushwick' }))).toBe(true)
+    expect(isSeededDemo(zine({ title: 'ghost notes' }))).toBe(true)
+    expect(isSeededDemo(zine({ title: 'the kit', tags: ['toolkit'] }))).toBe(true)
+    expect(isSeededDemo(zine({ title: 'after hours / bushwick (remix)', remixedFrom: 'a' }))).toBe(false)
+    expect(isSeededDemo(zine({ title: 'untitled issue' }))).toBe(false)
+  })
+
+  it('names the remix source and a path back', () => {
+    const src = zine({ id: 'k', title: 'the kit', published: true })
+    const fork = zine({ id: 'r', title: 'the kit (remix)', remixedFrom: 'k' })
+    expect(sourceOfRemix([src, fork], fork)?.id).toBe('k')
+    expect(sourceOfRemix([fork], fork)).toBeUndefined()
+    expect(remixCreditPath(src)).toBe('/z/k')
+    expect(remixCreditPath(zine({ id: 's', title: 'scatter floor', published: false }))).toBe('/edit/s')
   })
 
   it('reads studio create mode from the query', () => {

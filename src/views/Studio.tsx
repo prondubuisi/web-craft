@@ -13,6 +13,8 @@ import {
   editPath,
   isDropLive,
   isMine,
+  isSeededDemo,
+  isToolkitSeed,
   profilePath,
   readStudioCreate,
   recalledVibe,
@@ -160,18 +162,27 @@ export function Studio() {
         <div className="studio-layout">
           <div>
             {mine.length === 0 ? (
-              <p className="serif">empty wall. + new issue, or pull one in from the stream.</p>
+              <p className="serif">
+                empty wall. + new issue, pull one from the <Link to="/explore">stream</Link>, or reset
+                demo for the kit.
+              </p>
+            ) : mine.some(isSeededDemo) ? (
+              <p className="serif">seeded pages sit at the end. + new issue is yours.</p>
             ) : null}
             <div className="zine-wall">
               <button className="zine-card new-issue" onClick={() => setOpen(true)}>
                 + new issue
               </button>
-              {mine.map((z) => (
+              {[...mine]
+                .sort((a, b) => Number(isSeededDemo(a)) - Number(isSeededDemo(b)))
+                .map((z) => (
                 <Link key={z.id} to={editPath(z.id)} className="zine-card">
                   <Halftone src={coverSrc(z)} alt="" className="cover" />
                   <div className="body">
                     <h3>{z.title}</h3>
                     <div className="meta-line">
+                      {isToolkitSeed(z) ? <span>kit</span> : isSeededDemo(z) ? <span>seed</span> : null}
+                      {z.remixedFrom ? <span>remix</span> : null}
                       {seriesLabel(z) ? <span>{seriesLabel(z)}</span> : null}
                       <span>{z.vibe}</span>
                       <span>

@@ -62,6 +62,7 @@ test.describe('B. maker — studio and editor', () => {
       await expect(page).toHaveURL(/\/studio/)
     }
     await expect(page.locator('.studio')).toContainText(/empty wall/i)
+    await expect(page.locator('.studio')).not.toContainText(/seeded pages/i)
     await expect(page.getByRole('button', { name: '+ new issue' })).toBeVisible()
   })
 
@@ -341,7 +342,9 @@ test.describe('B. maker — studio and editor', () => {
   test('10k cover remix then link a scrap and drop', async ({ page }) => {
     await page.goto('/')
     await clickIncludes(page, 'Remix after hours')
+    await expect(page.locator('.title-input')).toHaveValue(/after hours/i)
     await expect(page.locator('.title-input')).toHaveValue(/remix/i)
+    await expect(page.getByRole('link', { name: /after hours/i })).toBeVisible()
     await page.locator('.block').filter({ has: page.locator('.heading-xl, .heading-lg, .heading-md') }).first().click()
     await page.getByLabel('ink samples').getByRole('button', { name: 'city', exact: true }).click()
     await page.getByRole('button', { name: /same scrap on the page/i }).click()
@@ -381,7 +384,56 @@ test.describe('B. maker — studio and editor', () => {
     expect(count).toBeGreaterThan(1)
     await page.getByRole('button', { name: 'combine every scrap that fits' }).click()
     await expect(cutSamples.getByRole('button')).toHaveClass(Array(count).fill(/on/) as unknown as RegExp)
-    await expect(page.locator('.divider.zip')).toBeVisible()
+    await expect(page.locator('.divider')).toHaveClass(/zip|scribble|speed/)
+  })
+
+  test('10o remix the kit keeps the original walkthrough', async ({ page }) => {
+    await page.goto('/')
+    await clickIncludes(page, 'Open the kit')
+    await expect(page.locator('.title-input')).toHaveValue(/the kit/i)
+    await expect(page.getByText(/remix it to keep the original/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Remix this kit' }).click()
+    await expect(page.locator('.title-input')).toHaveValue(/the kit \(remix\)/i)
+    await expect(page.getByRole('button', { name: 'Remix this kit' })).toHaveCount(0)
+    await expect(page.getByText(/remix of/i)).toBeVisible()
+    await page.getByRole('link', { name: /^the kit$/ }).click()
+    await expect(page).toHaveURL(/\/z\//)
+    await expect(page.locator('article.zine-page')).toContainText(/the kit/i)
+    await page.goto('/studio')
+    await expect(page.locator('.zine-card h3', { hasText: /^the kit$/ })).toBeVisible()
+    await expect(page.locator('.zine-card h3', { hasText: /the kit \(remix\)/ })).toBeVisible()
+    await expect(
+      page
+        .locator('.zine-card', { has: page.locator('h3', { hasText: /^the kit$/ }) })
+        .locator('.meta-line span')
+        .first(),
+    ).toHaveText('kit')
+    await expect(
+      page
+        .locator('.zine-card', { has: page.locator('h3', { hasText: /the kit \(remix\)/ }) })
+        .locator('.meta-line span', { hasText: /^remix$/ }),
+    ).toBeVisible()
+  })
+
+  test('10p remix after hours from the studio keeps the cover sample', async ({ page }) => {
+    await page.goto('/studio')
+    await page.locator('.zine-card', { has: page.locator('h3', { hasText: /after hours/ }) }).click()
+    await expect(page.locator('.title-input')).toHaveValue(/after hours/i)
+    await expect(page.getByText(/this is a seeded page/i)).toBeVisible()
+    await page.getByRole('button', { name: 'Remix this page' }).click()
+    await expect(page.locator('.title-input')).toHaveValue(/remix/i)
+    await expect(page.getByRole('link', { name: /after hours/i })).toBeVisible()
+    await page.goto('/')
+    await clickIncludes(page, 'Read after hours')
+    await expect(page.locator('article.zine-page')).toContainText(/after hours/i)
+    await expect(page.getByText(/remix of/i)).toHaveCount(0)
+    await page.goto('/studio')
+    await expect(page.locator('.zine-card h3', { hasText: /after hours/ })).toHaveCount(2)
+    await expect(
+      page
+        .locator('.zine-card', { has: page.locator('h3', { hasText: /^after hours \/ bushwick$/ }) })
+        .locator('.meta-line span', { hasText: /^seed$/ }),
+    ).toBeVisible()
   })
 
   test('11 editor meta, finish, scatter, compilation', async ({ page }) => {
@@ -446,6 +498,7 @@ test.describe('B. maker — studio and editor', () => {
     await expect(page.getByRole('button', { name: 'Reset demo' })).toBeVisible()
     await clickIncludes(page, 'Reset demo')
     await expect(page.locator('.zine-card', { hasText: /after hours/i })).toBeVisible()
+    await expect(page.locator('main')).toContainText(/seeded pages/i)
     await expect(page.locator('main')).not.toContainText('junk issue')
   })
 
@@ -478,8 +531,14 @@ test.describe('B. maker — studio and editor', () => {
     }
     await expect(modal.getByRole('button', { name: 'Copy studio link' })).toBeVisible()
     await expect(modal.getByRole('button', { name: 'Copy snapshot link' })).toBeVisible()
+    await expect(modal.getByRole('button', { name: 'Print issue' })).toBeVisible()
     await expect(modal.getByRole('button', { name: 'Export JSON' })).toBeVisible()
     await expect(modal).toContainText(/this browser until you claim a handle/i)
+    await expect(modal).toContainText(/print the page/i)
+    await page.emulateMedia({ media: 'print' })
+    await expect(page.locator('.modal-back')).toHaveCSS('display', 'none')
+    await expect(page.locator('.tray')).toHaveCSS('display', 'none')
+    await page.emulateMedia({ media: 'screen' })
     await clickText(page, 'Drop now')
     await expect(page.locator('.drop-toast')).toContainText(/dropped/i)
     await expect(page.locator('.drop-toast')).toContainText(/snapshot/i)

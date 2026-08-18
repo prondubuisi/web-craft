@@ -37,6 +37,33 @@ export function issueByTitle(zines: Zine[], title: string): Zine | undefined {
   return zines.find((zine) => zine.title.toLowerCase() === q) ?? zines.find((zine) => zine.title.toLowerCase().includes(q))
 }
 
+const SEEDED_TITLES = ['the kit', 'scatter floor', 'after hours / bushwick', 'ghost notes']
+
+/** Seeded studio-kit pages, not a remix of one. */
+export function isToolkitSeed(zine: Pick<Zine, 'title' | 'tags' | 'remixedFrom'>): boolean {
+  if (zine.remixedFrom) return false
+  if (zine.tags?.includes('toolkit')) return true
+  const title = zine.title.trim().toLowerCase()
+  return title === 'the kit' || title === 'scatter floor'
+}
+
+/** Reset-demo pages that are not yours yet, including after hours and ghost notes. */
+export function isSeededDemo(zine: Pick<Zine, 'title' | 'tags' | 'remixedFrom'>): boolean {
+  if (zine.remixedFrom) return false
+  if (isToolkitSeed(zine)) return true
+  return SEEDED_TITLES.includes(zine.title.trim().toLowerCase())
+}
+
+export function sourceOfRemix(zines: Zine[], zine: Pick<Zine, 'remixedFrom'>): Zine | undefined {
+  if (!zine.remixedFrom) return undefined
+  return zines.find((item) => item.id === zine.remixedFrom)
+}
+
+export function remixCreditPath(source: Zine, handle?: string | null): string {
+  if (!source.published && isMine(source, handle)) return editPath(source.id)
+  return issuePath(source)
+}
+
 export function studioPath(opts?: { new?: boolean; vibe?: VibeId }): string {
   const q = new URLSearchParams()
   if (opts?.new) q.set('new', '1')

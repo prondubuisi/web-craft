@@ -9,12 +9,14 @@ import {
   starterPage,
   typeForSample,
 } from './samples'
-import { WIDGETS, createBlock } from './widgets'
+import { ATTRS, WIDGETS, createBlock } from './widgets'
 import { applyBag, combineBags } from './widgetLang'
 
 describe('samples', () => {
-  it('tags every scrap with a label, attrs, and a bag', () => {
+  it('tags every scrap with a unique label, attrs, and a bag', () => {
     expect(SAMPLES.length).toBeGreaterThan(8)
+    const labels = SAMPLES.map((sample) => sample.label)
+    expect(new Set(labels).size).toBe(labels.length)
     for (const sample of SAMPLES) {
       expect(sample.label.length).toBeGreaterThan(0)
       expect(sample.attrs.length).toBeGreaterThan(0)
@@ -48,10 +50,35 @@ describe('samples', () => {
     expect(next.src).toBe(photo!.bag.photo)
   })
 
-  it('ships gutter notes, pass this, and corner store scraps', () => {
+  it('ships leftover-voice scraps and a pin for the scatter floor', () => {
     expect(SAMPLES.some((s) => s.label === 'gutter notes' && s.attrs.includes('ink'))).toBe(true)
     expect(SAMPLES.some((s) => s.label === 'pass this' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'drop when' && s.attrs.includes('ink'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'print pass' && s.attrs.includes('ink'))).toBe(true)
     expect(SAMPLES.some((s) => s.label === 'corner store' && s.attrs.includes('cite'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'the margin' && s.attrs.includes('cite'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'cover toc' && s.attrs.includes('set'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'corner pin' && s.attrs.includes('pin'))).toBe(true)
+    expect(SAMPLES.some((s) => s.label === 'vowels out' && s.attrs.includes('holes'))).toBe(true)
+  })
+
+  it('covers every cut except tape, which has no audio file', () => {
+    for (const attr of ATTRS) {
+      if (attr === 'tape') {
+        expect(samplesForAttr(attr)).toHaveLength(0)
+        continue
+      }
+      expect(samplesForAttr(attr).length, attr).toBeGreaterThan(0)
+    }
+  })
+
+  it('pins a sticker from a pin scrap', () => {
+    const pin = SAMPLES.find((s) => s.label === 'corner pin')
+    expect(pin).toBeTruthy()
+    const next = applyBag(createBlock('sticker', 'ham'), pin!.bag)
+    if (next.type !== 'sticker') throw new Error('expected sticker')
+    expect(next.x).toBe(8)
+    expect(next.y).toBe(22)
   })
 
   it('lists scraps for a tray cut', () => {

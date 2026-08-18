@@ -24,6 +24,8 @@ import {
   isMine,
   issuePath,
   profilePath,
+  remixCreditPath,
+  sourceOfRemix,
   runLabel,
   seriesLabel,
   wearLevel,
@@ -35,7 +37,7 @@ export function Preview() {
   const search = new URLSearchParams(useLocation().search)
   const key = search.get('k')
   const chainInvite = search.get('chain')
-  const { zineById, likeZine, remixZine, recordView, profile, session, online } = useZines()
+  const { zineById, likeZine, remixZine, recordView, profile, session, online, zines } = useZines()
   const found = id ? zineById(id) : undefined
   const fetched = useRemote(() => api.get(id!, key), [id, key], { enabled: Boolean(id && !found) })
   const [unlockedZine, setUnlockedZine] = useState<typeof found>()
@@ -53,6 +55,7 @@ export function Preview() {
   const [more, setMore] = useState(false)
   const drop = useCountdown(zine?.dropsAt)
   const mine = Boolean(zine && isMine(zine, session?.name))
+  const remixSource = zine ? sourceOfRemix(zines, zine) : undefined
   const secretOk = Boolean(zine && canOpenSecret(zine, key))
   const hiddenUnlisted = Boolean(zine && zine.visibility === 'unlisted' && !mine && !secretOk)
   const needsPass = Boolean(zine && zine.hasPass && !mine && !unlocked)
@@ -238,6 +241,18 @@ export function Preview() {
                 </Link>
                 <span>{zine.views} views</span>
               </div>
+              {zine.remixedFrom ? (
+                <p className="serif" style={{ margin: '-0.3rem 0 0.9rem' }}>
+                  {remixSource ? (
+                    <>
+                      remix of{' '}
+                      <Link to={remixCreditPath(remixSource, session?.name)}>{remixSource.title}</Link>
+                    </>
+                  ) : (
+                    <>this is a remix. the original is not on this desk.</>
+                  )}
+                </p>
+              ) : null}
               {chainInvite && social.chainPrev ? (
                 <div className="chain-peek">
                   <div className="issue-chip">

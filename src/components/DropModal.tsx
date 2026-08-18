@@ -10,6 +10,7 @@ export function DropModal({
   onDrop,
   onCopy,
   onExport,
+  onPrint,
 }: {
   zine: Zine
   local?: boolean
@@ -17,6 +18,7 @@ export function DropModal({
   onDrop: (when: number, opts: { visibility: Visibility; password?: string; chain?: boolean }) => void
   onCopy: (kind: 'local' | 'snapshot') => void
   onExport: () => void
+  onPrint: () => void
 }) {
   const [visibility, setVisibility] = useState<Visibility>(zine.visibility ?? 'public')
   const [password, setPassword] = useState('')
@@ -39,7 +41,7 @@ export function DropModal({
       </p>
       {local ? (
         <p className="hand" style={{ margin: '0.6rem 0 0' }}>
-          This drop lives in this browser until you claim a handle. Snapshot is the pass.
+          This drop lives in this browser until you claim a handle. Snapshot or print is the pass.
         </p>
       ) : null}
       <div className="vibe-picks" style={{ marginTop: 12 }}>
@@ -93,12 +95,19 @@ export function DropModal({
       {zine.published ? (
         <p className="hand" style={{ margin: '0.8rem 0 0' }}>
           {zine.visibility === 'unlisted' ? 'already unlisted.' : 'already on the stream.'} Copy the
-          snapshot to pass it.
+          snapshot or print the page. Fold sheet lives on Preview.
         </p>
-      ) : null}
+      ) : (
+        <p className="hand" style={{ margin: '0.8rem 0 0' }}>
+          Print the page here. Fold sheet lives on Preview.
+        </p>
+      )}
       <div className="cta-row" style={{ marginTop: 12 }}>
         <ComicButton className="small cyan" onClick={() => onCopy('snapshot')}>
           Copy snapshot link
+        </ComicButton>
+        <ComicButton className="small ghost" onClick={onPrint}>
+          Print issue
         </ComicButton>
         <ComicButton className="small ghost" onClick={() => onCopy('local')}>
           Copy studio link

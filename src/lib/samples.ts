@@ -17,6 +17,10 @@ export const SAMPLES: Sample[] = [
   { label: 'signal lost', attrs: ['ink'], bag: { ink: 'SIGNAL LOST' } },
   { label: 'gutter notes', attrs: ['ink'], bag: { ink: 'the gutter still takes notes' } },
   { label: 'pass this', attrs: ['ink'], bag: { ink: 'pass this page to someone who is not here yet' } },
+  { label: 'drop when', attrs: ['ink'], bag: { ink: 'drop when it feels like a page' } },
+  { label: 'heading picture', attrs: ['ink'], bag: { ink: 'a heading and a picture is enough' } },
+  { label: 'print pass', attrs: ['ink'], bag: { ink: 'print it. pass it.' } },
+  { label: 'hold the click', attrs: ['ink'], bag: { ink: 'hold for the click. no tape loaded.' } },
   {
     label: 'nobody proofreads',
     attrs: ['ink', 'cite'],
@@ -31,6 +35,16 @@ export const SAMPLES: Sample[] = [
   { label: 'wake', attrs: ['set'], bag: { items: ['wake', 'wait', 'wander', 'write'] } },
   { label: 'knock', attrs: ['set'], bag: { items: ['knock', 'pause', 'nothing', 'leave'] } },
   {
+    label: 'cover toc',
+    attrs: ['set'],
+    bag: { items: ['cover — enter', 'page — tear', 'back — leave a note'] },
+  },
+  {
+    label: 'pick link drop',
+    attrs: ['set'],
+    bag: { items: ['pick a scrap', 'link the page', 'drop', 'pass the snapshot'] },
+  },
+  {
     label: 'b-side',
     attrs: ['set', 'ink'],
     bag: { ink: 'what should the b-side say?', items: ['nothing', 'the truth', 'a dare'] },
@@ -38,7 +52,11 @@ export const SAMPLES: Sample[] = [
   { label: 'xerox', attrs: ['cite'], bag: { cite: 'the xerox machine' } },
   { label: 'gutter press', attrs: ['cite'], bag: { cite: 'gutter press' } },
   { label: 'corner store', attrs: ['cite'], bag: { cite: 'the corner store' } },
+  { label: 'the margin', attrs: ['cite'], bag: { cite: 'the margin' } },
+  { label: 'stranger on the L', attrs: ['cite'], bag: { cite: 'a stranger on the L' } },
+  { label: 'this browser', attrs: ['cite'], bag: { cite: 'this browser' } },
   { label: 'xl', attrs: ['cut'], bag: { size: 'xl' } },
+  { label: 'lg', attrs: ['cut'], bag: { size: 'lg' } },
   { label: 'tilt', attrs: ['cut'], bag: { tilt: -3.2 } },
   { label: 'grain', attrs: ['cut'], bag: { density: 0.55, split: 10 } },
   { label: 'gif diff', attrs: ['cut'], bag: { density: 0.62, split: 13 } },
@@ -46,8 +64,15 @@ export const SAMPLES: Sample[] = [
   { label: 'chroma tear', attrs: ['cut'], bag: { density: 0.18, split: 14 } },
   { label: 'static color', attrs: ['cut'], bag: { density: 0.4, split: 8 } },
   { label: 'zip', attrs: ['cut'], bag: { style: 'zip' } },
+  { label: 'scribble', attrs: ['cut'], bag: { style: 'scribble' } },
+  { label: 'speed', attrs: ['cut'], bag: { style: 'speed' } },
+  { label: 'three', attrs: ['cut'], bag: { layout: 'three' } },
+  { label: 'corner pin', attrs: ['pin'], bag: { x: 8, y: 22 } },
+  { label: 'gutter pin', attrs: ['pin'], bag: { x: 52, y: 18 } },
+  { label: 'floor pin', attrs: ['pin'], bag: { x: 28, y: 48 } },
   { label: 'redact', attrs: ['holes'], bag: { holes: [1, 3, 7] } },
   { label: 'blank it', attrs: ['holes'], bag: { holes: [0, 2, 4, 6] } },
+  { label: 'vowels out', attrs: ['holes'], bag: { holes: [1, 4, 6, 9] } },
 ]
 
 export function samplesFor(type: BlockType): Sample[] {

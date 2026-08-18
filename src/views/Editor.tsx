@@ -15,7 +15,7 @@ import { useHistory } from '../lib/useHistory'
 import { linkBag, matchSample, typeForSample } from '../lib/samples'
 import { applyBag, type AttrBag } from '../lib/widgetLang'
 import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
-import { issuePath, slugify } from '../lib/zine'
+import { editPath, isSeededDemo, isToolkitSeed, issuePath, remixCreditPath, slugify, sourceOfRemix } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
 type Sheet = 'tray' | 'inspect' | 'more' | null
@@ -38,7 +38,7 @@ export function Editor() {
 }
 
 function EditorCanvas({ zine }: { zine: Zine }) {
-  const { patchZine, setBlocks, publishZine, deleteZine, zines, session } = useZines()
+  const { patchZine, setBlocks, publishZine, deleteZine, remixZine, zines, session } = useZines()
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
   const [slash, setSlash] = useState('')
@@ -56,6 +56,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const { remember, undo, redo } = useHistory(zine)
 
   const selectedBlock = zine.blocks.find((b) => b.id === selected)
+  const remixSource = sourceOfRemix(zines, zine)
 
   const slashHits = useMemo(() => {
     const widgets = matchWidget(slash).map((w) => ({
@@ -413,6 +414,35 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         </button>
       </header>
       <EditorMeta zine={zine} zines={zines} patchZine={patchZine} />
+      {zine.remixedFrom ? (
+        <p className="serif no-print" style={{ margin: '0.45rem 0.9rem 0' }}>
+          {remixSource ? (
+            <>
+              remix of <Link to={remixCreditPath(remixSource, session?.name)}>{remixSource.title}</Link>
+              . drop when it feels like a page.
+            </>
+          ) : (
+            <>this is a remix. the original is not on this desk.</>
+          )}
+        </p>
+      ) : isSeededDemo(zine) ? (
+        <p className="serif no-print" style={{ margin: '0.45rem 0.9rem 0' }}>
+          {isToolkitSeed(zine)
+            ? 'this is the studio kit. remix it to keep the original, then drop your own page. '
+            : 'this is a seeded page. remix it to keep the original, then drop your own page. '}
+          <button
+            type="button"
+            className="owner-link"
+            onClick={() => {
+              void remixZine(zine.id, zine).then((next) => {
+                if (next) navigate(editPath(next))
+              })
+            }}
+          >
+            {isToolkitSeed(zine) ? 'Remix this kit' : 'Remix this page'}
+          </button>
+        </p>
+      ) : null}
 
       <div className="editor-stage">
         {trayOpen ? (
@@ -637,6 +667,15 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             <ComicButton className="small pink" onClick={() => setDropOpen(true)}>
               {zine.published ? 'Dropped' : 'Drop'}
             </ComicButton>
+            <ComicButton
+              className="small ghost"
+              onClick={() => {
+                setSheet(null)
+                window.setTimeout(() => window.print(), 50)
+              }}
+            >
+              Print issue
+            </ComicButton>
           </div>
           {!zine.published && zine.blocks.length > 0 ? (
             <p className="hand">A heading and a picture is a page. Drop when it feels like one.</p>
@@ -750,6 +789,10 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           }}
           onCopy={share}
           onExport={() => downloadJson(`${slugify(zine.title)}.zine.json`, zine)}
+          onPrint={() => {
+            setDropOpen(false)
+            window.setTimeout(() => window.print(), 50)
+          }}
         />
       ) : null}
 
