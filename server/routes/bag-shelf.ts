@@ -1,6 +1,25 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
+import type {
+  BagItemResponse,
+  BagResponse,
+  BagTuckBody,
+  ClaimResponse,
+  GuestNoteBody,
+  GuestNoteResponse,
+  GuestbookResponse,
+  LoanOneResponse,
+  LoansResponse,
+  OkBody,
+  PileResponse,
+  ReviewBody,
+  ReviewOneResponse,
+  ReviewsResponse,
+  ShelfResponse,
+  ShelfStockBody,
+} from '../../src/lib/contract.ts'
 import { ARCHIVE_THRESHOLD } from '../../src/lib/jam.ts'
+import type { VibeId } from '../../src/lib/types.ts'
 import { dropIsLive, getZineRow, rowToZine, type Db, type ZineRow } from '../db.ts'
 import { currentUser } from '../http.ts'
 import { notify } from '../services/notify.ts'
@@ -18,7 +37,8 @@ export function registerBagShelf(app: Hono, db: Db) {
       )
       .get(Date.now()) as ZineRow | undefined
     if (!row) return c.json({ error: 'empty pile' }, 404)
-    return c.json({ zine: rowToZine(row) })
+    const payload: PileResponse = { zine: rowToZine(row) }
+    return c.json(payload)
   })
 
   app.get('/api/users/:name/guestbook', (c) => {
@@ -31,14 +51,15 @@ export function registerBagShelf(app: Hono, db: Db) {
          WHERE g.profile_id = ? ORDER BY g.created_at DESC LIMIT 40`,
       )
       .all(user.id) as { id: string; body: string; created_at: number; author_name: string }[]
-    return c.json({
+    const payload: GuestbookResponse = {
       notes: rows.map((row) => ({
         id: row.id,
         author: `@${row.author_name}`,
         body: row.body,
         createdAt: row.created_at,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/users/:name/guestbook', async (c) => {
@@ -47,7 +68,7 @@ export function registerBagShelf(app: Hono, db: Db) {
     const name = c.req.param('name').trim().toLowerCase().replace(/^@/, '')
     const host = db.prepare('SELECT id FROM users WHERE name = ?').get(name) as { id: string } | undefined
     if (!host) return c.json({ error: 'Nobody with that handle' }, 404)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<GuestNoteBody> | null
     const text = String(body?.body ?? '').trim().slice(0, 200)
     if (!text) return c.json({ error: 'Write something' }, 400)
     const id = randomUUID()
@@ -59,13 +80,14 @@ export function registerBagShelf(app: Hono, db: Db) {
       text,
       now,
     )
-    return c.json({ note: { id, author: `@${author.name}`, body: text, createdAt: now } })
+    const payload: GuestNoteResponse = { note: { id, author: `@${author.name}`, body: text, createdAt: now } }
+    return c.json(payload)
   })
 
   app.post('/api/shelf', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<ShelfStockBody> | null
     const zineId = String(body?.zineId ?? '')
     const note = String(body?.note ?? 'stocked from the pile').slice(0, 80)
     const zine = getZineRow(db, zineId)
@@ -74,14 +96,18 @@ export function registerBagShelf(app: Hono, db: Db) {
       `INSERT INTO shelves (user_id, zine_id, note, created_at) VALUES (?, ?, ?, ?)
        ON CONFLICT(user_id, zine_id) DO UPDATE SET note = excluded.note`,
     ).run(user.id, zineId, note, Date.now())
-    return c.json({ shelf: [{ zineId, title: zine.title, owner: `@${zine.owner_name}`, note, vibe: zine.vibe }] })
+    const payload: ShelfResponse = {
+      shelf: [{ zineId, title: zine.title, owner: `@${zine.owner_name}`, note, vibe: zine.vibe as VibeId }],
+    }
+    return c.json(payload)
   })
 
   app.delete('/api/shelf/:id', (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     db.prepare('DELETE FROM shelves WHERE user_id = ? AND zine_id = ?').run(user.id, c.req.param('id'))
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.get('/api/bag', (c) => {
@@ -94,20 +120,21 @@ export function registerBagShelf(app: Hono, db: Db) {
          WHERE b.user_id = ? ORDER BY b.created_at DESC`,
       )
       .all(user.id) as { zine_id: string; title: string; vibe: string; owner_name: string }[]
-    return c.json({
+    const payload: BagResponse = {
       bag: rows.map((row) => ({
         zineId: row.zine_id,
         title: row.title,
         owner: `@${row.owner_name}`,
-        vibe: row.vibe,
+        vibe: row.vibe as VibeId,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/bag', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<BagTuckBody> | null
     const zineId = String(body?.zineId ?? '')
     const zine = getZineRow(db, zineId)
     if (!zine || !zine.published) return c.json({ error: 'Cannot tuck that' }, 404)
@@ -115,16 +142,18 @@ export function registerBagShelf(app: Hono, db: Db) {
       `INSERT INTO bags (user_id, zine_id, created_at) VALUES (?, ?, ?)
        ON CONFLICT(user_id, zine_id) DO NOTHING`,
     ).run(user.id, zineId, Date.now())
-    return c.json({
-      item: { zineId, title: zine.title, owner: `@${zine.owner_name}`, vibe: zine.vibe },
-    })
+    const payload: BagItemResponse = {
+      item: { zineId, title: zine.title, owner: `@${zine.owner_name}`, vibe: zine.vibe as VibeId },
+    }
+    return c.json(payload)
   })
 
   app.delete('/api/bag/:id', (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
     db.prepare('DELETE FROM bags WHERE user_id = ? AND zine_id = ?').run(user.id, c.req.param('id'))
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.get('/api/zines/:id/reviews', (c) => {
@@ -136,7 +165,7 @@ export function registerBagShelf(app: Hono, db: Db) {
          WHERE r.zine_id = ? ORDER BY r.created_at DESC`,
       )
       .all(row.id) as { id: string; zine_id: string; body: string; created_at: number; author_name: string }[]
-    return c.json({
+    const payload: ReviewsResponse = {
       reviews: rows.map((item) => ({
         id: item.id,
         zineId: item.zine_id,
@@ -144,7 +173,8 @@ export function registerBagShelf(app: Hono, db: Db) {
         body: item.body,
         createdAt: item.created_at,
       })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/reviews', async (c) => {
@@ -153,7 +183,7 @@ export function registerBagShelf(app: Hono, db: Db) {
     const row = getZineRow(db, c.req.param('id'))
     if (!row || !row.published) return c.json({ error: 'Cannot review that' }, 404)
     if (!dropIsLive(row) && row.owner_id !== user.id) return c.json({ error: 'Still sealed' }, 403)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<ReviewBody> | null
     const text = String(body?.body ?? '').trim().slice(0, 240)
     if (!text) return c.json({ error: 'Write a blurb' }, 400)
     const now = Date.now()
@@ -168,9 +198,10 @@ export function registerBagShelf(app: Hono, db: Db) {
     if (row.owner_id !== user.id) {
       notify(db, { recipientId: row.owner_id, actorId: user.id, kind: 'review', zineId: row.id, body: row.title })
     }
-    return c.json({
+    const payload: ReviewOneResponse = {
       review: { id, zineId: row.id, author: `@${user.name}`, body: text, createdAt: now },
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/claim', (c) => {
@@ -181,13 +212,18 @@ export function registerBagShelf(app: Hono, db: Db) {
     const existing = db.prepare('SELECT 1 FROM claims WHERE user_id = ? AND zine_id = ?').get(user.id, row.id)
     if (existing) {
       const claimed = claimCount(db, row.id)
-      return c.json({ claimed, mine: true, out: claimed >= row.edition_size })
+      const payload: ClaimResponse = { claimed, mine: true, out: claimed >= row.edition_size }
+      return c.json(payload)
     }
     const claimed = claimCount(db, row.id)
-    if (claimed >= row.edition_size) return c.json({ claimed, mine: false, out: true })
+    if (claimed >= row.edition_size) {
+      const payload: ClaimResponse = { claimed, mine: false, out: true }
+      return c.json(payload)
+    }
     db.prepare('INSERT INTO claims (user_id, zine_id, created_at) VALUES (?, ?, ?)').run(user.id, row.id, Date.now())
     const next = claimed + 1
-    return c.json({ claimed: next, mine: true, out: next >= row.edition_size })
+    const payload: ClaimResponse = { claimed: next, mine: true, out: next >= row.edition_size }
+    return c.json(payload)
   })
 
   app.get('/api/loans', (c) => {
@@ -200,9 +236,10 @@ export function registerBagShelf(app: Hono, db: Db) {
          WHERE l.user_id = ? AND l.due_at > ? ORDER BY l.due_at`,
       )
       .all(user.id, now) as { zine_id: string; due_at: number; title: string }[]
-    return c.json({
+    const payload: LoansResponse = {
       loans: rows.map((row) => ({ zineId: row.zine_id, title: row.title, dueAt: row.due_at })),
-    })
+    }
+    return c.json(payload)
   })
 
   app.post('/api/zines/:id/checkout', (c) => {
@@ -217,6 +254,7 @@ export function registerBagShelf(app: Hono, db: Db) {
       `INSERT INTO loans (user_id, zine_id, due_at) VALUES (?, ?, ?)
        ON CONFLICT(user_id, zine_id) DO UPDATE SET due_at = excluded.due_at`,
     ).run(user.id, row.id, dueAt)
-    return c.json({ loan: { zineId: row.id, title: row.title, dueAt } })
+    const payload: LoanOneResponse = { loan: { zineId: row.id, title: row.title, dueAt } }
+    return c.json(payload)
   })
 }

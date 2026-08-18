@@ -1,21 +1,42 @@
+import { useEffect, useState } from 'react'
 import { actionError } from '../lib/catch'
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
+import { samplesFor } from '../lib/samples'
 import { readFileAsDataUrl, readImageAsDataUrl } from '../lib/share'
-import type { Block } from '../lib/types'
-import { widgetByType } from '../lib/widgets'
+import type { Block, VibeId } from '../lib/types'
+import { applyBag, combineBags, retarget, widgetsWithAttr } from '../lib/widgetLang'
+import { ATTRS, LANES, WIDGETS, contentsFrom, widgetByType, type AttrId } from '../lib/widgets'
 
 export function Inspector({
   block,
   onChange,
   onCommit,
+  pageBlocks = [],
+  vibe = 'miles',
 }: {
   block: Block
   onChange: (next: Block, recordHistory?: boolean) => void
   onCommit?: () => void
+  pageBlocks?: Block[]
+  vibe?: VibeId
 }) {
   const meta = widgetByType(block.type)
+  const [typeCut, setTypeCut] = useState<AttrId | 'all'>('all')
+  const typed = typeCut === 'all' ? WIDGETS : widgetsWithAttr(typeCut)
+  const [samplePicks, setSamplePicks] = useState<number[]>([])
+  const samples = samplesFor(block.type)
+
+  useEffect(() => {
+    setSamplePicks([])
+  }, [block.id, block.type])
+
+  function toggleSample(i: number) {
+    const next = samplePicks.includes(i) ? samplePicks.filter((n) => n !== i) : [...samplePicks, i]
+    setSamplePicks(next)
+    onChange(applyBag(block, combineBags(next.map((idx) => samples[idx].bag))), true)
+  }
 
   async function onUpload(file: File | undefined) {
     if (!file) return
@@ -42,12 +63,75 @@ export function Inspector({
         {meta.label}
       </h3>
       <p className="serif">{meta.hint}</p>
+      <p className="meta-line">{meta.attrs.join(' · ')}</p>
+      <label>Type</label>
+      <div className="tray-attr" role="group" aria-label="type cut">
+        <button
+          type="button"
+          className={`tray-item ${typeCut === 'all' ? 'on' : ''}`}
+          onClick={() => setTypeCut('all')}
+        >
+          all
+        </button>
+        {ATTRS.map((attr) => (
+          <button
+            key={attr}
+            type="button"
+            className={`tray-item ${typeCut === attr ? 'on' : ''}`}
+            onClick={() => setTypeCut(attr)}
+          >
+            {attr}
+          </button>
+        ))}
+      </div>
+      {LANES.map((lane) => {
+        const list = typed.filter((widget) => widget.lane === lane.id)
+        if (!list.length) return null
+        return (
+          <div key={lane.id} className="vibe-picks" aria-label={`${lane.label} types`}>
+            {list.map((widget) => (
+              <button
+                key={widget.type}
+                className={`tray-item ${block.type === widget.type ? 'on' : ''}`}
+                title={widget.attrs.join(' · ')}
+                onClick={() => onChange(retarget(block, widget.type, vibe), true)}
+              >
+                /{widget.slash}
+              </button>
+            ))}
+          </div>
+        )
+      })}
+      <label>Samples</label>
+      <p className="serif">pick more than one. they stack.</p>
+      {ATTRS.filter((attr) => meta.attrs.includes(attr) && samples.some((s) => s.attrs.includes(attr))).map(
+        (attr) => (
+          <div key={attr} className="vibe-picks" role="group" aria-label={`${attr} samples`}>
+            {samples
+              .map((sample, i) => ({ sample, i }))
+              .filter(({ sample }) => sample.attrs.includes(attr))
+              .map(({ sample, i }) => (
+                <button
+                  key={`${attr}-${sample.label}`}
+                  className={`tray-item ${samplePicks.includes(i) ? 'on' : ''}`}
+                  onClick={() => toggleSample(i)}
+                >
+                  {sample.label}
+                </button>
+              ))}
+          </div>
+        ),
+      )}
       {block.type === 'heading' ? (
         <>
           <label>Size</label>
           <div className="vibe-picks">
             {(['xl', 'lg', 'md'] as const).map((size) => (
-              <button key={size} className="tray-item" onClick={() => onChange({ ...block, size }, true)}>
+              <button
+                key={size}
+                className={`tray-item ${block.size === size ? 'on' : ''}`}
+                onClick={() => onChange({ ...block, size }, true)}
+              >
                 {size}
               </button>
             ))}
@@ -170,12 +254,77 @@ export function Inspector({
             {(['two', 'three', 'asymmetric'] as const).map((layout) => (
               <button
                 key={layout}
-                className="tray-item"
+                className={`tray-item ${block.layout === layout ? 'on' : ''}`}
                 onClick={() => onChange({ ...block, layout }, true)}
               >
                 {layout}
               </button>
             ))}
+          </div>
+          <label>Panels</label>
+          <div className="cta-row" style={{ marginTop: 8 }}>
+            <button
+              className="tray-item"
+              disabled={block.panels.length >= 6}
+              onClick={() =>
+                onChange(
+                  {
+                    ...block,
+                    panels: [
+                      ...block.panels,
+                      {
+                        text: `panel ${block.panels.length + 1}`,
+                        fill: ['var(--accent)', 'var(--accent-2)', 'var(--accent-3)'][
+                          block.panels.length % 3
+                        ],
+                      },
+                    ],
+                  },
+                  true,
+                )
+              }
+            >
+              add
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.panels.length <= 2}
+              onClick={() => onChange({ ...block, panels: block.panels.slice(0, -1) }, true)}
+            >
+              drop last
+            </button>
+          </div>
+        </>
+      ) : null}
+      {block.type === 'stack' ? (
+        <>
+          <label>Cards</label>
+          <div className="cta-row" style={{ marginTop: 8 }}>
+            <button
+              className="tray-item"
+              disabled={block.cards.length >= 6}
+              onClick={() =>
+                onChange(
+                  {
+                    ...block,
+                    cards: [
+                      ...block.cards,
+                      { title: `card ${block.cards.length + 1}`, body: 'write on the back.' },
+                    ],
+                  },
+                  true,
+                )
+              }
+            >
+              add
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.cards.length <= 2}
+              onClick={() => onChange({ ...block, cards: block.cards.slice(0, -1) }, true)}
+            >
+              drop last
+            </button>
           </div>
         </>
       ) : null}
@@ -184,7 +333,11 @@ export function Inspector({
           <label>Style</label>
           <div className="vibe-picks">
             {(['scribble', 'speed', 'zip'] as const).map((style) => (
-              <button key={style} className="tray-item" onClick={() => onChange({ ...block, style }, true)}>
+              <button
+                key={style}
+                className={`tray-item ${block.style === style ? 'on' : ''}`}
+                onClick={() => onChange({ ...block, style }, true)}
+              >
                 {style}
               </button>
             ))}
@@ -196,7 +349,11 @@ export function Inspector({
           <label>Burst</label>
           <div className="vibe-picks">
             {['THWIP!', 'POW!', 'BAM!', 'ZAP!', 'WHOOSH!', 'KRACK!'].map((word) => (
-              <button key={word} className="tray-item" onClick={() => onChange({ ...block, word }, true)}>
+              <button
+                key={word}
+                className={`tray-item ${block.word === word ? 'on' : ''}`}
+                onClick={() => onChange({ ...block, word }, true)}
+              >
                 {word}
               </button>
             ))}
@@ -208,7 +365,11 @@ export function Inspector({
           <label>Voice</label>
           <div className="vibe-picks">
             {['the margin', 'a stranger on the L', 'issue zero', 'your future self'].map((cite) => (
-              <button key={cite} className="tray-item" onClick={() => onChange({ ...block, cite }, true)}>
+              <button
+                key={cite}
+                className={`tray-item ${block.cite === cite ? 'on' : ''}`}
+                onClick={() => onChange({ ...block, cite }, true)}
+              >
                 {cite}
               </button>
             ))}
@@ -276,7 +437,27 @@ export function Inspector({
         </>
       ) : null}
       {block.type === 'blackout' ? (
-        <p className="serif">Tap words on the page to redact them. The reader only sees the holes.</p>
+        <>
+          <p className="serif">Tap words on the page to redact them. The reader only sees the holes.</p>
+          <div className="cta-row" style={{ marginTop: 8 }}>
+            <button
+              className="tray-item"
+              disabled={block.hidden.length === 0}
+              onClick={() => onChange({ ...block, hidden: [] }, true)}
+            >
+              clear holes
+            </button>
+            <button
+              className="tray-item"
+              onClick={() => {
+                const n = block.text.split(/\s+/).filter(Boolean).length
+                onChange({ ...block, hidden: Array.from({ length: n }, (_, i) => i) }, true)
+              }}
+            >
+              redact all
+            </button>
+          </div>
+        </>
       ) : null}
       {block.type === 'contents' ? (
         <div className="cta-row" style={{ marginTop: 8 }}>
@@ -295,6 +476,15 @@ export function Inspector({
           >
             drop last
           </button>
+          <button
+            className="tray-item"
+            onClick={() => {
+              const pulled = contentsFrom(pageBlocks.filter((row) => row.id !== block.id))
+              onChange({ ...block, lines: pulled.lines }, true)
+            }}
+          >
+            pull headings
+          </button>
         </div>
       ) : null}
       {block.type === 'reply' ? (
@@ -308,7 +498,11 @@ export function Inspector({
           <label>Press</label>
           <div className="vibe-picks">
             {['kitchen table riso', 'gutter press', 'xerox after midnight', 'a borrowed copier'].map((press) => (
-              <button key={press} className="tray-item" onClick={() => onChange({ ...block, press }, true)}>
+              <button
+                key={press}
+                className={`tray-item ${block.press === press ? 'on' : ''}`}
+                onClick={() => onChange({ ...block, press }, true)}
+              >
                 {press}
               </button>
             ))}

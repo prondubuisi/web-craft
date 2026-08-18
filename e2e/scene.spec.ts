@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, workerHeader } from './fixtures'
 import {
   claimHandle,
   clickIncludes,
@@ -7,7 +7,10 @@ import {
   expectNoPageErrors,
   forceOffline,
   fresh,
+  HEALTH_MS,
   openNewIssue,
+  openSecondDesk,
+  requireHandle,
   uniqueHandle,
 } from './helpers'
 
@@ -23,6 +26,9 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
   test('31 board pin filter swap remove', async ({ page }) => {
     await page.goto('/board')
     await expect(page.locator('h1')).toContainText(/board/i)
+    await expect(page.locator('main > .filter-bar')).toBeVisible()
+    await expect(page.locator('.board-form .filter-bar')).toHaveCount(0)
+    await expect(page.getByLabel('posting as')).toBeVisible()
     await clickText(page, 'trade')
     await clickText(page, 'collab')
     await clickText(page, 'feedback')
@@ -39,6 +45,28 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await card.getByRole('button', { name: 'unswap' }).click()
     await card.getByRole('button', { name: 'pull pin' }).click()
     await expect(page.locator('.board-card', { hasText: body })).toHaveCount(0)
+  })
+
+  test('31d board filter is not the posting-as picker', async ({ page }) => {
+    await forceOffline(page)
+    await page.goto('/board')
+    await expect(page.locator('.board-card')).toHaveCount(4)
+    const filter = page.locator('main > .filter-bar')
+    const picker = page.getByLabel('posting as')
+    await filter.getByRole('button', { name: /^trade$/i }).click()
+    await expect(page.locator('.board-card')).toHaveCount(2)
+    await expect(page.locator('.board-card', { hasText: /sunday market stickers/i })).toBeVisible()
+    await expect(page.locator('.board-card', { hasText: /dimension hop/i })).toBeVisible()
+    await expect(page.locator('.board-card', { hasText: /guest panel/i })).toHaveCount(0)
+    await picker.getByRole('button', { name: /^collab$/i }).click()
+    await expect(page.locator('.board-card')).toHaveCount(2)
+    await page.locator('.board-form textarea').fill('need a second pair of eyes')
+    await page.locator('.board-form').getByRole('button', { name: 'Pin it' }).click()
+    await expect(page.locator('.board-card', { hasText: 'need a second pair of eyes' })).toHaveCount(0)
+    await filter.getByRole('button', { name: /^collab$/i }).click()
+    const pinned = page.locator('.board-card', { hasText: 'need a second pair of eyes' })
+    await expect(pinned).toBeVisible()
+    await expect(pinned).toContainText(/collab/i)
   })
 
   test('31c board pin is disabled until text and honors the cap', async ({ page }) => {
@@ -122,7 +150,13 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await expect(page.locator('main')).toContainText('the board is blank. pin something ugly.')
   })
 
-  test('34 letters and postcards', async ({ page, browser }) => {
+  test('34b first-visit letters have no unread chip', async ({ page }) => {
+    await page.goto('/mail')
+    await expect(page.locator('.mail-threads')).toContainText(/yuzu/i)
+    await expect(page.locator('.mail-threads .issue-chip')).toHaveCount(0)
+  })
+
+  test('34 letters empty and postcard cap offline', async ({ page }) => {
     await forceOffline(page)
     await page.goto('/mail')
     await page.evaluate(() => localStorage.setItem('zineverse.mail.v1', '[]'))
@@ -134,44 +168,32 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await expect(page.locator('.board-form textarea')).toHaveAttribute('maxlength', '400')
     await page.locator('.tray-item', { hasText: 'postcard' }).click()
     await expect(page.locator('.board-form textarea')).toHaveAttribute('maxlength', '140')
-    await page.unroute('**/api/**')
+    await page.locator('[aria-label="Send to handle"]').fill('yuzu')
+    await page.locator('.board-form textarea').fill('fold it twice.')
+    await page.getByRole('button', { name: 'Mail postcard' }).click()
+    await expect(page.locator('.mail-thread')).toContainText('fold it twice.')
+  })
+
+  test('34c two desks letter and postcard', async ({ page, browser, workerApiPort }) => {
+    const me = await requireHandle(page)
+    const other = await openSecondDesk(browser, workerHeader(workerApiPort))
+    await other.page.goto('/mail')
+    await other.page.locator('[aria-label="Send to handle"]').fill(me)
+    await other.page.locator('.board-form textarea').fill('hello from the other desk')
+    await other.page.getByRole('button', { name: 'Send letter' }).click()
+    await expect(other.page.locator('.mail-thread')).toContainText('hello from the other desk')
+    await other.page.locator('.tray-item', { hasText: 'postcard' }).click()
+    await expect(other.page.locator('.vibe-picks')).toBeVisible()
+    await other.page.locator('.board-form textarea').fill('one side')
+    await other.page.getByRole('button', { name: 'Mail postcard' }).click()
+    await expect(other.page.locator('.mail-thread')).toContainText('POSTCARD')
 
     await page.goto('/mail')
-    await expect(page.locator('h1')).toContainText(/letter/i)
-    const me = await claimHandle(page)
-    if (!me) {
-      await page.locator('.board-form input[aria-label="Send to handle"]').fill('yuzu')
-      await page.locator('.board-form textarea').fill('fold it twice.')
-      await page.getByRole('button', { name: 'Send letter' }).click()
-      await expect(page.locator('.mail-thread')).toContainText('fold it twice.')
-      return
-    }
-    const ctx = await browser.newContext()
-    const other = await ctx.newPage()
-    await fresh(other)
-    const them = await claimHandle(other)
-    if (!them) {
-      await ctx.close()
-      test.skip(true, 'API offline for second handle')
-      return
-    }
-    await other.goto('/mail')
-    await other.locator('[aria-label="Send to handle"]').fill(me)
-    await other.locator('.board-form textarea').fill('hello from the other desk')
-    await other.getByRole('button', { name: 'Send letter' }).click()
-    await expect(other.locator('.mail-thread')).toContainText('hello from the other desk')
-    await other.locator('.tray-item', { hasText: 'postcard' }).click()
-    await expect(other.locator('.vibe-picks')).toBeVisible()
-    await other.locator('.board-form textarea').fill('one side')
-    await other.getByRole('button', { name: 'Mail postcard' }).click()
-    await expect(other.locator('.mail-thread')).toContainText('POSTCARD')
-
-    await page.goto('/mail')
-    await expect(page.locator('.mail-threads')).toContainText(them)
+    await expect(page.locator('.mail-threads')).toContainText(other.handle)
     await expect(page.locator('.mail-threads')).toContainText(/new/i)
-    await page.locator('.mail-threads a', { hasText: them }).click()
+    await page.locator('.mail-threads a', { hasText: other.handle }).click()
     await expect(page.locator('.mail-thread')).toContainText('hello from the other desk')
-    await ctx.close()
+    await other.ctx.close()
   })
 
   test('35 profile wall watch guestbook shelf stamps', async ({ page, browser }) => {
@@ -217,33 +239,35 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
   test('35b profile series, sealed, empty wall, badges', async ({ page }) => {
     await page.goto('/u/you')
     await expect(page.getByRole('main')).toContainText(/rooftop hours|after hours/i)
+    const youMeta = page.locator('.zine-card .meta-line').first()
+    await expect(youMeta).toBeVisible()
+    const vibeHits = ((await youMeta.innerText()).match(/miles/gi) ?? []).length
+    expect(vibeHits).toBe(1)
     await expect(page.locator('.comic-badge.dim').first()).toBeVisible()
     await page.goto('/u/inkstain')
     await expect(page.locator('main')).toContainText(/sealed|confession|midnight/i)
+    const penned = page.locator('.zine-card', { hasText: /issue 13/i }).locator('.meta-line')
+    await expect(penned).toContainText(/the gutter/i)
+    await expect(penned).toContainText(/noir/i)
+    expect(((await penned.innerText()).match(/noir/gi) ?? []).length).toBe(1)
+    expect(((await penned.innerText()).match(/the gutter/gi) ?? []).length).toBe(1)
+    const sealed = page.locator('.zine-card', { hasText: /midnight run/i }).locator('.meta-line')
+    await expect(sealed).not.toContainText(/the gutter/i)
+    expect(((await sealed.innerText()).match(/noir/gi) ?? []).length).toBe(1)
 
-    const me = await claimHandle(page)
-    test.skip(!me, 'API offline')
+    const me = await requireHandle(page)
     await page.goto(`/u/${me}`)
     await expect(page.getByText('YOUR WALL')).toBeVisible()
     await expect(page.locator('main')).toContainText(/No dropped issues yet/)
     await expect(page.getByRole('link', { name: /Open the studio/i })).toBeVisible()
   })
 
-  test('36 MAIL wire after a letter', async ({ page, browser }) => {
-    const me = await claimHandle(page)
-    test.skip(!me, 'API offline')
-    const ctx = await browser.newContext()
-    const other = await ctx.newPage()
-    await fresh(other)
-    const them = await claimHandle(other)
-    if (!them) {
-      await ctx.close()
-      test.skip(true, 'API offline for second handle')
-      return
-    }
-    await other.goto(`/mail/${me}`)
-    await other.locator('textarea').fill('wire ping')
-    await other.getByRole('button', { name: 'Send letter' }).click()
+  test('36 MAIL wire after a letter', async ({ page, browser, workerApiPort }) => {
+    const me = await requireHandle(page)
+    const other = await openSecondDesk(browser, workerHeader(workerApiPort))
+    await other.page.goto(`/mail/${me}`)
+    await other.page.locator('textarea').fill('wire ping')
+    await other.page.getByRole('button', { name: 'Send letter' }).click()
 
     await page.goto('/studio')
     const mail = page.getByRole('button', { name: /Notices|new notices/i })
@@ -254,12 +278,11 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
     await expect(panel).toContainText(/quiet on this frequency|letter|wrote|mail|@/i)
     await page.mouse.click(4, 4)
     await expect(panel).toHaveCount(0)
-    await ctx.close()
+    await other.ctx.close()
   })
 
   test('claim studio shows Letters in the nav', async ({ page }) => {
-    const handle = await claimHandle(page)
-    test.skip(!handle, 'API offline')
+    const handle = await requireHandle(page)
     const nav = await page.locator('.nav-links').innerText()
     expect(nav).toMatch(/Letters/i)
     expect(nav).toMatch(new RegExp(`@${handle}`, 'i'))
@@ -270,8 +293,9 @@ test.describe('E. scene — board, fest, cork, mail, profile, wire', () => {
   test('login toggle on claim modal', async ({ page }) => {
     await page.goto('/studio')
     const claim = page.getByRole('button', { name: /Claim studio|API offline|Checking API/i })
-    await expect(claim).not.toHaveText(/Checking API/i, { timeout: 15_000 })
+    await expect(claim).not.toHaveText(/Checking API/i, { timeout: HEALTH_MS })
     if (!(await claim.isEnabled()) || /offline/i.test((await claim.innerText()) ?? '')) {
+      if (process.env.CI) throw new Error('API must be up in CI')
       test.skip(true, 'API offline')
     }
     await claim.click()

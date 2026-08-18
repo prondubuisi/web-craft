@@ -12,7 +12,7 @@ function demoLetters(): Letter[] {
       from: '@yuzu',
       to: 'you',
       body: 'booth 12 still has bows if you mail first.',
-      read: false,
+      read: true,
       createdAt: now - 2 * 3600_000,
     },
     {

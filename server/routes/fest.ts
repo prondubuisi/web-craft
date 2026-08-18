@@ -1,5 +1,12 @@
 import type { Hono } from 'hono'
-import type { FestListResponse, FestTableResponse, SitResponse, StampsResponse } from '../../src/lib/contract.ts'
+import type {
+  FestListResponse,
+  FestTableBody,
+  FestTableResponse,
+  SitResponse,
+  StampBody,
+  StampsResponse,
+} from '../../src/lib/contract.ts'
 import { normalizeScene } from '../../src/lib/fest.ts'
 import { getZineRow, type Db } from '../db.ts'
 import { currentUser } from '../http.ts'
@@ -45,7 +52,7 @@ export function registerFest(app: Hono, db: Db) {
   app.post('/api/fest', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<FestTableBody> | null
     const name = String(body?.name ?? '').trim().slice(0, 48) || `${user.name}'s table`
     const scene = normalizeScene(body?.scene) ?? ''
     const blurb = String(body?.blurb ?? '').trim().slice(0, 200)
@@ -76,7 +83,7 @@ export function registerFest(app: Hono, db: Db) {
   app.post('/api/stamps', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<StampBody> | null
     const zineId = String(body?.zineId ?? '')
     const zine = getZineRow(db, zineId)
     if (!zine || !zine.published || zine.visibility === 'unlisted') {

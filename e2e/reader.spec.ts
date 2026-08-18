@@ -1,14 +1,16 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, workerHeader } from './fixtures'
 import {
   clickIncludes,
   clickText,
   dropNow,
   expectNoPageErrors,
+  expectGhostContrast,
   forceOffline,
   fresh,
   insertSlash,
   openNewIssue,
   readIssue,
+  routedContext,
 } from './helpers'
 
 test.describe('C. reader — /z/:id', () => {
@@ -18,6 +20,24 @@ test.describe('C. reader — /z/:id', () => {
 
   test.afterEach(({ page }) => {
     expectNoPageErrors(page)
+  })
+
+  test('ghost buttons read on paper and stay cream on ink', async ({ page }) => {
+    await page.goto('/explore')
+    await readIssue(page, /sunday market/i)
+    const more = page.getByRole('button', { name: /More on this issue/i })
+    await expect(more).toBeVisible()
+    await expectGhostContrast(more, 'paper')
+    await more.click()
+    await expectGhostContrast(page.getByRole('button', { name: /Preview fold/i }), 'paper')
+
+    await openNewIssue(page, 'ghost drop')
+    await clickIncludes(page, 'Drop issue')
+    await expectGhostContrast(page.locator('[role="dialog"]').getByRole('button', { name: 'Export JSON' }), 'paper')
+    await page.keyboard.press('Escape')
+
+    await page.goto('/help')
+    await expectGhostContrast(page.locator('.help-page .comic-btn.ghost').first(), 'ink')
   })
 
   test('18 primary actions stay thin', async ({ page }) => {
@@ -143,7 +163,7 @@ test.describe('C. reader — /z/:id', () => {
     await expect(page.getByLabel('Blurbs')).toHaveCount(0)
   })
 
-  test('24 corpse invite shows last page only when API is up', async ({ page, browser }) => {
+  test('24 corpse invite shows last page only when API is up', async ({ page, browser, workerApiPort }) => {
     await openNewIssue(page, 'chain hop')
     await clickIncludes(page, 'Drop issue')
     await page.locator('[role="dialog"] .tray-item', { hasText: 'exquisite corpse' }).click()
@@ -162,7 +182,7 @@ test.describe('C. reader — /z/:id', () => {
     })
     const path = copied.match(/\/z\/[^?\s]+(?:\?chain=[^&\s]+)?/)?.[0]
     test.skip(!path, 'clipboard did not yield a corpse link')
-    const ctx = await browser.newContext()
+    const ctx = await routedContext(browser, workerHeader(workerApiPort))
     const other = await ctx.newPage()
     await fresh(other)
     await other.goto(path!)

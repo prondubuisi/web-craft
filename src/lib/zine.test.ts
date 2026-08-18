@@ -174,6 +174,8 @@ describe('series', () => {
   it('prefers a pen name as the byline', () => {
     expect(byline({ owner: '@inkstain', penName: 'the gutter' })).toBe('the gutter')
     expect(byline({ owner: '@inkstain' })).toBe('@inkstain')
+    expect(byline({ owner: 'you', penName: '   ' })).toBe('you')
+    expect(byline({ owner: 'you', penName: '' })).toBe('you')
   })
 })
 

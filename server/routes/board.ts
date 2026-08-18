@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Hono } from 'hono'
-import type { BoardListResponse, BoardPostResponse, SwapResponse } from '../../src/lib/contract.ts'
+import type { BoardListResponse, BoardPostBody, BoardPostResponse, OkBody, SwapResponse } from '../../src/lib/contract.ts'
 import { getZineRow, rowToListing, type Db } from '../db.ts'
 import { currentUser } from '../http.ts'
 
@@ -37,7 +37,7 @@ export function registerBoard(app: Hono, db: Db) {
   app.post('/api/board', async (c) => {
     const user = currentUser(db, c)
     if (!user) return c.json({ error: 'Sign in first' }, 401)
-    const body = await c.req.json().catch(() => null)
+    const body = (await c.req.json().catch(() => null)) as Partial<BoardPostBody> | null
     const kind = String(body?.kind ?? '')
     const text = String(body?.body ?? '').trim().slice(0, 280)
     if (!LISTING_KINDS.has(kind)) return c.json({ error: 'Pick trade, collab, or feedback' }, 400)
@@ -89,7 +89,8 @@ export function registerBoard(app: Hono, db: Db) {
     if (!row) return c.json({ error: 'missing pin' }, 404)
     if (row.user_id !== user.id) return c.json({ error: 'Not your pin' }, 403)
     db.prepare('DELETE FROM listings WHERE id = ?').run(c.req.param('id'))
-    return c.json({ ok: true })
+    const payload: OkBody = { ok: true }
+    return c.json(payload)
   })
 
   app.post('/api/board/:id/swap', (c) => {

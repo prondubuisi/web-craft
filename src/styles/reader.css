@@ -405,6 +405,39 @@ button.blackout-word.hid {
   gap: 0.45rem;
 }
 
+.tray-attr {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.tray-attr .tray-item {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.58rem;
+}
+
+.tray-lane {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: inherit;
+  gap: inherit;
+}
+
+.tray-lane-label {
+  grid-column: 1 / -1;
+  font-family: var(--font-badge);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-top: 0.25rem;
+}
+
+.tray-grid > .tray-lane:first-child .tray-lane-label {
+  margin-top: 0;
+}
+
 .tray-item {
   border: 3px solid var(--ink);
   background: #fff;
@@ -414,6 +447,11 @@ button.blackout-word.hid {
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.tray-item.on {
+  outline: 3px solid var(--ink);
+  background: color-mix(in oklab, var(--accent-2) 32%, #fff);
 }
 
 .tray-item .glyph {
@@ -500,6 +538,8 @@ button.blackout-word.hid {
   width: min(520px, 100%);
   background: var(--paper);
   color: var(--ink);
+  --ghost-ink: var(--ink);
+  --ghost-border: var(--ink);
   border: 4px solid var(--ink);
   box-shadow: 10px 12px 0 var(--ink);
   padding: 1.1rem;

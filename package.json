@@ -1,7 +1,7 @@
 {
   "name": "web-craft",
   "private": true,
-  "version": "1.5.8",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n web,api -c cyan,magenta \"vite\" \"tsx watch server/index.ts\"",
@@ -13,6 +13,9 @@
     "lint:css": "stylelint \"src/styles/**/*.css\"",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:headed": "HEADED=1 playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
     "preview": "vite preview",
     "verify": "node scripts/verify.mjs"
   },
