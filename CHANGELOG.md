@@ -6,6 +6,32 @@ All notable changes to Zineverse live here. Versions match git tags.
 
 Ghost buttons on the reader and in modals use ink on paper instead of cream-on-cream.
 
+Board's compose kind picker is no longer a second `filter-bar`. It uses `kind-picker` and a “posting as” label.
+
+Profile issue cards show the vibe once when there is no pen name.
+
+Help glossary cards no longer force a 180px minimum height.
+
+Playwright covers Board filter vs posting-as, penned vs unpenned profile bylines, remaining Help hops, and Help card height on a phone.
+
+Stream filters group into lane / vibe / sort / tag clusters. Vibe chips use the same palette tint as the New issue picks.
+
+First-visit MAIL and Letters arrive already read. The seeded @wobble / @inkstain notices and the @yuzu thread stay so those surfaces are not empty; the badge is not hot until something new happens.
+
+`docs/ISSUES.md` lists Playwright bottlenecks from a live 74-pass run — later amendments, not a feature round.
+
+Widget tray groups into page / ink / bind. Slash ↑↓ moves the highlight. Inspector marks the current size, layout, style, burst, voice, and press. Snap inserts after the selected block. Alt+↑/↓ moves a block; ⌘D duplicates. Redo sits next to Undo.
+
+Slash stays open after insert so you can stack widgets from the keyboard. Stack and grid get add / drop last in the inspector. On a scatter page, arrow keys nudge a selected sticker or hero.
+
+Paste or drop a photo onto the page to make a sticker. `]` / `[` tilts a selected sticker. Contents can pull headings. Blackout can clear holes or redact all. `/` on a block opens slash under it.
+
+Widgets are recipes of ink / photo / tape / cut / pin / set / cite / holes. The inspector Type row retargets a block and carries overlapping attributes. Slash `/photo` or `/set` finds every recipe that uses that cut. The tray can filter by those same cuts. Help names type and cut. Slash lists the cuts on each hit. The inspector Type row filters by the same vocabulary.
+
+`widgetLang.test.ts` covers harvest/applyBag/retarget: same-type is a no-op, id survives a retarget, heading text carries into a quote, a sticker photo carries into a hero, poll options carry into contents lines, and every widget retargets to every other widget without throwing. The inspector's Type row and its per-type option pickers (size, layout, style…) no longer collide on `.tray-item.on` — Playwright scopes the size-row assertion past the Type row instead.
+
+`docs/playwright-e2e-prompt.txt` and `docs/playwright-user-stories.txt` are gone — both were bootstrap prompts for the e2e suite, self-marked historical/implemented, cited nowhere, and stale against the current 78-test suite. The suite itself (`e2e/*.spec.ts`) is the living reference now.
+
 ## 1.5.8 — 2026-08-17
 
 Empty watching / archive / jam / board / cork / fest / mail / bag / wire / editor states hop to another resource instead of dead-ending.

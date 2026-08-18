@@ -9,10 +9,10 @@ Five real findings, one confirmed non-issue, one open question:
 | # | Where | What | Confidence |
 | --- | --- | --- | --- |
 | 1 | Reader + any modal | Secondary buttons render nearly invisible (cream-on-cream) | **Shipped** — `--ghost-ink` / `--ghost-border` |
-| 2 | `Board.tsx` | Filter row and "post as" picker share one CSS class | High — confirmed in code |
-| 3 | `Profile.tsx` | Un-penned issues show the vibe twice in the meta line | High — confirmed in code |
-| 4 | `Help.tsx` | Glossary cards force a 180px minimum height regardless of content | High — confirmed in code |
-| 5 | `Explore.tsx` | Lane / vibe / sort / tag filters are visually undifferentiated | Medium — real, but the fix needs a design call |
+| 2 | `Board.tsx` | Filter row and "post as" picker share one CSS class | **Shipped** — `kind-picker` + “posting as” |
+| 3 | `Profile.tsx` | Un-penned issues show the vibe twice in the meta line | **Shipped** — byline only when it differs |
+| 4 | `Help.tsx` | Glossary cards force a 180px minimum height regardless of content | **Shipped** — `.help-entry { min-height: auto }` |
+| 5 | `Explore.tsx` | Lane / vibe / sort / tag filters are visually undifferentiated | **Shipped** — clusters + vibe-tinted chips |
 | — | Reader, noir vibe | Suspected MAIL badge legibility issue | **Not real** — re-checked, renders fine |
 | — | Landing, `/mail` | First-time visitor already has 2 unread notices + a pen-pal thread | Confirmed intentional (`demoNotices()`) — a tone question, not a bug |
 
@@ -43,6 +43,8 @@ Reproduced identically across two screenshots taken 300ms apart (ruling out a re
 
 **Fix:** give the compose picker its own class (`kind-picker`) and a small label above it ("posting as"), matching the label style already used in `EditorMeta`. Same pill shape, visually quieter background so it doesn't compete with the active filter row.
 
+**Shipped.** Compose uses `kind-picker` + an `issue-chip` “posting as” label. Filter row stays `filter-bar`.
+
 ## 3. Profile shows the vibe twice for un-penned issues
 
 `Profile.tsx:211-212`:
@@ -59,11 +61,15 @@ When a zine has no distinct pen name, the fallback branch renders the vibe — t
 ```
 Same idiom already used for `seriesLabel`, not a new pattern.
 
+**Shipped.** Un-penned issues show the vibe once.
+
 ## 4. Help glossary wastes height on short entries
 
 Each entry uses the shared `.comic-cell` class (`base.css:422`: `min-height: 180px`) via `Help.tsx:138`'s `className="help-entry comic-cell"`. That's sized for equal-length grid cards elsewhere, not an 18-entry list where "issue" is one sentence and "snapshot" is three. Short entries sit in a mostly-empty box; scanning the full glossary takes far more scrolling than the content needs.
 
 **Fix:** one line — `.help-entry { min-height: auto; }` in `landing.css`, overriding `.comic-cell` just for this context. No other `.comic-cell` usage is touched.
+
+**Shipped.** Short glossary entries hug their copy.
 
 ## 5. Stream's filter row has four controls with no visual grouping
 
@@ -75,17 +81,19 @@ Lane (`ALL/WATCHING/JAM/ARCHIVE`, exclusive), vibe (`MILES…NOIR`, exclusive), 
 
 This one needs a design nod before touching markup (which grouping treatment), unlike 1–4 which are precise enough to just execute.
 
+**Shipped.** Four `filter-cluster` groups (lane / vibe / sort / tags) with a thin divider between them. Vibe chips reuse the VibePicks palette (● + `palette[2]` fill + ink outline when on).
+
 ## Not real / not a fix
 
 - **Noir-vibe MAIL badge**: re-checked with a fresh screenshot on the `ham` vibe reader — the unread count renders clearly ("2", legible white-on-red). The earlier read was a compressed-screenshot artifact. No action.
-- **First-visit unread mail**: `demoNotices()` (`src/lib/social/ink.ts:64`) deliberately seeds "@wobble liked after hours" and "@inkstain dropped midnight run" so the mailbox isn't empty on arrival — same spirit as the two seeded demo zines. Reasonable to read either way: makes the app feel alive immediately, or hands a new visitor unread clutter from strangers before they've done anything. A tone call, not a bug — flagging for a decision, not proposing a change.
+- **First-visit unread mail**: `demoNotices()` and `demoLetters()` still seed the wire and a @yuzu thread so those surfaces aren't empty — **shipped quieter**. Both arrive already read. MAIL is not hot; Letters has no "new" chip. A real like or letter still lights the badge.
 
 ## Suggested sequence
 
 1. **Item 1** — shipped (`--ghost-ink` / `--ghost-border`).
-2. **Items 2–4** — each is a small, independent, precisely-scoped fix; any order, could land in one PR or three.
-3. **Item 5** — needs a quick call on the grouping treatment, then it's equally mechanical.
-4. **The seeded-notices question** — raise with whoever owns product tone; not blocking on anything above.
+2. **Items 2–4** — shipped (Board picker, Profile vibe, Help card height).
+3. **Item 5** — shipped (lane / vibe / sort / tag clusters + VibePicks tint).
+4. **The seeded-notices question** — shipped quieter (demo notices and the @yuzu letter arrive already read).
 
 ## How this was read
 
