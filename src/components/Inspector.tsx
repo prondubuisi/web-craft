@@ -41,6 +41,12 @@ export function Inspector({
     onChange(applyBag(block, combineBags(next.map((idx) => samples[idx].bag))), true)
   }
 
+  function combineAll() {
+    const next = samples.map((_, i) => i)
+    setSamplePicks(next)
+    onChange(applyBag(block, combineBags(samples.map((s) => s.bag))), true)
+  }
+
   async function onUpload(file: File | undefined) {
     if (!file) return
     try {
@@ -107,6 +113,11 @@ export function Inspector({
       })}
       <label>Samples</label>
       <p className="serif">pick more than one. they stack.</p>
+      {samples.length > 1 ? (
+        <button type="button" className="comic-btn small" style={{ marginBottom: 8 }} onClick={combineAll}>
+          combine every scrap that fits
+        </button>
+      ) : null}
       {ATTRS.filter((attr) => meta.attrs.includes(attr) && samples.some((s) => s.attrs.includes(attr))).map(
         (attr) => (
           <div key={attr} className="vibe-picks" role="group" aria-label={`${attr} samples`}>

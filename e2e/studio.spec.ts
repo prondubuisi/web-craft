@@ -372,6 +372,18 @@ test.describe('B. maker — studio and editor', () => {
     await expect(page.locator('.sticker-block')).toContainText(/the city prints itself wrong on purpose/i)
   })
 
+  test('10n combine every scrap that fits selects and applies them all', async ({ page }) => {
+    await openNewIssue(page, 'shuffle hop')
+    await insertSlash(page, 'divider')
+    await page.locator('.block').filter({ has: page.locator('.divider') }).click()
+    const cutSamples = page.getByLabel('cut samples')
+    const count = await cutSamples.getByRole('button').count()
+    expect(count).toBeGreaterThan(1)
+    await page.getByRole('button', { name: 'combine every scrap that fits' }).click()
+    await expect(cutSamples.getByRole('button')).toHaveClass(Array(count).fill(/on/) as unknown as RegExp)
+    await expect(page.locator('.divider.zip')).toBeVisible()
+  })
+
   test('11 editor meta, finish, scatter, compilation', async ({ page }) => {
     await openNewIssue(page, 'meta hop')
     await page.getByLabel('Tags').fill('diary, protest')
