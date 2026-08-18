@@ -1,14 +1,14 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-17 (1.5.8)_
+_Last reviewed: 2026-08-18 (1.6.0)_
 
 ## Overview
 
-**Zineverse** (`package.json` name: `web-craft`, version `1.5.8`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
+**Zineverse** (`package.json` name: `web-craft`, version `1.6.0`, private) is a Spider-Verse-styled, block-based zine/collage editor. Stack: React 19 + TypeScript ~6 + Vite 8, with `react-router-dom`. Persistence is `localStorage` (`zineverse.v1`) plus an optional Hono + SQLite API.
 
 Public repo: https://github.com/prondubuisi/web-craft  
 Live demo: https://prondubuisi.github.io/web-craft/  
-git-flow: `main` / `develop`, tags `0.1.0` … `1.5.8`.
+git-flow: `main` / `develop`, tags `0.1.0` … `1.6.0`.
 
 Routes (from `src/App.tsx`):
 
