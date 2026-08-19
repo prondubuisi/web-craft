@@ -3,7 +3,7 @@ import type { Hono } from 'hono'
 import type { MailSendBody, MailSendResponse, MailThreadResponse, MailThreadsResponse } from '../../src/lib/contract.ts'
 import type { VibeId } from '../../src/lib/types.ts'
 import type { Db } from '../db.ts'
-import { currentUser } from '../http.ts'
+import { currentUser, VIBES } from '../http.ts'
 import { notify } from '../services/notify.ts'
 
 export function registerMail(app: Hono, db: Db) {
@@ -110,9 +110,7 @@ export function registerMail(app: Hono, db: Db) {
       .toLowerCase()
       .replace(/^@/, '')
     const postcard = Boolean(body?.postcard)
-    const vibe = ['miles', 'gwen', 'peni', 'ham', 'noir'].includes(String(body?.vibe ?? ''))
-      ? (String(body.vibe) as VibeId)
-      : undefined
+    const vibe = VIBES.has(String(body?.vibe ?? '')) ? (String(body.vibe) as VibeId) : undefined
     const text = String(body?.body ?? '')
       .trim()
       .slice(0, postcard ? 140 : 400)

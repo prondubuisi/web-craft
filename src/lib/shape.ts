@@ -9,7 +9,7 @@ const BLOCK_TYPE_SET = new Set<string>(BLOCK_TYPES)
 
 function assertVibe(value: unknown, path = 'vibe'): VibeId {
   if (typeof value !== 'string' || !VIBE_IDS.has(value)) {
-    fail(path, 'miles, gwen, peni, ham, or noir')
+    fail(path, `${[...VIBE_IDS].join(', ')}`)
   }
   return value as VibeId
 }

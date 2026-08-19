@@ -1,8 +1,9 @@
+import { VIBES as VIBE_LIST } from '../src/lib/vibes.ts'
 import { userFromToken } from './auth.ts'
 import type { Db, UserRow } from './db.ts'
 
 export const COOKIE = 'zv_session'
-export const VIBES = new Set(['miles', 'gwen', 'peni', 'ham', 'noir'])
+export const VIBES = new Set(VIBE_LIST.map((vibe) => vibe.id))
 
 export type RequestLike = { req: { header: (name: string) => string | undefined } }
 

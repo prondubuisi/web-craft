@@ -38,12 +38,43 @@ export const SAMPLES: Sample[] = [
   { label: 'noir', attrs: ['photo'], bag: { photo: '/art/noir.jpg' } },
   { label: 'peni', attrs: ['photo'], bag: { photo: '/art/peni.jpg' } },
   { label: 'ham', attrs: ['photo'], bag: { photo: '/art/ham.jpg' } },
+  { label: 'curse', attrs: ['photo'], bag: { photo: '/art/curse.jpg' }, tags: ['domain', 'ofuda'] },
+  { label: 'ofuda seal', attrs: ['photo'], bag: { photo: '/art/curse-seal.jpg' }, tags: ['domain', 'ofuda'] },
+  {
+    label: 'binding vow',
+    attrs: ['ink'],
+    bag: { ink: 'fold the ofuda twice. if it burns blue, keep it.' },
+    tags: ['domain'],
+  },
+  { label: 'shrine gate', attrs: ['cite'], bag: { cite: 'a stranger at the shrine gate' }, tags: ['domain'] },
   { label: 'web corner', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-web-corner.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'storyboard', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-storyboard.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'lightbox desk', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-desk.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'gesture study', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-gesture.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'rooftop skyline', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-rooftop.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'intern badge', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-badge.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'peg bar', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-pegbar.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'timing chart', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-timing.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'coffee ring', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-coffee.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  {
+    label: 'eleven weeks',
+    attrs: ['ink'],
+    bag: { ink: 'eleven weeks, one badge, no NDA about the coffee.' },
+    tags: ['internship', 'sketch'],
+  },
+  {
+    label: 'in-between',
+    attrs: ['ink'],
+    bag: { ink: 'you are not late. you are in-between.' },
+    tags: ['internship', 'sketch'],
+  },
+  { label: 'next desk', attrs: ['cite'], bag: { cite: 'the desk next to mine' }, tags: ['internship'] },
+  {
+    label: 'layout pass',
+    attrs: ['set'],
+    bag: { items: ['layout', 'gesture', 'review', 'keep'] },
+    tags: ['internship', 'sketch'],
+  },
   { label: 'wake', attrs: ['set'], bag: { items: ['wake', 'wait', 'wander', 'write'] } },
   { label: 'knock', attrs: ['set'], bag: { items: ['knock', 'pause', 'nothing', 'leave'] } },
   {
@@ -146,6 +177,13 @@ export function matchSample(query: string): Sample[] {
       sample.attrs.some((attr) => attr.includes(q)) ||
       sample.tags?.some((tag) => tag.toLowerCase().includes(q)),
   )
+}
+
+/** Scraps tagged for a set — sketch, internship, etc. */
+export function samplesTagged(tag: string): Sample[] {
+  const q = tag.toLowerCase()
+  if (!q) return []
+  return SAMPLES.filter((sample) => sample.tags?.some((item) => item.toLowerCase() === q || item.toLowerCase().includes(q)))
 }
 
 /** First recipe that can take every cut on the scrap. */

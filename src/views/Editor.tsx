@@ -31,6 +31,7 @@ import { dismissPrimer, primerSeen } from '../lib/primer'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
 import { markShared } from '../lib/shared'
 import type { Block, BlockType, LookLayer, PreviewMode, VibeId, Zine } from '../lib/types'
+import { VIBES } from '../lib/vibes'
 import { useHistory } from '../lib/useHistory'
 import { bagForType, linkBag, matchSample, misregisterPage, SAMPLES, typeForSample } from '../lib/samples'
 import { applyBag, harvest, restylePageForVibe, type AttrBag } from '../lib/widgetLang'
@@ -667,9 +668,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             onChange={(e) => pickVibe(e.target.value as VibeId)}
             aria-label="Vibe"
           >
-            {(['miles', 'gwen', 'peni', 'ham', 'noir'] as VibeId[]).map((v) => (
-              <option key={v} value={v}>
-                {v}
+            {VIBES.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
               </option>
             ))}
           </select>

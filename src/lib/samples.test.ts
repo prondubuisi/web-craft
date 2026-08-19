@@ -8,6 +8,7 @@ import {
   misregisterBlock,
   pickMisregister,
   pickN,
+  samplesTagged,
   starterPage,
 } from './samples'
 import { createBlock } from './widgets'
@@ -62,6 +63,14 @@ test('matchSample finds pencil scraps by tag, not just label', () => {
   assert.ok(hits.some((sample) => sample.label === 'intern badge'))
   assert.ok(hits.every((sample) => sample.tags?.some((tag) => tag.includes('sketch'))))
   assert.ok(matchSample('internship').some((sample) => sample.label === 'lightbox desk'))
+})
+
+test('samplesTagged returns the new internship sketch set', () => {
+  const sketch = samplesTagged('sketch')
+  assert.ok(sketch.some((sample) => sample.label === 'peg bar'))
+  assert.ok(sketch.some((sample) => sample.label === 'timing chart'))
+  assert.ok(sketch.some((sample) => sample.label === 'coffee ring'))
+  assert.ok(samplesTagged('internship').some((sample) => sample.label === 'eleven weeks'))
 })
 
 function harvestInk(block: { type: string; text?: string }) {

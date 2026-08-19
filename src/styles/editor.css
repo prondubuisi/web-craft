@@ -166,25 +166,37 @@
   border: 2px solid var(--ink);
   background: var(--accent-3);
   cursor: grab;
-  display: none;
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease);
 }
 
 .block:hover .block-handle,
 .block.selected .block-handle {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .block-tools {
-  display: none;
+  display: flex;
   position: absolute;
   right: 0;
   top: -34px;
   gap: 0.3rem;
   z-index: 3;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease);
 }
 
 .block.selected .block-tools {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .icon-btn {
@@ -406,6 +418,19 @@
   animation-duration: 2.4s;
 }
 
+[data-vibe='curse'] .quote-block {
+  background: var(--paper-2);
+  box-shadow: 6px 7px 0 var(--accent-3);
+}
+
+[data-vibe='curse'] .glitch-block {
+  letter-spacing: 0.12em;
+}
+
+[data-vibe='curse'] .sticker-block {
+  border-color: var(--accent-3);
+}
+
 .poll-block {
   background: #fff;
   color: var(--ink);
@@ -607,6 +632,7 @@ button.owner-link {
 
 .block.eyedrop-target {
   outline-color: var(--accent-2);
+  transition: outline-color 140ms var(--ease);
 }
 
 .block.pinnable,
@@ -632,6 +658,12 @@ button.owner-link {
   background: var(--accent);
   transform: translateX(-50%);
   cursor: grab;
+  transition: transform 120ms var(--ease);
+}
+
+.rotate-handle:hover,
+.rotate-handle:active {
+  transform: translateX(-50%) scale(1.18);
 }
 
 .rotate-handle::after {
@@ -645,10 +677,18 @@ button.owner-link {
   transform: translateX(-50%);
 }
 
+.cell,
+.strip-cell,
+.stack-card {
+  outline: 3px solid transparent;
+  outline-offset: 0;
+  transition: outline-color 140ms var(--ease), outline-offset 140ms var(--ease);
+}
+
 .cell.isolated,
 .strip-cell.isolated,
 .stack-card.isolated {
-  outline: 3px solid var(--accent);
+  outline-color: var(--accent);
   outline-offset: 3px;
 }
 
@@ -679,6 +719,11 @@ button.owner-link {
   font-size: 0.92rem;
 }
 
+@keyframes look-in {
+  from { opacity: 0.4; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
 .look-row {
   display: flex;
   align-items: center;
@@ -686,6 +731,13 @@ button.owner-link {
   border: 2px solid var(--ink);
   background: #fff;
   padding: 3px 5px;
+  animation: look-in 140ms var(--ease);
+  transition: transform 140ms var(--ease), box-shadow 140ms var(--ease);
+}
+
+.look-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
 .look-row.over {

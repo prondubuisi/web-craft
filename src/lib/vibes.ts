@@ -50,6 +50,14 @@ export const VIBES: Vibe[] = [
     art: '/art/noir.jpg',
     palette: ['#111111', '#f3efe4', '#c41212'],
   },
+  {
+    id: 'curse',
+    name: 'Curse',
+    alias: 'Ofuda night / domain ink',
+    blurb: 'Void black, cursed cyan, vermillion seals. The paper still smokes.',
+    art: '/art/curse.jpg',
+    palette: ['#6b4fff', '#19e8ff', '#e11d2e'],
+  },
 ]
 
 export const ART_LIBRARY = [
@@ -59,12 +67,17 @@ export const ART_LIBRARY = [
   '/art/ham.jpg',
   '/art/noir.jpg',
   '/art/collage-hero.jpg',
+  '/art/curse.jpg',
+  '/art/curse-seal.jpg',
   '/art/pencil/sketch-web-corner.svg',
   '/art/pencil/sketch-storyboard.svg',
   '/art/pencil/sketch-desk.svg',
   '/art/pencil/sketch-gesture.svg',
   '/art/pencil/sketch-rooftop.svg',
   '/art/pencil/sketch-badge.svg',
+  '/art/pencil/sketch-pegbar.svg',
+  '/art/pencil/sketch-timing.svg',
+  '/art/pencil/sketch-coffee.svg',
 ]
 
 export function vibeById(id: VibeId): Vibe {
@@ -119,5 +132,13 @@ export const VIBE_VOICE: Record<
     glitch: 'REDACC TED',
     quote: 'it rained like a confession and the gutter took notes.',
     cite: 'issue zero',
+  },
+  curse: {
+    sticker: 'fold the ofuda twice. if it burns blue, keep it.',
+    hero: 'the domain prints itself. you only hold the paper.',
+    sfx: 'KOKYU!',
+    glitch: 'BINDING VOW',
+    quote: 'throughout heaven and the xerox, I alone am the misregister.',
+    cite: 'a stranger at the shrine gate',
   },
 }

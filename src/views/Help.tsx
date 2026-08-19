@@ -12,7 +12,7 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'vibe',
-    body: 'A palette, not a template. Miles, Gwen, Peni, Ham, Noir. Temperature, not layout.',
+    body: 'A palette, not a template. Miles, Gwen, Peni, Ham, Noir, Curse. Temperature, not layout.',
     to: '/',
     go: 'Pick a vibe',
   },
@@ -34,7 +34,31 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'type',
-    body: 'What a block is. Change it in the inspector. Shared cuts carry over — heading ink becomes quote ink, a sticker photo becomes a hero photo.',
+    body: 'What a block is. Change it in the inspector. Shared cuts carry over — heading ink becomes quote ink, a sticker photo becomes a hero photo. Seventeen types stay; retarget instead of inventing an eighteenth.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'sticker / hero',
+    body: 'Same cuts (ink, photo, trim, pin). Sticker is a boxed scrap with tilt. Hero is the full-bleed halftone. Retarget to swap; do not keep both unless you mean two photos.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'grid / strip / stack',
+    body: 'Three ways to hold a set. Grid: gutters, fills, layout. Strip: one row of beats. Stack: overlapping cards with backs. Isolation edits one child. Shuffle reorders. Not three copies of one widget.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'sfx / glitch',
+    body: 'Both are ink. Sfx is one burst (THWIP). Glitch is a misregistered sentence. Retarget if you picked the wrong size of shout.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'quote / insert / colophon',
+    body: 'All can hold ink + cite. Quote is a pull on the page. Insert is a loose flyer. Colophon is edition, press, thanks. Reply is the tear-out that mails; letters sit under INK.',
     to: '/studio',
     go: 'Open the studio',
   },

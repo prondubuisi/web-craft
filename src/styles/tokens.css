@@ -83,3 +83,15 @@
   --halftone: 0.45;
   --aber: 1.2px;
 }
+
+[data-vibe='curse'] {
+  --ink: #0a0610;
+  --paper: #f4ead4;
+  --paper-2: #e2d0a8;
+  --accent: #6b4fff;
+  --accent-2: #19e8ff;
+  --accent-3: #e11d2e;
+  --panel: #0d0a14;
+  --halftone: 0.42;
+  --aber: 2.6px;
+}

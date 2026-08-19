@@ -516,6 +516,40 @@ p {
   font-size: clamp(3rem, 10vw, 6rem);
 }
 
+.studio-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.studio-more {
+  position: relative;
+}
+
+.studio-more-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 12.5rem;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+}
+
+.badge-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  flex: 1 1 100%;
+}
+
+.bag-empty {
+  min-height: auto;
+  margin: 0 0 1.2rem;
+  transform: none;
+}
+
 .badge-row {
   display: flex;
   flex-wrap: wrap;
@@ -711,7 +745,16 @@ p {
   .modal-back,
   .modal,
   .sheet-back,
-  .sheet {
+  .sheet,
+  .flip-page,
+  .look-row,
+  .rotate-handle,
+  .block-handle,
+  .block-tools,
+  .cell,
+  .strip-cell,
+  .stack-card,
+  .block.eyedrop-target {
     animation: none;
     transition: none;
   }

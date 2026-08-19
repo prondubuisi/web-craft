@@ -53,7 +53,7 @@ test('assertZineShape accepts a minimal issue and fills defaults', () => {
 
 test('assertZineShape rejects untrusted junk at the issue boundary', () => {
   fails(() => assertZineShape(null), /issue must be an object/)
-  fails(() => assertZineShape({ title: 'x', vibe: 'neon', blocks: [] }), /miles, gwen, peni, ham, or noir/)
+  fails(() => assertZineShape({ title: 'x', vibe: 'neon', blocks: [] }), /curse/)
   fails(() => assertZineShape({ title: '   ', vibe: 'miles', blocks: [] }), /non-empty/)
   fails(() => assertZineShape({ title: 'x', vibe: 'miles', blocks: 'nope' }), /blocks must be an array/)
 })

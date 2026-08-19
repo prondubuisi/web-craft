@@ -6,6 +6,7 @@ import { actionError } from '../lib/catch'
 import { useRemoteWithFallback } from '../lib/useRemote'
 import { listThreads, markThreadRead, sendLetter, threadWith } from '../lib/social'
 import type { VibeId } from '../lib/types'
+import { VIBES } from '../lib/vibes'
 import { profilePath } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -154,14 +155,14 @@ export function Mail() {
               </button>
               {card ? (
                 <div className="vibe-picks">
-                  {(['miles', 'gwen', 'peni', 'ham', 'noir'] as VibeId[]).map((id) => (
+                  {VIBES.map((item) => (
                     <button
-                      key={id}
+                      key={item.id}
                       type="button"
-                      className={`tray-item ${vibe === id ? 'on' : ''}`}
-                      onClick={() => setVibe(id)}
+                      className={`tray-item ${vibe === item.id ? 'on' : ''}`}
+                      onClick={() => setVibe(item.id)}
                     >
-                      {id}
+                      {item.name}
                     </button>
                   ))}
                 </div>

@@ -1,4 +1,4 @@
-export type VibeId = 'miles' | 'gwen' | 'peni' | 'ham' | 'noir'
+export type VibeId = 'miles' | 'gwen' | 'peni' | 'ham' | 'noir' | 'curse'
 
 export type BlockType =
   | 'heading'

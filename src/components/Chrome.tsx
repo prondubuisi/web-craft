@@ -6,7 +6,7 @@ import { dismissPrimer, primerSeen } from '../lib/primer'
 import { noticeCopy } from '../lib/social'
 import { VIBES, vibeById } from '../lib/vibes'
 import { profilePath, rememberVibe, studioPath } from '../lib/zine'
-import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useRef, useState, forwardRef, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react'
 import { assetUrl } from '../lib/paths'
 
 export function Topbar() {
@@ -226,17 +226,15 @@ export function CheckCircle({ on }: { on: boolean }) {
   )
 }
 
-export function ComicButton({
-  children,
-  className = '',
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button className={`comic-btn ${className}`} {...props}>
-      {children}
-    </button>
-  )
-}
+export const ComicButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
+  function ComicButton({ children, className = '', ...props }, ref) {
+    return (
+      <button ref={ref} className={`comic-btn ${className}`} {...props}>
+        {children}
+      </button>
+    )
+  },
+)
 
 export function Badge({ id, dim }: { id: BadgeId; dim?: boolean }) {
   const meta = BADGE_META[id]
