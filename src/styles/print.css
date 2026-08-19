@@ -11,6 +11,7 @@
   .modal-back,
   .modal,
   .drop-toast,
+  .toast-stack,
   .skip-link,
   .no-print,
   .footer-issue,
@@ -18,7 +19,11 @@
   .filter-bar,
   .inbox,
   .local-note,
-  .primer {
+  .primer,
+  .tour-rail,
+  .tour-rail-tab-col,
+  .onboard-banner,
+  .rotate-handle {
     display: none !important;
   }
 

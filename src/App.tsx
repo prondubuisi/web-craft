@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { appBasename } from './lib/paths'
 import { ZineProvider } from './store/ZineContext'
+import { ToastStack } from './components/ToastStack'
 import { Landing } from './views/Landing'
 import { Studio } from './views/Studio'
 
@@ -57,6 +58,7 @@ export default function App() {
               </Routes>
             </Suspense>
           </div>
+          <ToastStack />
         </div>
       </BrowserRouter>
     </ZineProvider>

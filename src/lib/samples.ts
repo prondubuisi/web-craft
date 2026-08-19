@@ -1,5 +1,6 @@
 import { uid } from './id'
-import type { Block, BlockType, VibeId } from './types'
+import { mergeLinkedLooks } from './looks'
+import type { Block, BlockType, LookLayer, VibeId } from './types'
 import { applyBag, combineBags, type AttrBag } from './widgetLang'
 import { WIDGETS, createBlock, widgetByType, type AttrId } from './widgets'
 
@@ -60,18 +61,18 @@ export const SAMPLES: Sample[] = [
   { label: 'the margin', attrs: ['cite'], bag: { cite: 'the margin' } },
   { label: 'stranger on the L', attrs: ['cite'], bag: { cite: 'a stranger on the L' } },
   { label: 'this browser', attrs: ['cite'], bag: { cite: 'this browser' } },
-  { label: 'xl', attrs: ['cut'], bag: { size: 'xl' } },
-  { label: 'lg', attrs: ['cut'], bag: { size: 'lg' } },
-  { label: 'tilt', attrs: ['cut'], bag: { tilt: -3.2 } },
-  { label: 'grain', attrs: ['cut'], bag: { density: 0.55, split: 10 } },
-  { label: 'gif diff', attrs: ['cut'], bag: { density: 0.62, split: 13 } },
-  { label: 'pixel bloom', attrs: ['cut'], bag: { density: 0.7, split: 5 } },
-  { label: 'chroma tear', attrs: ['cut'], bag: { density: 0.18, split: 14 } },
-  { label: 'static color', attrs: ['cut'], bag: { density: 0.4, split: 8 } },
-  { label: 'zip', attrs: ['cut'], bag: { style: 'zip' } },
-  { label: 'scribble', attrs: ['cut'], bag: { style: 'scribble' } },
-  { label: 'speed', attrs: ['cut'], bag: { style: 'speed' } },
-  { label: 'three', attrs: ['cut'], bag: { layout: 'three' } },
+  { label: 'xl', attrs: ['trim'], bag: { size: 'xl' } },
+  { label: 'lg', attrs: ['trim'], bag: { size: 'lg' } },
+  { label: 'tilt', attrs: ['trim'], bag: { tilt: -3.2 } },
+  { label: 'grain', attrs: ['trim'], bag: { density: 0.55, split: 10 } },
+  { label: 'gif diff', attrs: ['trim'], bag: { density: 0.62, split: 13 } },
+  { label: 'pixel bloom', attrs: ['trim'], bag: { density: 0.7, split: 5 } },
+  { label: 'chroma tear', attrs: ['trim'], bag: { density: 0.18, split: 14 } },
+  { label: 'static color', attrs: ['trim'], bag: { density: 0.4, split: 8 } },
+  { label: 'zip', attrs: ['trim'], bag: { style: 'zip' } },
+  { label: 'scribble', attrs: ['trim'], bag: { style: 'scribble' } },
+  { label: 'speed', attrs: ['trim'], bag: { style: 'speed' } },
+  { label: 'three', attrs: ['trim'], bag: { layout: 'three' } },
   { label: 'corner pin', attrs: ['pin'], bag: { x: 8, y: 22 } },
   { label: 'gutter pin', attrs: ['pin'], bag: { x: 52, y: 18 } },
   { label: 'floor pin', attrs: ['pin'], bag: { x: 28, y: 48 } },
@@ -87,9 +88,38 @@ export const SAMPLES: Sample[] = [
     attrs: ['set'],
     bag: { items: ['cut', 'glue', 'staple', 'leave'] },
   },
-  { label: 'hand tilt', attrs: ['cut'], bag: { tilt: 2.4 } },
+  { label: 'hand tilt', attrs: ['trim'], bag: { tilt: 2.4 } },
   { label: 'staple pin', attrs: ['pin'], bag: { x: 6, y: 8 } },
   { label: 'tear here', attrs: ['holes'], bag: { holes: [0, 1, 2] } },
+  { label: 'pow', attrs: ['ink'], bag: { ink: 'POW!' } },
+  { label: 'bam', attrs: ['ink'], bag: { ink: 'BAM!' } },
+  { label: 'zap', attrs: ['ink'], bag: { ink: 'ZAP!' } },
+  { label: 'offset', attrs: ['ink'], bag: { ink: 'OFFSET THE WORLD' } },
+  { label: 'mail it back', attrs: ['ink'], bag: { ink: 'tear this out. mail it back to the desk.' } },
+  {
+    label: 'gutter took notes',
+    attrs: ['ink', 'cite'],
+    bag: { ink: 'the gutter took notes. i took the L home.', cite: 'issue 13' },
+  },
+  {
+    label: 'this fell out',
+    attrs: ['cite', 'ink'],
+    bag: { cite: 'this fell out', ink: 'a show tonight. bring a stapler.' },
+  },
+  { label: 'four beats', attrs: ['set'], bag: { items: ['enter', 'tear', 'glue', 'leave'] } },
+  {
+    label: 'street ask',
+    attrs: ['ink', 'set'],
+    bag: { ink: 'what still prints?', items: ['one cheap copy', 'no bleed', 'the gutter'] },
+  },
+  {
+    label: 'desk pile',
+    attrs: ['set'],
+    bag: { items: ['the kit', 'scatter floor', 'after hours', 'ghost notes'] },
+  },
+  { label: 'last words', attrs: ['holes'], bag: { holes: [8, 9, 10, 11] } },
+  { label: 'asymmetric', attrs: ['trim'], bag: { layout: 'asymmetric' } },
+  { label: 'two-up', attrs: ['trim'], bag: { layout: 'two' } },
 ]
 
 export function samplesFor(type: BlockType): Sample[] {
@@ -128,7 +158,7 @@ export function bagForType(type: BlockType, bag: AttrBag): AttrBag {
     if (bag.x !== undefined) next.x = bag.x
     if (bag.y !== undefined) next.y = bag.y
   }
-  if (attrs.includes('cut')) {
+  if (attrs.includes('trim')) {
     if (bag.size) next.size = bag.size
     if (bag.tilt !== undefined) next.tilt = bag.tilt
     if (bag.density !== undefined) next.density = bag.density
@@ -144,10 +174,12 @@ export function canHoldBag(type: BlockType, bag: AttrBag): boolean {
 }
 
 /** Plant a scrap on every page widget that shares a cut — no new block type. */
-export function linkBag(blocks: Block[], bag: AttrBag): Block[] {
+export function linkBag(blocks: Block[], bag: AttrBag, live?: LookLayer[]): Block[] {
   return blocks.map((block) => {
     const slim = bagForType(block.type, bag)
-    return Object.keys(slim).length ? applyBag(block, slim) : block
+    if (!Object.keys(slim).length) return block
+    if (live?.length) return mergeLinkedLooks(block, live, slim)
+    return applyBag(block, slim)
   })
 }
 

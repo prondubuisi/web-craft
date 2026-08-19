@@ -1,6 +1,6 @@
 # Project Status: Zineverse (web-craft)
 
-_Last reviewed: 2026-08-18 (1.6.0)_
+_Last reviewed: 2026-08-19 (1.6.0)_
 
 ## Overview
 
@@ -29,7 +29,7 @@ Routes (from `src/App.tsx`):
 
 ## Development Status
 
-**Structure** (~8,800 lines of TS/TSX in `src/`):
+**Structure** (~12,600 lines of TS/TSX in `src/`):
 
 - `src/views/` — 14 screens (Help added). Editor canvas + extracted DropModal/EditorMeta. Preview chrome; social state in `useIssueSocial`
 - `src/components/` — Blocks, Chrome, Inspector, Comments, Reviews, Margins, FlipReader, FoldSheet
@@ -42,9 +42,9 @@ Routes (from `src/App.tsx`):
 
 **Runtime deps:** `react`, `react-dom`, `react-router-dom`, `hono`, `@hono/node-server`, `better-sqlite3`, `qrcode`.
 
-**Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build + Playwright e2e.
+**Build health:** `npm run build` is `tsc -b && vite build`. CI on `main`/`develop` runs lint + unit tests + build.
 
-**Testing:** Vitest + happy-dom (31 `*.test.ts` files, 231 tests, including `server/api.test.ts`, `src/lib/shape.test.ts`, `src/lib/catch.test.ts`, `src/lib/useIssueSocial.test.ts`, `src/lib/widgetLang.test.ts`, `src/lib/samples.test.ts`, `src/lib/seed.test.ts`, and service tests). Playwright user-story suite in `e2e/` — 93 tests, `workers: 4` locally / `2` in CI, each worker on its own isolated API + SQLite (`e2e/fixtures.ts`). Locally `npm run test:e2e` reuses `npm run dev`; CI starts the app itself. Puppeteer smoke script `scripts/verify.mjs`; 22 shots in `scripts/shots/`.
+**Testing:** the previous Vitest/happy-dom suite (31 `*.test.ts` files, 231 tests) and the Playwright e2e suite (`e2e/`, 93 tests, `scripts/verify.mjs` Puppeteer smoke script + `scripts/shots/` screenshots) were removed from the working tree; coverage is being rebuilt incrementally rather than restored wholesale. Current suite: `npm test` is `tsx --test src/lib/*.test.ts server/*.test.ts` (`node:test`). Files: `looks`/`pin` (appearance stack + pin math), `shape` (untrusted JSON), `widgetLang` (combine/harvest/apply/retarget), `samples` (bagForType/linkBag), `server/auth` (password + session rotation), `server/rateLimit` (login window). The glob is the contract — a new `*.test.ts` in those folders runs without a package.json edit.
 
 **Documentation:** `README.md` (run + feature list + state flow), `CONTRIBUTING.md` (git-flow), this file, `docs/IMPROVEMENTS.md` (idea log; rounds 1–6 shipped; frozen), `docs/ARCHITECTURE_PLAN.md` (restructuring plan, items 1–7 against 1.1.0, Round 2 items 8–14 against 1.5.0), `CHANGELOG.md`, `sg.md` (live next changes), `docs/sg3.md` (Tiger-style observation), `docs/sg4.md` (1.5.0 consolidation observation), `docs/sg5.md` (finish/share/find honesty; create vs drop in 1.5.4), `docs/sg6.md` (screenshot-driven visual QA pass; items 1–5 shipped), `docs/sg7.md` (Studio enjoyment pass — empty-state copy, `.stream-item` hover, modal/sheet motion; items 1–4 shipped), `docs/sg8.md` (speculative widget-feature catalog, explicitly not a round — shuffle button shipped, rest not queued), `docs/sg9.md` (data-model maintainability note — JSON helper, edition field list, and table-driven block recipes shipped), `docs/sg10.md` (async-collaboration polish — chain page number, compilation cap, and missing-remix stream hop shipped), `docs/ISSUES.md` (suite bottlenecks for later amendments).
 
@@ -54,7 +54,7 @@ Routes (from `src/App.tsx`):
 - **Without the API the app is still a local studio.** `owner` is a display label (`you` or `@handle`). Anyone with the page can edit whatever is in that browser’s `localStorage`.
 - **Sharing is still a blob.** Snapshot URLs (`/s#…`) encode the issue. No revocation.
 - **Sealed drops and passphrases are enforced on the API** when it is up. Offline they are client-side checks only.
-- **CI and Pages are live.** `.github/workflows/ci.yml` on `main`/`develop` (lint, unit, build, Playwright). `.github/workflows/pages.yml` deploys `main`. `.github/workflows/deploy-api.yml` deploys Fly (`FLY_API_TOKEN` is set).
+- **CI and Pages are live.** `.github/workflows/ci.yml` on `main`/`develop` (lint, unit, build). `.github/workflows/pages.yml` deploys `main`. `.github/workflows/deploy-api.yml` deploys Fly (`FLY_API_TOKEN` is set).
 - **Hosted API** is `https://zineverse-api.fly.dev`. `VITE_API_URL` is a repo Actions variable. Fly volume holds SQLite (`0003_legacy_columns` covers leftover schemas).
 
 ## Evaluation

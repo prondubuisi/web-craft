@@ -19,6 +19,36 @@ export type BlockType =
   | 'insert'
   | 'reply'
 
+/**
+ * One contributor on a block's appearance stack. `bag` is snapshotted at
+ * apply time so replay does not depend on the live SAMPLES list.
+ *
+ * Hand-edits do not drop the layer — they mark the touched keys in
+ * `overridden`. Removing the layer later then leaves those fields alone
+ * instead of snapping them back to the sample (or the widget default).
+ */
+export type LookLayer = {
+  label: string
+  bag: {
+    ink?: string
+    cite?: string
+    photo?: string
+    tape?: string
+    size?: 'xl' | 'lg' | 'md'
+    tilt?: number
+    density?: number
+    split?: number
+    style?: 'scribble' | 'speed' | 'zip'
+    layout?: 'two' | 'three' | 'asymmetric'
+    x?: number
+    y?: number
+    items?: string[]
+    holes?: number[]
+  }
+  linked?: boolean
+  overridden?: string[]
+}
+
 export type HeadingBlock = {
   id: string
   type: 'heading'
@@ -160,7 +190,7 @@ export type ReplyBlock = {
   prompt: string
 }
 
-export type Block =
+export type Block = (
   | HeadingBlock
   | StickerBlock
   | HeroBlock
@@ -178,6 +208,9 @@ export type Block =
   | ContentsBlock
   | InsertBlock
   | ReplyBlock
+) & {
+  looks?: LookLayer[]
+}
 
 export type Visibility = 'public' | 'unlisted'
 export type FinishId = 'clean' | 'riso' | 'grain'

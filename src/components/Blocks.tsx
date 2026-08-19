@@ -68,12 +68,18 @@ export function BlockView({
   poll,
   onVote,
   onMail,
+  flowPin = true,
+  subIndex = null,
+  onSubSelect,
 }: {
   block: Block
   onChange?: (next: Block) => void
   poll?: PollTally
   onVote?: (option: number) => void
   onMail?: (body: string) => void
+  flowPin?: boolean
+  subIndex?: number | null
+  onSubSelect?: (kind: 'panel' | 'card', index: number) => void
 }) {
   switch (block.type) {
     case 'heading':
@@ -86,7 +92,14 @@ export function BlockView({
       )
     case 'sticker':
       return (
-        <div className="sticker-block" style={{ transform: `rotate(${block.rotation}deg)` }}>
+        <div
+          className="sticker-block"
+          style={{
+            transform: flowPin
+              ? `translate(${block.x ?? 0}%, ${block.y ?? 0}%) rotate(${block.rotation}deg)`
+              : `rotate(${block.rotation}deg)`,
+          }}
+        >
           {block.src ? <img src={assetUrl(block.src)} alt="" className="sticker-cutout" /> : null}
           <Field
             value={block.text}
@@ -96,7 +109,9 @@ export function BlockView({
       )
     case 'hero':
       return (
-        <figure>
+        <figure
+          style={flowPin ? { transform: `translate(${block.x ?? 0}%, ${block.y ?? 0}%)` } : undefined}
+        >
           <Halftone
             src={block.src}
             alt={block.caption}
@@ -116,7 +131,19 @@ export function BlockView({
       return (
         <div className={`grid-block ${block.layout}`}>
           {block.panels.map((panel, i) => (
-            <div key={i} className="cell" style={{ background: panel.fill }}>
+            <div
+              key={i}
+              className={`cell${subIndex === i ? ' isolated' : ''}`}
+              style={{ background: panel.fill }}
+              onClick={
+                onSubSelect
+                  ? (e) => {
+                      e.stopPropagation()
+                      onSubSelect('panel', i)
+                    }
+                  : undefined
+              }
+            >
               {panel.src ? <img src={assetUrl(panel.src)} alt="" /> : null}
               <span>
                 <Field
@@ -178,7 +205,18 @@ export function BlockView({
       return (
         <div className="stack-block">
           {block.cards.map((card, i) => (
-            <article key={i} className="stack-card">
+            <article
+              key={i}
+              className={`stack-card${subIndex === i ? ' isolated' : ''}`}
+              onClick={
+                onSubSelect
+                  ? (e) => {
+                      e.stopPropagation()
+                      onSubSelect('card', i)
+                    }
+                  : undefined
+              }
+            >
               <Field
                 className="hand"
                 value={card.title}
@@ -300,7 +338,18 @@ export function BlockView({
       return (
         <div className="strip-block" aria-label="Mini comic">
           {block.panels.map((panel, i) => (
-            <div key={i} className="strip-cell">
+            <div
+              key={i}
+              className={`strip-cell${subIndex === i ? ' isolated' : ''}`}
+              onClick={
+                onSubSelect
+                  ? (e) => {
+                      e.stopPropagation()
+                      onSubSelect('panel', i)
+                    }
+                  : undefined
+              }
+            >
               {panel.src ? <img src={assetUrl(panel.src)} alt="" /> : null}
               <Field
                 value={panel.text}

@@ -1,10 +1,11 @@
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { useZines } from '../store/useZines'
 import type { BadgeId, VibeId } from '../lib/types'
 import { BADGE_META } from '../lib/seed'
+import { dismissPrimer, primerSeen } from '../lib/primer'
 import { noticeCopy } from '../lib/social'
-import { VIBES } from '../lib/vibes'
-import { profilePath } from '../lib/zine'
+import { VIBES, vibeById } from '../lib/vibes'
+import { profilePath, rememberVibe, studioPath } from '../lib/zine'
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react'
 import { assetUrl } from '../lib/paths'
 
@@ -40,6 +41,69 @@ export function LocalNote() {
       Local studio. Snapshot links and print work here. Board, fest, and letters need the API.{' '}
       <Link to="/help">What do the words mean?</Link>
     </p>
+  )
+}
+
+/** Greets a visitor who arrived cold on a shared issue/snapshot link — not the Cover page,
+ * which is the only other place onboarding happens. Reuses the Cover primer's dismiss flag,
+ * so seeing one counts as seeing the other. */
+export function OnboardBanner({ vibe }: { vibe?: VibeId }) {
+  const [show, setShow] = useState(() => !primerSeen())
+  const [picked, setPicked] = useState<VibeId>(vibe ?? 'miles')
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (vibe) setPicked(vibe)
+  }, [vibe])
+  if (!show) return null
+  const current = vibeById(picked)
+  return (
+    <aside className="comic-cell onboard-banner" aria-label="New here">
+      <div className="kicker">FIRST TIME?</div>
+      <p className="serif">
+        This page is one issue of <strong>Zineverse</strong>, a zine studio — not a website
+        builder. Tap a vibe to preview it, then make your own.
+      </p>
+      <div className="vibe-swatches" role="group" aria-label="Pick a vibe">
+        {VIBES.map((v) => {
+          const on = picked === v.id
+          return (
+            <button
+              key={v.id}
+              type="button"
+              aria-pressed={on}
+              aria-label={v.name}
+              className={`vibe-swatch ${on ? 'on' : ''}`}
+              onClick={() => setPicked(v.id)}
+              style={{ background: v.id === 'noir' ? v.palette[2] : v.palette[0], borderColor: on ? 'var(--ink)' : 'transparent' }}
+            />
+          )
+        })}
+        <span className="vibe-swatch-name hand">
+          {current.name} — {current.alias}
+        </span>
+      </div>
+      <div className="cta-row">
+        <ComicButton
+          className="small"
+          onClick={() => {
+            dismissPrimer()
+            rememberVibe(picked)
+            navigate(studioPath({ new: true, vibe: picked }))
+          }}
+        >
+          Make it in {current.name}
+        </ComicButton>
+        <ComicButton
+          className="small ghost"
+          onClick={() => {
+            dismissPrimer()
+            setShow(false)
+          }}
+        >
+          Dismiss
+        </ComicButton>
+      </div>
+    </aside>
   )
 }
 
@@ -144,6 +208,21 @@ function Inbox() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+export function CheckCircle({ on }: { on: boolean }) {
+  return (
+    <svg className="check-circle" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        fill={on ? 'var(--accent-3)' : 'none'}
+        stroke={on ? 'var(--ink)' : 'currentColor'}
+        strokeWidth="2"
+      />
+    </svg>
   )
 }
 

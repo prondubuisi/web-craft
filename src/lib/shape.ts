@@ -1,8 +1,8 @@
-import type { Block, BlockType, VibeId, Visibility, Zine } from './types'
+import type { Block, BlockType, LookLayer, VibeId, Visibility, Zine } from './types'
 import { VIBES } from './vibes'
 import { FINISH_IDS } from './zineFields'
 import { BLOCK_RECIPES, BLOCK_TYPES } from './blockRecipes'
-import { assertStringList, bool, fail, isRecord, nonempty, num, oneOf, optional, str } from './check'
+import { assertNumberList, assertStringList, bool, fail, isRecord, nonempty, num, oneOf, optional, str } from './check'
 
 const VIBE_IDS = new Set<string>(VIBES.map((v) => v.id))
 const BLOCK_TYPE_SET = new Set<string>(BLOCK_TYPES)
@@ -14,12 +14,52 @@ function assertVibe(value: unknown, path = 'vibe'): VibeId {
   return value as VibeId
 }
 
+function assertLookBag(raw: unknown, path: string): LookLayer['bag'] {
+  if (!isRecord(raw)) fail(path, 'an object')
+  const bag: LookLayer['bag'] = {}
+  if ('ink' in raw) bag.ink = str(raw.ink, `${path}.ink`)
+  if ('cite' in raw) bag.cite = str(raw.cite, `${path}.cite`)
+  if ('photo' in raw) bag.photo = str(raw.photo, `${path}.photo`)
+  if ('tape' in raw) bag.tape = str(raw.tape, `${path}.tape`)
+  if ('size' in raw) bag.size = oneOf(raw.size, ['xl', 'lg', 'md'] as const, `${path}.size`)
+  if ('tilt' in raw) bag.tilt = num(raw.tilt, `${path}.tilt`)
+  if ('density' in raw) bag.density = num(raw.density, `${path}.density`)
+  if ('split' in raw) bag.split = num(raw.split, `${path}.split`)
+  if ('style' in raw) bag.style = oneOf(raw.style, ['scribble', 'speed', 'zip'] as const, `${path}.style`)
+  if ('layout' in raw) {
+    bag.layout = oneOf(raw.layout, ['two', 'three', 'asymmetric'] as const, `${path}.layout`)
+  }
+  if ('x' in raw) bag.x = num(raw.x, `${path}.x`)
+  if ('y' in raw) bag.y = num(raw.y, `${path}.y`)
+  if ('items' in raw) bag.items = assertStringList(raw.items, `${path}.items`)
+  if ('holes' in raw) bag.holes = assertNumberList(raw.holes, `${path}.holes`)
+  return bag
+}
+
+function assertLooks(raw: unknown, path: string): LookLayer[] | undefined {
+  if (raw === undefined) return undefined
+  if (!Array.isArray(raw)) fail(path, 'an array')
+  return raw.map((item, i) => {
+    const p = `${path}[${i}]`
+    if (!isRecord(item)) fail(p, 'an object')
+    return {
+      label: nonempty(item.label, `${p}.label`),
+      bag: assertLookBag(item.bag, `${p}.bag`),
+      linked: optional(item.linked, `${p}.linked`, bool),
+      overridden:
+        item.overridden === undefined ? undefined : assertStringList(item.overridden, `${p}.overridden`),
+    }
+  })
+}
+
 function assertBlock(value: unknown, path: string): Block {
   if (!isRecord(value)) fail(path, 'an object')
   const id = nonempty(value.id, `${path}.id`)
   const type = str(value.type, `${path}.type`)
   if (!BLOCK_TYPE_SET.has(type)) fail(`${path}.type`, 'a known widget')
-  return BLOCK_RECIPES[type as BlockType].validate(value, id, path)
+  const block = BLOCK_RECIPES[type as BlockType].validate(value, id, path)
+  const looks = assertLooks(value.looks, `${path}.looks`)
+  return looks?.length ? { ...block, looks } : block
 }
 
 export function assertBlocks(value: unknown): Block[] {

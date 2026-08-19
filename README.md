@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-That starts the Vite app **and** the SQLite API (`http://127.0.0.1:8787`). Open **http://127.0.0.1:5173/** (not `localhost` — Vite is bound to IPv4 so the browser and Playwright share one origin). Claim a handle in the studio to sync drafts across browsers. Without the API, the **studio and issue data** still run from `localStorage`. Board, mail, jam, archive, fest, cork, bag, and the other community surfaces need the API — they do not have a full offline store.
+That starts the Vite app **and** the SQLite API (`http://127.0.0.1:8787`). Open **http://127.0.0.1:5173/** (not `localhost` — Vite is bound to IPv4). Claim a handle in the studio to sync drafts across browsers. Without the API, the **studio and issue data** still run from `localStorage`. Board, mail, jam, archive, fest, cork, bag, and the other community surfaces need the API — they do not have a full offline store.
 
 ```bash
 npm run dev:web   # frontend only
@@ -21,10 +21,6 @@ npm run dev:api   # API only
 ```
 
 ```bash
-npm test          # unit tests
-npm run test:e2e         # Playwright; reuses `npm run dev` on http://127.0.0.1:5173
-npm run test:e2e:headed  # same live server, visible Chrome
-npm run test:e2e:ui      # pick a story in the Playwright UI
 npm run lint      # oxlint + stylelint
 npm run build     # typecheck + production bundle
 ```

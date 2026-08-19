@@ -1,70 +1,59 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
-import { assertZineShape } from './shape'
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { assertBlocks, assertZineShape } from './shape'
+import { createBlock } from './widgets'
 
-const fixture = JSON.parse(
-  readFileSync(join(process.cwd(), 'e2e/fixtures/sample.zine.json'), 'utf8'),
-) as unknown
+function fails(fn: () => unknown, match: RegExp) {
+  assert.throws(fn, (err: unknown) => err instanceof Error && match.test(err.message))
+}
 
-describe('assertZineShape', () => {
-  it('accepts a studio export fixture', () => {
-    const zine = assertZineShape(fixture)
-    expect(zine.title).toBe('imported scrap')
-    expect(zine.vibe).toBe('gwen')
-    expect(zine.blocks).toHaveLength(2)
-    expect(zine.blocks[1]).toMatchObject({ type: 'sticker', text: 'from a json file' })
-  })
+function heading() {
+  return createBlock('heading', 'miles')
+}
 
-  it('fills defaults so a snapshot-shaped object is still a Zine', () => {
-    const zine = assertZineShape({
-      title: 'ghost notes',
-      vibe: 'noir',
-      owner: '@ink',
-      dropsAt: 99,
-      blocks: [{ id: 'h', type: 'heading', text: 'ghost notes', size: 'xl' }],
-    })
-    expect(zine.id).toBe('')
-    expect(zine.published).toBe(false)
-    expect(zine.owner).toBe('@ink')
-    expect(zine.dropsAt).toBe(99)
-  })
+test('assertBlocks accepts a recipe-valid heading', () => {
+  const block = heading()
+  const [out] = assertBlocks([block])
+  assert.equal(out.id, block.id)
+  assert.equal(out.type, 'heading')
+})
 
-  it('names the missing title', () => {
-    expect(() => assertZineShape({ vibe: 'miles', blocks: [] })).toThrow(/title must be a string/)
-  })
+test('assertBlocks rejects a non-array, an unknown type, and a missing field', () => {
+  fails(() => assertBlocks({}), /blocks must be an array/)
+  fails(() => assertBlocks([{ id: 'x', type: 'not-a-widget' }]), /known widget/)
+  fails(() => assertBlocks([{ id: 'x', type: 'heading', text: 'ok' }]), /size/)
+})
 
-  it('names a bad vibe', () => {
-    expect(() => assertZineShape({ title: 'x', vibe: 'spider', blocks: [] })).toThrow(
-      /vibe must be miles, gwen, peni, ham, or noir/,
-    )
-  })
+test('assertBlocks keeps a valid looks stack and drops an empty one', () => {
+  const block = heading()
+  const looks = [{ label: 'city', bag: { ink: 'city ink' }, linked: true, overridden: ['ink'] }]
+  const [kept] = assertBlocks([{ ...block, looks }])
+  assert.deepEqual(kept.looks, looks)
+  const [plain] = assertBlocks([{ ...block, looks: [] }])
+  assert.equal(plain.looks, undefined)
+})
 
-  it('names a missing blocks array', () => {
-    expect(() => assertZineShape({ title: 'x', vibe: 'miles' })).toThrow(/blocks must be an array/)
-  })
+test('assertBlocks rejects a look bag with a non-numeric trim field', () => {
+  const block = heading()
+  fails(
+    () => assertBlocks([{ ...block, looks: [{ label: 'tilt', bag: { tilt: 'sideways' } }] }]),
+    /looks\[0\]\.bag\.tilt must be a finite number/,
+  )
+})
 
-  it('names an unknown widget', () => {
-    expect(() =>
-      assertZineShape({
-        title: 'x',
-        vibe: 'miles',
-        blocks: [{ id: 'b', type: 'carousel', text: 'nope' }],
-      }),
-    ).toThrow(/blocks\[0\]\.type must be a known widget/)
-  })
+test('assertZineShape accepts a minimal issue and fills defaults', () => {
+  const zine = assertZineShape({ title: 'untitled issue', vibe: 'gwen', blocks: [] })
+  assert.equal(zine.title, 'untitled issue')
+  assert.equal(zine.vibe, 'gwen')
+  assert.deepEqual(zine.blocks, [])
+  assert.equal(zine.owner, 'you')
+  assert.equal(zine.published, false)
+  assert.equal(zine.dropsAt, null)
+})
 
-  it('names a heading with no text', () => {
-    expect(() =>
-      assertZineShape({
-        title: 'x',
-        vibe: 'miles',
-        blocks: [{ id: 'b', type: 'heading', size: 'xl' }],
-      }),
-    ).toThrow(/blocks\[0\]\.text must be a string/)
-  })
-
-  it('rejects a non-object', () => {
-    expect(() => assertZineShape('issue')).toThrow(/issue must be an object/)
-  })
+test('assertZineShape rejects untrusted junk at the issue boundary', () => {
+  fails(() => assertZineShape(null), /issue must be an object/)
+  fails(() => assertZineShape({ title: 'x', vibe: 'neon', blocks: [] }), /miles, gwen, peni, ham, or noir/)
+  fails(() => assertZineShape({ title: '   ', vibe: 'miles', blocks: [] }), /non-empty/)
+  fails(() => assertZineShape({ title: 'x', vibe: 'miles', blocks: 'nope' }), /blocks must be an array/)
 })

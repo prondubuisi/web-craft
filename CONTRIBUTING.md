@@ -34,26 +34,12 @@ npm run dev
 ## Checks
 
 ```bash
-npm test
-npm run test:e2e         # Playwright; reuses `npm run dev` on http://127.0.0.1:5173
-npm run test:e2e:headed  # same server, visible Chrome
-npm run test:e2e:ui      # Playwright UI — pick a story, watch it hit localhost
 npm run lint
+npm test
 npm run build
 ```
 
-CI on `main` and `develop` runs lint, unit tests, build, and Playwright (`npm run test:e2e`). Local e2e **reuses** an already-running `npm run dev` so IDE tests and the browser you have open share one Vite + SQLite process.
-
-## Live tests from the IDE
-
-1. Start the app once: `npm run dev` (or Run Task **dev: live localhost**).
-2. Open **http://127.0.0.1:5173/** — not `localhost` (Vite is bound to IPv4 only; tests use the same origin).
-3. Run a spec against that server:
-   - Playwright extension (recommended): gutter ▶ on a `test(...)` in `e2e/*.spec.ts`. Turn on **Show browser** to watch Chrome hit the same origin.
-   - Run and Debug: **Playwright: current file (reuse localhost)** or the **headed** / **UI** variants.
-   - Terminal: `npx playwright test e2e/studio.spec.ts -g "10h"` (add `HEADED=1` to see it).
-
-`playwright.config.ts` has `reuseExistingServer: true` when `CI` is unset. Do not start a second `npm run dev` — port 5173 is strict. The API stays `http://127.0.0.1:8787`.
+CI on `main` and `develop` runs lint, unit tests, and build.
 
 ## State
 

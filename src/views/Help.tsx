@@ -40,7 +40,13 @@ const ENTRIES: { term: string; body: string; to?: string; go?: string }[] = [
   },
   {
     term: 'cut',
-    body: 'The parts a widget is made of: ink, photo, tape, cut, pin, set, cite, holes. Slash /photo or the tray cut row finds every recipe that uses that part. Not a vibe and not a new widget.',
+    body: 'The parts a widget is made of: ink, photo, tape, trim, pin, set, cite, holes. Slash /photo or the tray attr row finds every recipe that uses that part. Not a vibe and not a new widget.',
+    to: '/studio',
+    go: 'Open the studio',
+  },
+  {
+    term: 'trim',
+    body: 'The cut for shape and format: size, tilt, halftone density and split, divider style, grid layout. Xl, hand tilt, grain, asymmetric — all trim scraps.',
     to: '/studio',
     go: 'Open the studio',
   },

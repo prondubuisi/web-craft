@@ -17,16 +17,16 @@ export function Tray({
   onLinkSample?: (sample: Sample) => void
   className?: string
 }) {
-  const [cut, setCut] = useState<AttrId | 'all'>('all')
-  const recipes = cut === 'all' ? WIDGETS : widgetsWithAttr(cut)
+  const [attrFilter, setAttrFilter] = useState<AttrId | 'all'>('all')
+  const recipes = attrFilter === 'all' ? WIDGETS : widgetsWithAttr(attrFilter)
 
   return (
     <div className={className}>
-      <div className="tray-attr" role="group" aria-label="cut">
+      <div className="tray-attr" role="group" aria-label="widget attrs">
         <button
           type="button"
-          className={`tray-item ${cut === 'all' ? 'on' : ''}`}
-          onClick={() => setCut('all')}
+          className={`tray-item ${attrFilter === 'all' ? 'on' : ''}`}
+          onClick={() => setAttrFilter('all')}
         >
           all
         </button>
@@ -34,8 +34,8 @@ export function Tray({
           <button
             key={attr}
             type="button"
-            className={`tray-item ${cut === attr ? 'on' : ''}`}
-            onClick={() => setCut(attr)}
+            className={`tray-item ${attrFilter === attr ? 'on' : ''}`}
+            onClick={() => setAttrFilter(attr)}
           >
             {attr}
           </button>
@@ -61,9 +61,9 @@ export function Tray({
           </div>
         )
       })}
-      {cut !== 'all' && onPlantSample
+      {attrFilter !== 'all' && onPlantSample
         ? (() => {
-            const scraps = samplesForAttr(cut)
+            const scraps = samplesForAttr(attrFilter)
             if (!scraps.length) return null
             return (
               <div className="tray-lane">

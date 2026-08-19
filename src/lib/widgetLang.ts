@@ -57,7 +57,7 @@ export function combineBags(bags: AttrBag[]): AttrBag {
 export function retarget(block: Block, type: BlockType, vibe: VibeId): Block {
   if (block.type === type) return block
   const next = applyBag(createBlock(type, vibe), harvest(block))
-  return { ...next, id: block.id }
+  return { ...next, id: block.id, looks: block.looks }
 }
 
 export function widgetsWithAttr(attr: AttrId) {

@@ -1,21 +1,41 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BlockView } from '../components/Blocks'
-import { BottomSheet, ComicButton, VibePicks } from '../components/Chrome'
+import { BottomSheet, CheckCircle, ComicButton, VibePicks } from '../components/Chrome'
 import { DropModal } from '../components/DropModal'
 import { EditorMeta } from '../components/EditorMeta'
 import { RemixCredit } from '../components/RemixCredit'
-import { Inspector } from '../components/Inspector'
+import { Inspector, type Eyedropper, type SubSel } from '../components/Inspector'
 import { Tray } from '../components/Tray'
 import { actionError } from '../lib/catch'
 import { cutoutImage } from '../lib/cutout'
+import {
+  applyLook,
+  breakingLooks,
+  changedKeys,
+  EYEDROP_LABEL,
+  SAMPLE_MIME,
+  unlinkLooks,
+  withOverrides,
+} from '../lib/looks'
+import {
+  canPin,
+  overlayPin,
+  pinFromPointer,
+  pinOrigin,
+  tiltFromPointer,
+  type PinLive,
+} from '../lib/pin'
 import { appHref } from '../lib/paths'
+import { dismissPrimer, primerSeen } from '../lib/primer'
 import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../lib/share'
-import type { Block, BlockType, PreviewMode, VibeId, Zine } from '../lib/types'
+import { markShared } from '../lib/shared'
+import type { Block, BlockType, LookLayer, PreviewMode, VibeId, Zine } from '../lib/types'
 import { useHistory } from '../lib/useHistory'
-import { linkBag, matchSample, typeForSample } from '../lib/samples'
-import { applyBag, restylePageForVibe, type AttrBag } from '../lib/widgetLang'
+import { bagForType, linkBag, matchSample, SAMPLES, typeForSample } from '../lib/samples'
+import { applyBag, harvest, restylePageForVibe, type AttrBag } from '../lib/widgetLang'
 import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
+import { pushToast } from '../lib/toast'
 import { editPath, isSeededDemo, isToolkitSeed, issuePath, slugify, sourceOfRemix } from '../lib/zine'
 import { useZines } from '../store/useZines'
 
@@ -49,15 +69,63 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const [trayOpen, setTrayOpen] = useState(true)
   const [sheet, setSheet] = useState<Sheet>(null)
   const [dropOpen, setDropOpen] = useState(false)
-  const [copied, setCopied] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [eyedropper, setEyedropper] = useState<Eyedropper>({ on: false, bag: null })
+  const [ghostBag, setGhostBag] = useState<AttrBag | null>(null)
+  const [pinLive, setPinLive] = useState<PinLive | null>(null)
+  const [subSel, setSubSel] = useState<(SubSel & { blockId: string }) | null>(null)
   const textTimer = useRef<number>(0)
   const textDirty = useRef(false)
   const slashRef = useRef<HTMLInputElement>(null)
+  const pageRef = useRef<HTMLElement>(null)
+  const zineRef = useRef(zine)
+  zineRef.current = zine
+  const didDrag = useRef(false)
+  const pinLiveRef = useRef<PinLive | null>(null)
+  const pinRaf = useRef(0)
+  const dragRef = useRef<{
+    id: string
+    kind: 'move' | 'rotate'
+    originX: number
+    originY: number
+    startX: number
+    startY: number
+    cx: number
+    cy: number
+    moved: boolean
+    prev: Block
+    pointerId: number
+    target: Element | null
+  } | null>(null)
   const { remember, undo, redo } = useHistory(zine)
+  const rememberRef = useRef(remember)
+  rememberRef.current = remember
+  const firstVisit = useRef(!primerSeen())
+  const [railOpen, setRailOpen] = useState(() => firstVisit.current && zine.blocks.length === 0)
 
-  const selectedBlock = zine.blocks.find((b) => b.id === selected)
+  useEffect(() => {
+    if (firstVisit.current && zine.blocks.length === 0) dismissPrimer()
+  }, [zine.blocks.length])
+
+  const rawSelected = zine.blocks.find((b) => b.id === selected)
+  const selectedBlock = rawSelected ? overlayPin(rawSelected, pinLive) : undefined
   const remixSource = sourceOfRemix(zines, zine)
+
+  useEffect(() => {
+    if (!subSel) return
+    const block = zine.blocks.find((item) => item.id === subSel.blockId)
+    if (!block) {
+      setSubSel(null)
+      return
+    }
+    const len =
+      block.type === 'grid' || block.type === 'strip'
+        ? block.panels.length
+        : block.type === 'stack'
+          ? block.cards.length
+          : 0
+    if (subSel.index >= len) setSubSel(null)
+  }, [subSel, zine.blocks])
 
   const slashHits = useMemo(() => {
     const widgets = matchWidget(slash).map((w) => ({
@@ -107,8 +175,15 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     insertBlock(block)
   }
 
-  function linkSampleOnPage(bag: AttrBag) {
-    update(linkBag(zine.blocks, bag))
+  function linkSampleOnPage(bag: AttrBag, live?: LookLayer[]) {
+    const next = linkBag(zine.blocks, bag, live)
+    if (next.every((block, i) => block === zine.blocks[i])) {
+      setSlash('')
+      setSlashPick(0)
+      setSlashOpen(false)
+      return
+    }
+    update(next)
     setSlash('')
     setSlashPick(0)
     setSlashOpen(false)
@@ -118,18 +193,35 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     const selectedFits =
       selectedBlock && sample.attrs.some((attr) => widgetByType(selectedBlock.type).attrs.includes(attr))
     if (selectedFits && selectedBlock) {
-      update(zine.blocks.map((b) => (b.id === selectedBlock.id ? applyBag(b, sample.bag) : b)))
+      const layer: LookLayer = {
+        label: sample.label,
+        bag: bagForType(selectedBlock.type, sample.bag),
+      }
+      update(zine.blocks.map((b) => (b.id === selectedBlock.id ? applyLook(b, layer) : b)))
       setSlash('')
       setSlashPick(0)
       setSlashOpen(false)
       return
     }
-    insertBlock(applyBag(createBlock(typeForSample(sample), zine.vibe), sample.bag))
+    const fresh = createBlock(typeForSample(sample), zine.vibe)
+    insertBlock(applyLook(fresh, { label: sample.label, bag: bagForType(fresh.type, sample.bag) }))
+  }
+
+  function applySampleTo(block: Block, label: string) {
+    const sample = SAMPLES.find((row) => row.label === label)
+    if (!sample) return
+    const layer: LookLayer = { label: sample.label, bag: bagForType(block.type, sample.bag) }
+    remember()
+    setBlocks(
+      zine.id,
+      zine.blocks.map((item) => (item.id === block.id ? applyLook(item, layer) : item)),
+    )
   }
 
   function remove(blockId: string) {
     update(zine.blocks.filter((b) => b.id !== blockId))
     setSelected(null)
+    if (subSel?.blockId === blockId) setSubSel(null)
   }
 
   function duplicate(blockId: string) {
@@ -151,7 +243,26 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     update(next)
   }
 
+  function paintBlock(id: string, fn: (block: Block) => Block) {
+    const current = zineRef.current
+    setBlocks(
+      current.id,
+      current.blocks.map((block) => (block.id === id ? fn(block) : block)),
+    )
+  }
+
   function patchBlock(next: Block, recordHistory = false) {
+    const current = zine.blocks.find((block) => block.id === next.id)
+    let dest = next
+    if (current) {
+      const breaking = breakingLooks(current, next)
+      if (breaking.length) {
+        const labels = breaking.map((layer) => layer.label).join(', ')
+        if (!window.confirm(`This unlinks “${labels}” from other blocks on the page.`)) return
+        dest = unlinkLooks(next, breaking, changedKeys(harvest(current), harvest(next)))
+      }
+      dest = withOverrides(current, dest)
+    }
     if (recordHistory) {
       remember()
       textDirty.current = false
@@ -161,12 +272,148 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     }
     setBlocks(
       zine.id,
-      zine.blocks.map((b) => (b.id === next.id ? next : b)),
+      zine.blocks.map((b) => (b.id === dest.id ? dest : b)),
     )
     window.clearTimeout(textTimer.current)
     textTimer.current = window.setTimeout(() => {
       textDirty.current = false
     }, 700)
+  }
+
+  function onEyedropBlock(block: Block) {
+    if (!eyedropper.on) return false
+    if (!eyedropper.bag) {
+      setEyedropper({ on: true, bag: harvest(block) })
+      setSelected(block.id)
+      return true
+    }
+    const slim = bagForType(block.type, eyedropper.bag)
+    if (Object.keys(slim).length) {
+      const next = applyLook(block, { label: EYEDROP_LABEL, bag: slim })
+      remember()
+      setBlocks(
+        zine.id,
+        zine.blocks.map((item) => (item.id === block.id ? next : item)),
+      )
+    }
+    setSelected(block.id)
+    return true
+  }
+
+  function flushPinLive(next: PinLive) {
+    pinLiveRef.current = next
+    if (pinRaf.current) return
+    pinRaf.current = window.requestAnimationFrame(() => {
+      pinRaf.current = 0
+      if (pinLiveRef.current) setPinLive(pinLiveRef.current)
+    })
+  }
+
+  function clearPinLive() {
+    if (pinRaf.current) {
+      window.cancelAnimationFrame(pinRaf.current)
+      pinRaf.current = 0
+    }
+    pinLiveRef.current = null
+    setPinLive(null)
+  }
+
+  function startPinDrag(e: ReactPointerEvent, block: Block, index: number, kind: 'move' | 'rotate') {
+    if (eyedropper.on) return
+    if (!canPin(block.type) && kind === 'move') return
+    if (block.type !== 'sticker' && kind === 'rotate') return
+    const origin = pinOrigin(block, index, Boolean(zine.scatter))
+    const box = e.currentTarget.closest('.block')?.getBoundingClientRect()
+    didDrag.current = false
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* capture is best-effort on older webviews */
+    }
+    dragRef.current = {
+      id: block.id,
+      kind,
+      originX: origin.x,
+      originY: origin.y,
+      startX: e.clientX,
+      startY: e.clientY,
+      cx: box ? box.left + box.width / 2 : e.clientX,
+      cy: box ? box.top + box.height / 2 : e.clientY,
+      moved: false,
+      prev: block,
+      pointerId: e.pointerId,
+      target: e.currentTarget,
+    }
+
+    function onMove(ev: PointerEvent) {
+      const drag = dragRef.current
+      const page = pageRef.current
+      if (!drag || !page || ev.pointerId !== drag.pointerId) return
+      const rect = page.getBoundingClientRect()
+      if (!drag.moved && Math.hypot(ev.clientX - drag.startX, ev.clientY - drag.startY) > 3) {
+        drag.moved = true
+        didDrag.current = true
+      }
+      if (!drag.moved) return
+      ev.preventDefault()
+      const rotation =
+        drag.kind === 'rotate'
+          ? tiltFromPointer(drag.cx, drag.cy, ev.clientX, ev.clientY)
+          : drag.prev.type === 'sticker'
+            ? drag.prev.rotation
+            : 0
+      const pos =
+        drag.kind === 'move'
+          ? pinFromPointer(
+              drag.originX,
+              drag.originY,
+              drag.startX,
+              drag.startY,
+              ev.clientX,
+              ev.clientY,
+              rect.width,
+              rect.height,
+            )
+          : { x: drag.originX, y: drag.originY }
+      flushPinLive({ id: drag.id, x: pos.x, y: pos.y, rotation })
+    }
+
+    function onUp(ev: PointerEvent) {
+      const drag = dragRef.current
+      if (!drag || ev.pointerId !== drag.pointerId) return
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (drag.target instanceof Element && drag.target.hasPointerCapture(drag.pointerId)) {
+        drag.target.releasePointerCapture(drag.pointerId)
+      }
+      dragRef.current = null
+      const live = pinLiveRef.current
+      clearPinLive()
+      if (!drag.moved || !live) return
+      const staged =
+        drag.prev.type === 'sticker'
+          ? { ...drag.prev, x: live.x, y: live.y, rotation: live.rotation }
+          : drag.prev.type === 'hero'
+            ? { ...drag.prev, x: live.x, y: live.y }
+            : drag.prev
+      const breaking = breakingLooks(drag.prev, staged)
+      if (breaking.length) {
+        const labels = breaking.map((layer) => layer.label).join(', ')
+        if (!window.confirm(`This unlinks “${labels}” from other blocks on the page.`)) return
+        rememberRef.current()
+        paintBlock(drag.id, () =>
+          unlinkLooks(withOverrides(drag.prev, staged), breaking, changedKeys(harvest(drag.prev), harvest(staged))),
+        )
+        return
+      }
+      rememberRef.current()
+      paintBlock(drag.id, () => withOverrides(drag.prev, staged))
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
 
   function onDrop(overId: string) {
@@ -185,20 +432,19 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     if (kind === 'snapshot') {
       const packed = tryEncodeShare(zine)
       if (!packed.ok) {
-        setCopied(packed.reason)
-        window.setTimeout(() => setCopied(null), 3600)
+        pushToast(packed.reason, 'error', zine.vibe)
         return
       }
       const url = `${appHref('/s')}#${packed.token}`
       const ok = await copyText(url)
-      setCopied(ok ? 'Snapshot link copied' : url)
-      window.setTimeout(() => setCopied(null), 2400)
+      if (ok) markShared()
+      pushToast(ok ? 'Snapshot link copied' : url, 'success', zine.vibe)
       return
     }
     const url = appHref(`/z/${zine.id}`)
     const ok = await copyText(url)
-    setCopied(ok ? 'Studio link copied' : url)
-    window.setTimeout(() => setCopied(null), 2400)
+    if (ok) markShared()
+    pushToast(ok ? 'Studio link copied' : url, 'success', zine.vibe)
   }
 
   async function snapSticker(file: File | undefined) {
@@ -221,7 +467,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
       setSelected(block.id)
       setSheet(null)
     } catch (err) {
-      window.alert(actionError(err, 'Could not use that photo'))
+      pushToast(actionError(err, 'Could not use that photo'), 'error', zine.vibe)
     }
   }
 
@@ -338,6 +584,10 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         setSlashOpen(false)
         setSheet(null)
         setDropOpen(false)
+        setEyedropper({ on: false, bag: null })
+        setGhostBag(null)
+        setSubSel(null)
+        clearPinLive()
       }
       if ((e.key === 'Backspace' || e.key === 'Delete') && selected && !typing) {
         e.preventDefault()
@@ -469,17 +719,25 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         )}
 
         <div
-          className="canvas-wrap"
+          className={`canvas-wrap${eyedropper.on ? ' eyedropper' : ''}`}
           onClick={() => {
             setSelected(null)
             setSlashOpen(false)
+            setSubSel(null)
           }}
         >
           <article
-            className={`zine-page ${mode}${zine.scatter ? ' scatter' : ''}`}
+            ref={pageRef}
+            className={`zine-page ${mode}${zine.scatter ? ' scatter' : ''}${eyedropper.on ? ' eyedropper' : ''}`}
             onClick={(e) => e.stopPropagation()}
             onDragOver={(e) => {
-              if (e.dataTransfer?.types.includes('Files') || zine.scatter) e.preventDefault()
+              if (
+                e.dataTransfer?.types.includes('Files') ||
+                e.dataTransfer.types.includes(SAMPLE_MIME) ||
+                zine.scatter
+              ) {
+                e.preventDefault()
+              }
             }}
             onDrop={(e) => {
               const file = [...(e.dataTransfer?.files ?? [])].find((row) => row.type.startsWith('image/'))
@@ -497,31 +755,57 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                 is enough — then Drop issue.
               </p>
             ) : null}
-            {zine.blocks.map((block, i) => (
+            {zine.blocks.map((block, i) => {
+              const pinned = overlayPin(block, pinLive)
+              const shown =
+                selected === block.id && ghostBag && !pinLive
+                  ? applyBag(pinned, bagForType(block.type, ghostBag))
+                  : pinned
+              const origin = pinOrigin(pinned, i, Boolean(zine.scatter))
+              return (
               <div
                 key={block.id}
                 className={`block ${selected === block.id ? 'selected' : ''}${
-                  zine.scatter && (block.type === 'sticker' || block.type === 'hero')
-                    ? ' scatter-pin'
-                    : ''
-                }`}
+                  zine.scatter && canPin(block.type) ? ' scatter-pin' : ''
+                }${canPin(block.type) ? ' pinnable' : ''}${
+                  pinLive?.id === block.id ? ' pinning' : ''
+                }${eyedropper.on && eyedropper.bag ? ' eyedrop-target' : ''}`}
                 style={
-                  zine.scatter && (block.type === 'sticker' || block.type === 'hero')
-                    ? {
-                        left: `${block.x ?? (i % 3) * 28 + 6}%`,
-                        top: `${block.y ?? Math.floor(i / 3) * 26 + 8}%`,
-                      }
+                  zine.scatter && canPin(block.type)
+                    ? { left: `${origin.x}%`, top: `${origin.y}%` }
                     : undefined
                 }
                 onClick={(e) => {
                   e.stopPropagation()
+                  if (didDrag.current) {
+                    didDrag.current = false
+                    return
+                  }
+                  if (onEyedropBlock(block)) return
                   setSelected(block.id)
                   setSlashOpen(false)
+                  if (subSel && subSel.blockId !== block.id) setSubSel(null)
+                }}
+                onPointerDown={(e) => {
+                  const tag = (e.target as HTMLElement).tagName
+                  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return
+                  if ((e.target as HTMLElement).closest('.block-tools, .block-handle, .rotate-handle')) {
+                    return
+                  }
+                  if (canPin(block.type)) startPinDrag(e, block, i, 'move')
                 }}
                 onDragOver={(e) => {
-                  if (!zine.scatter) e.preventDefault()
+                  if (e.dataTransfer.types.includes(SAMPLE_MIME) || !zine.scatter) e.preventDefault()
                 }}
-                onDrop={() => {
+                onDrop={(e) => {
+                  const label = e.dataTransfer.getData(SAMPLE_MIME)
+                  if (label) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    applySampleTo(block, label)
+                    setSelected(block.id)
+                    return
+                  }
                   if (!zine.scatter) onDrop(block.id)
                 }}
               >
@@ -565,12 +849,36 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                     ×
                   </button>
                 </div>
-                <BlockView block={block} onChange={(next) => patchBlock(next, false)} />
+                {selected === block.id && block.type === 'sticker' ? (
+                  <button
+                    type="button"
+                    className="rotate-handle"
+                    aria-label="Rotate sticker"
+                    onPointerDown={(e) => {
+                      e.stopPropagation()
+                      startPinDrag(e, block, i, 'rotate')
+                    }}
+                  />
+                ) : null}
+                <BlockView
+                  block={shown}
+                  onChange={(next) => patchBlock(next, false)}
+                  flowPin={!zine.scatter}
+                  subIndex={subSel?.blockId === block.id ? subSel.index : null}
+                  onSubSelect={(kind, index) => {
+                    setSelected(block.id)
+                    setSubSel({ blockId: block.id, kind, index })
+                  }}
+                />
               </div>
-            ))}
+              )
+            })}
           </article>
         </div>
 
+        {firstVisit.current && zine.blocks.length === 0 ? (
+          <TourRail open={railOpen} onToggle={() => setRailOpen((v) => !v)} />
+        ) : (
         <aside className="inspector desktop-only">
           <div className="kicker">INSPECTOR</div>
           {selectedBlock ? (
@@ -581,6 +889,10 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               onLinkBag={linkSampleOnPage}
               pageBlocks={zine.blocks}
               vibe={zine.vibe}
+              eyedropper={eyedropper}
+              onEyedropper={setEyedropper}
+              onPreview={setGhostBag}
+              subSel={subSel?.blockId === selectedBlock.id ? subSel : null}
             />
           ) : (
             <div>
@@ -610,6 +922,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             </div>
           )}
         </aside>
+        )}
       </div>
 
       <button className="fab mobile-only" onClick={() => setSheet('tray')} aria-label="Add widget">
@@ -637,6 +950,10 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             onLinkBag={linkSampleOnPage}
             pageBlocks={zine.blocks}
             vibe={zine.vibe}
+            eyedropper={eyedropper}
+            onEyedropper={setEyedropper}
+            onPreview={setGhostBag}
+            subSel={subSel?.blockId === selectedBlock.id ? subSel : null}
           />
         </BottomSheet>
       ) : null}
@@ -666,8 +983,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             <ComicButton
               className="small ghost"
               onClick={() => {
+                markShared()
+                window.print()
                 setSheet(null)
-                window.setTimeout(() => window.print(), 50)
               }}
             >
               Print issue
@@ -753,46 +1071,111 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               opts.visibility === 'unlisted' || opts.chain
                 ? zine.shareKey || crypto.randomUUID().replace(/-/g, '').slice(0, 16)
                 : zine.shareKey
-            publishZine(zine.id, when, { ...opts, shareKey })
+            const firstDrop = publishZine(zine.id, when, { ...opts, shareKey })
             setDropOpen(false)
             if (opts.chain && shareKey) {
               const url = `${appHref(`/z/${zine.id}?chain=${shareKey}`)}`
-              void copyText(url)
-              setCopied('Corpse link copied. They only see the last page.')
+              void copyText(url).then((ok) => {
+                if (ok) markShared()
+              })
+              if (!firstDrop) {
+                pushToast('Corpse link copied. They only see the last page.', 'success', zine.vibe)
+              }
             } else if (opts.visibility === 'unlisted' && shareKey) {
               const url = `${appHref(issuePath({ id: zine.id, shareKey, visibility: 'unlisted' }))}`
-              void copyText(url)
-              setCopied('Unlisted link copied. Not on the stream.')
+              void copyText(url).then((ok) => {
+                if (ok) markShared()
+              })
+              if (!firstDrop) {
+                pushToast('Unlisted link copied. Not on the stream.', 'success', zine.vibe)
+              }
             } else {
               const packed = tryEncodeShare(zine)
               if (packed.ok) {
                 const url = `${appHref('/s')}#${packed.token}`
-                void copyText(url)
-                setCopied(
-                  when > Date.now()
-                    ? 'Scheduled. Snapshot copied.'
-                    : 'Dropped. Snapshot copied.',
-                )
-              } else {
-                setCopied(
-                  when > Date.now()
-                    ? `Scheduled. ${packed.reason}`
-                    : `Dropped. ${packed.reason}`,
+                void copyText(url).then((ok) => {
+                  if (ok) markShared()
+                })
+                if (!firstDrop) {
+                  pushToast(
+                    when > Date.now() ? 'Scheduled. Snapshot copied.' : 'Dropped. Snapshot copied.',
+                    'success',
+                    zine.vibe,
+                  )
+                }
+              } else if (!firstDrop) {
+                pushToast(
+                  when > Date.now() ? `Scheduled. ${packed.reason}` : `Dropped. ${packed.reason}`,
+                  'error',
+                  zine.vibe,
                 )
               }
             }
-            window.setTimeout(() => setCopied(null), 3200)
           }}
           onCopy={share}
           onExport={() => downloadJson(`${slugify(zine.title)}.zine.json`, zine)}
           onPrint={() => {
+            markShared()
+            window.print()
             setDropOpen(false)
-            window.setTimeout(() => window.print(), 50)
           }}
         />
       ) : null}
-
-      {copied ? <div className="drop-toast">{copied}</div> : null}
     </div>
+  )
+}
+
+const TOUR_STEPS = ['Add a block with /', 'Snap a photo onto the page', 'Drop your issue']
+
+function TourRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const tabRef = useRef<HTMLButtonElement>(null)
+  const collapseRef = useRef<HTMLButtonElement>(null)
+  const skipFocus = useRef(true)
+
+  useEffect(() => {
+    if (skipFocus.current) {
+      skipFocus.current = false
+      return
+    }
+    if (open) collapseRef.current?.focus()
+    else tabRef.current?.focus()
+  }, [open])
+
+  if (!open) {
+    return (
+      <button
+        ref={tabRef}
+        type="button"
+        className="tour-rail-tab-col desktop-only"
+        onClick={onToggle}
+      >
+        TRY THIS
+      </button>
+    )
+  }
+  return (
+    <aside className="tour-rail desktop-only" aria-label="First issue">
+      <div className="tray-head">
+        <strong className="hand">try this</strong>
+        <button
+          ref={collapseRef}
+          type="button"
+          className="tour-rail-min"
+          onClick={onToggle}
+          aria-label="Collapse tour"
+        >
+          ›
+        </button>
+      </div>
+      <ul className="milestone-list">
+        {TOUR_STEPS.map((label) => (
+          <li key={label}>
+            <CheckCircle on={false} />
+            {label}
+          </li>
+        ))}
+      </ul>
+      <p className="hand tour-rail-note">canvas stays fully usable — this never blocks a click.</p>
+    </aside>
   )
 }

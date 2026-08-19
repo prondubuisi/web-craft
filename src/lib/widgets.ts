@@ -5,9 +5,9 @@ import { BLOCK_RECIPES } from './blockRecipes'
 export type WidgetLane = 'page' | 'ink' | 'bind'
 
 /** Shared cuts of a widget. Recipes in the tray are combinations of these. */
-export type AttrId = 'ink' | 'photo' | 'tape' | 'cut' | 'pin' | 'set' | 'cite' | 'holes'
+export type AttrId = 'ink' | 'photo' | 'tape' | 'trim' | 'pin' | 'set' | 'cite' | 'holes'
 
-export const ATTRS: AttrId[] = ['ink', 'photo', 'tape', 'cut', 'pin', 'set', 'cite', 'holes']
+export const ATTRS: AttrId[] = ['ink', 'photo', 'tape', 'trim', 'pin', 'set', 'cite', 'holes']
 
 export type WidgetDef = {
   type: BlockType
@@ -26,11 +26,11 @@ export const LANES: { id: WidgetLane; label: string }[] = [
 ]
 
 export const WIDGETS: WidgetDef[] = [
-  { type: 'heading', slash: 'heading', label: 'Scribble title', hint: 'Hand-drawn headline', glyph: 'Aa', lane: 'page', attrs: ['ink', 'cut'] },
-  { type: 'sticker', slash: 'sticker', label: 'Sticker box', hint: 'Thick border, slight tilt', glyph: '▣', lane: 'page', attrs: ['ink', 'photo', 'cut', 'pin'] },
-  { type: 'hero', slash: 'halftone', label: 'Halftone hero', hint: 'Image + dots + RGB split', glyph: '◉', lane: 'page', attrs: ['ink', 'photo', 'cut', 'pin'] },
-  { type: 'grid', slash: 'panel', label: 'Action grid', hint: 'Comic panels with gutters', glyph: '▦', lane: 'page', attrs: ['set', 'cut', 'photo'] },
-  { type: 'divider', slash: 'scribble', label: 'Scribble divider', hint: 'Speed lines between beats', glyph: '∿', lane: 'page', attrs: ['cut'] },
+  { type: 'heading', slash: 'heading', label: 'Scribble title', hint: 'Hand-drawn headline', glyph: 'Aa', lane: 'page', attrs: ['ink', 'trim'] },
+  { type: 'sticker', slash: 'sticker', label: 'Sticker box', hint: 'Thick border, slight tilt', glyph: '▣', lane: 'page', attrs: ['ink', 'photo', 'trim', 'pin'] },
+  { type: 'hero', slash: 'halftone', label: 'Halftone hero', hint: 'Image + dots + RGB split', glyph: '◉', lane: 'page', attrs: ['ink', 'photo', 'trim', 'pin'] },
+  { type: 'grid', slash: 'panel', label: 'Action grid', hint: 'Comic panels with gutters', glyph: '▦', lane: 'page', attrs: ['set', 'trim', 'photo'] },
+  { type: 'divider', slash: 'scribble', label: 'Scribble divider', hint: 'Speed lines between beats', glyph: '∿', lane: 'page', attrs: ['trim'] },
   { type: 'stack', slash: 'stack', label: 'Zine stack', hint: 'Overlapping scrapbook cards', glyph: '▤', lane: 'page', attrs: ['set', 'ink'] },
   { type: 'strip', slash: 'strip', label: 'Mini comic', hint: 'Four panels in a row', glyph: '▮', lane: 'page', attrs: ['set', 'photo'] },
   { type: 'sfx', slash: 'sfx', label: 'Sound FX', hint: 'THWIP / POW / ZAP', glyph: '!', lane: 'ink', attrs: ['ink'] },

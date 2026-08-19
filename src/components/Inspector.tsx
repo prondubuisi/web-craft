@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
+import { AppearanceStack } from './AppearanceStack'
+import { SampleTray } from './SampleTray'
 import { actionError } from '../lib/catch'
+import { pushToast } from '../lib/toast'
+import { looksOf, toggleLook } from '../lib/looks'
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
-import { canHoldBag, samplesFor } from '../lib/samples'
+import { bagForType, canHoldBag, samplesFor } from '../lib/samples'
 import { readFileAsDataUrl, readImageAsDataUrl } from '../lib/share'
-import type { Block, VibeId } from '../lib/types'
+import type { Block, LookLayer, VibeId } from '../lib/types'
 import type { AttrBag } from '../lib/widgetLang'
 import { applyBag, combineBags, retarget, widgetsWithAttr } from '../lib/widgetLang'
 import { ATTRS, LANES, WIDGETS, contentsFrom, widgetByType, type AttrId } from '../lib/widgets'
+
+export type Eyedropper = { on: boolean; bag: AttrBag | null }
+export type SubSel = { kind: 'panel' | 'card'; index: number }
 
 export function Inspector({
   block,
@@ -17,52 +24,71 @@ export function Inspector({
   onLinkBag,
   pageBlocks = [],
   vibe = 'miles',
+  eyedropper,
+  onEyedropper,
+  onPreview,
+  subSel,
 }: {
   block: Block
   onChange: (next: Block, recordHistory?: boolean) => void
   onCommit?: () => void
-  onLinkBag?: (bag: AttrBag) => void
+  onLinkBag?: (bag: AttrBag, live?: LookLayer[]) => void
   pageBlocks?: Block[]
   vibe?: VibeId
+  eyedropper?: Eyedropper
+  onEyedropper?: (next: Eyedropper) => void
+  onPreview?: (bag: AttrBag | null) => void
+  subSel?: SubSel | null
 }) {
   const meta = widgetByType(block.type)
-  const [typeCut, setTypeCut] = useState<AttrId | 'all'>('all')
-  const typed = typeCut === 'all' ? WIDGETS : widgetsWithAttr(typeCut)
-  const [samplePicks, setSamplePicks] = useState<number[]>([])
+  // Async work (uploads, cutouts) can resolve after the user has edited other
+  // fields on this same block; reading blockRef.current at resolve-time (instead
+  // of closing over the `block` prop from the render that kicked off the async
+  // call) avoids clobbering those in-flight edits with a stale snapshot.
+  const blockRef = useRef(block)
+  blockRef.current = block
+  const [typeAttr, setTypeAttr] = useState<AttrId | 'all'>('all')
+  const typed = typeAttr === 'all' ? WIDGETS : widgetsWithAttr(typeAttr)
+  const [sampleQuery, setSampleQuery] = useState('')
+  const [liveLink, setLiveLink] = useState(false)
   const samples = samplesFor(block.type)
+  const looks = looksOf(block)
+  const activeLabels = looks.map((layer) => layer.label)
 
-  useEffect(() => {
-    setSamplePicks([])
-  }, [block.id, block.type])
-
-  function toggleSample(i: number) {
-    const next = samplePicks.includes(i) ? samplePicks.filter((n) => n !== i) : [...samplePicks, i]
-    setSamplePicks(next)
-    onChange(applyBag(block, combineBags(next.map((idx) => samples[idx].bag))), true)
+  function plantSample(sample: (typeof samples)[number]) {
+    const layer: LookLayer = { label: sample.label, bag: bagForType(block.type, sample.bag) }
+    onChange(toggleLook(block, layer, vibe), true)
   }
 
   function combineAll() {
-    const next = samples.map((_, i) => i)
-    setSamplePicks(next)
-    onChange(applyBag(block, combineBags(samples.map((s) => s.bag))), true)
+    const bags = samples.map((sample) => bagForType(block.type, sample.bag))
+    let next = applyBag(block, combineBags(bags))
+    const extra: LookLayer[] = samples.map((sample, i) => ({ label: sample.label, bag: bags[i] }))
+    onChange({ ...next, looks: [...looks, ...extra] }, true)
   }
 
   async function onUpload(file: File | undefined) {
     if (!file) return
     try {
       if (block.type === 'hero') {
-        onChange({ ...block, src: await readImageAsDataUrl(file) }, true)
+        const src = await readImageAsDataUrl(file)
+        const current = blockRef.current
+        onChange(current.type === 'hero' ? { ...current, src } : { ...block, src }, true)
         return
       }
       if (block.type === 'sticker') {
-        onChange({ ...block, src: await readImageAsDataUrl(file) }, true)
+        const src = await readImageAsDataUrl(file)
+        const current = blockRef.current
+        onChange(current.type === 'sticker' ? { ...current, src } : { ...block, src }, true)
         return
       }
       if (block.type === 'audio') {
-        onChange({ ...block, src: await readFileAsDataUrl(file) }, true)
+        const src = await readFileAsDataUrl(file)
+        const current = blockRef.current
+        onChange(current.type === 'audio' ? { ...current, src } : { ...block, src }, true)
       }
     } catch (err) {
-      window.alert(actionError(err, 'Upload failed'))
+      pushToast(actionError(err, 'Upload failed'), 'error', vibe)
     }
   }
 
@@ -74,11 +100,11 @@ export function Inspector({
       <p className="serif">{meta.hint}</p>
       <p className="meta-line">{meta.attrs.join(' · ')}</p>
       <label>Type</label>
-      <div className="tray-attr" role="group" aria-label="type cut">
+      <div className="tray-attr" role="group" aria-label="widget attrs">
         <button
           type="button"
-          className={`tray-item ${typeCut === 'all' ? 'on' : ''}`}
-          onClick={() => setTypeCut('all')}
+          className={`tray-item ${typeAttr === 'all' ? 'on' : ''}`}
+          onClick={() => setTypeAttr('all')}
         >
           all
         </button>
@@ -86,8 +112,8 @@ export function Inspector({
           <button
             key={attr}
             type="button"
-            className={`tray-item ${typeCut === attr ? 'on' : ''}`}
-            onClick={() => setTypeCut(attr)}
+            className={`tray-item ${typeAttr === attr ? 'on' : ''}`}
+            onClick={() => setTypeAttr(attr)}
           >
             {attr}
           </button>
@@ -111,46 +137,72 @@ export function Inspector({
           </div>
         )
       })}
-      <label>Samples</label>
-      <p className="serif">pick more than one. they stack.</p>
+      <div className="samples-head">
+        <label>Samples</label>
+        {onEyedropper ? (
+          <button
+            type="button"
+            className={`tray-item eyedrop-btn${eyedropper?.on ? ' on' : ''}`}
+            aria-pressed={eyedropper?.on ?? false}
+            aria-label="Eyedropper"
+            onClick={() => onEyedropper(eyedropper?.on ? { on: false, bag: null } : { on: true, bag: null })}
+          >
+            eyedropper
+          </button>
+        ) : null}
+      </div>
+      <p className="serif">
+        {eyedropper?.on
+          ? eyedropper.bag
+            ? 'click a block on the page to paint this look. escape cancels.'
+            : 'click a block on the page to pick up its look.'
+          : 'pick more than one. they stack. hover a scrap to preview.'}
+      </p>
+      <AppearanceStack block={block} vibe={vibe} onChange={onChange} />
       {samples.length > 1 ? (
         <button type="button" className="comic-btn small" style={{ marginBottom: 8 }} onClick={combineAll}>
           combine every scrap that fits
         </button>
       ) : null}
-      {ATTRS.filter((attr) => meta.attrs.includes(attr) && samples.some((s) => s.attrs.includes(attr))).map(
-        (attr) => (
-          <div key={attr} className="vibe-picks" role="group" aria-label={`${attr} samples`}>
-            {samples
-              .map((sample, i) => ({ sample, i }))
-              .filter(({ sample }) => sample.attrs.includes(attr))
-              .map(({ sample, i }) => (
-                <button
-                  key={`${attr}-${sample.label}`}
-                  className={`tray-item ${samplePicks.includes(i) ? 'on' : ''}`}
-                  onClick={() => toggleSample(i)}
-                >
-                  {sample.label}
-                </button>
-              ))}
-          </div>
-        ),
-      )}
-      {samplePicks.length > 0 && onLinkBag
+      <SampleTray
+        samples={samples}
+        activeLabels={activeLabels}
+        query={sampleQuery}
+        onQuery={setSampleQuery}
+        onToggle={plantSample}
+        onPreview={(bag) => onPreview?.(bag)}
+      />
+      {looks.length > 0 && onLinkBag
         ? (() => {
-            const bag = combineBags(samplePicks.map((idx) => samples[idx].bag))
+            const bag = combineBags(looks.map((layer) => layer.bag as AttrBag))
             const linked = pageBlocks.filter((item) => canHoldBag(item.type, bag)).length
             if (linked < 2) return null
             return (
-              <button
-                type="button"
-                className="comic-btn small"
-                style={{ marginTop: 10 }}
-                aria-label="same scrap on the page"
-                onClick={() => onLinkBag(bag)}
-              >
-                same scrap on the page · {linked}
-              </button>
+              <div className="link-row">
+                <label className="link-flag">
+                  <input
+                    type="checkbox"
+                    checked={liveLink}
+                    onChange={(e) => setLiveLink(e.target.checked)}
+                  />
+                  link across page
+                </label>
+                <button
+                  type="button"
+                  className="comic-btn small"
+                  aria-label="same scrap on the page"
+                  onClick={() =>
+                    onLinkBag(
+                      bag,
+                      liveLink
+                        ? looks.map((layer) => ({ ...layer, linked: true }))
+                        : undefined,
+                    )
+                  }
+                >
+                  same scrap on the page · {linked}
+                </button>
+              </div>
             )
           })()
         : null}
@@ -201,8 +253,11 @@ export function Inspector({
               style={{ marginTop: 10 }}
               onClick={() => {
                 void cutoutImage(block.src ?? '')
-                  .then((src) => onChange({ ...block, src }, true))
-                  .catch((err: unknown) => window.alert(actionError(err, 'Cutout failed')))
+                  .then((src) => {
+                    const current = blockRef.current
+                    onChange(current.type === 'sticker' ? { ...current, src } : { ...block, src }, true)
+                  })
+                  .catch((err: unknown) => pushToast(actionError(err, 'Cutout failed'), 'error', vibe))
               }}
             >
               Cut out background
@@ -258,8 +313,11 @@ export function Inspector({
             style={{ marginTop: 10 }}
             onClick={() => {
               void cutoutImage(block.src)
-                .then((src) => onChange({ ...block, src }, true))
-                .catch((err: unknown) => window.alert(actionError(err, 'Cutout failed')))
+                .then((src) => {
+                  const current = blockRef.current
+                  onChange(current.type === 'hero' ? { ...current, src } : { ...block, src }, true)
+                })
+                .catch((err: unknown) => pushToast(actionError(err, 'Cutout failed'), 'error', vibe))
             }}
           >
             Cut out background
@@ -326,6 +384,42 @@ export function Inspector({
               drop last
             </button>
           </div>
+          {subSel?.kind === 'panel' && block.panels[subSel.index] ? (
+            <>
+              <label>Panel {subSel.index + 1}</label>
+              <input
+                className="sample-filter"
+                value={block.panels[subSel.index].text}
+                onChange={(e) => {
+                  const text = e.target.value
+                  const panels = block.panels.map((panel, i) =>
+                    i === subSel.index ? { ...panel, text } : panel,
+                  )
+                  onChange({ ...block, panels }, false)
+                }}
+                onPointerDown={() => onCommit?.()}
+              />
+              <div className="vibe-picks">
+                {['var(--accent)', 'var(--accent-2)', 'var(--accent-3)'].map((fill) => (
+                  <button
+                    key={fill}
+                    type="button"
+                    className={`tray-item ${block.panels[subSel.index].fill === fill ? 'on' : ''}`}
+                    onClick={() => {
+                      const panels = block.panels.map((panel, i) =>
+                        i === subSel.index ? { ...panel, fill } : panel,
+                      )
+                      onChange({ ...block, panels }, true)
+                    }}
+                  >
+                    {fill.replace('var(--', '').replace(')', '')}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="serif">click a panel on the page to edit it.</p>
+          )}
         </>
       ) : null}
       {block.type === 'stack' ? (
@@ -358,6 +452,38 @@ export function Inspector({
               drop last
             </button>
           </div>
+          {subSel?.kind === 'card' && block.cards[subSel.index] ? (
+            <>
+              <label>Card {subSel.index + 1}</label>
+              <input
+                className="sample-filter"
+                value={block.cards[subSel.index].title}
+                onChange={(e) => {
+                  const title = e.target.value
+                  const cards = block.cards.map((card, i) =>
+                    i === subSel.index ? { ...card, title } : card,
+                  )
+                  onChange({ ...block, cards }, false)
+                }}
+                onPointerDown={() => onCommit?.()}
+              />
+              <textarea
+                className="sample-filter"
+                rows={3}
+                value={block.cards[subSel.index].body}
+                onChange={(e) => {
+                  const body = e.target.value
+                  const cards = block.cards.map((card, i) =>
+                    i === subSel.index ? { ...card, body } : card,
+                  )
+                  onChange({ ...block, cards }, false)
+                }}
+                onPointerDown={() => onCommit?.()}
+              />
+            </>
+          ) : (
+            <p className="serif">click a card on the page to edit it.</p>
+          )}
         </>
       ) : null}
       {block.type === 'divider' ? (
@@ -466,6 +592,25 @@ export function Inspector({
               drop last
             </button>
           </div>
+          {subSel?.kind === 'panel' && block.panels[subSel.index] ? (
+            <>
+              <label>Beat {subSel.index + 1}</label>
+              <input
+                className="sample-filter"
+                value={block.panels[subSel.index].text}
+                onChange={(e) => {
+                  const text = e.target.value
+                  const panels = block.panels.map((panel, i) =>
+                    i === subSel.index ? { ...panel, text } : panel,
+                  )
+                  onChange({ ...block, panels }, false)
+                }}
+                onPointerDown={() => onCommit?.()}
+              />
+            </>
+          ) : (
+            <p className="serif">click a beat on the page to edit it.</p>
+          )}
         </>
       ) : null}
       {block.type === 'blackout' ? (
