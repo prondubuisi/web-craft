@@ -136,11 +136,18 @@ function StudioMore({
           >
             Import JSON
           </ComicButton>
-          <Link to="/cork" className="comic-btn ghost small" role="menuitem">
+          <Link to="/cork" className="comic-btn ghost small" role="menuitem" onClick={() => closeMenu(false)}>
             Corkboard
           </Link>
           {session ? (
-            <ComicButton className="ghost small" role="menuitem" onClick={onSignOut}>
+            <ComicButton
+              className="ghost small"
+              role="menuitem"
+              onClick={() => {
+                closeMenu(true)
+                onSignOut()
+              }}
+            >
               Sign out
             </ComicButton>
           ) : (
@@ -157,7 +164,14 @@ function StudioMore({
             </ComicButton>
           )}
           {!session ? (
-            <ComicButton className="ghost small" role="menuitem" onClick={onReset}>
+            <ComicButton
+              className="ghost small"
+              role="menuitem"
+              onClick={() => {
+                closeMenu(true)
+                onReset()
+              }}
+            >
               Reset demo
             </ComicButton>
           ) : null}
