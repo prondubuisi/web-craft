@@ -488,11 +488,12 @@ button.blackout-word.hid {
   position: fixed;
   z-index: 50;
   width: min(360px, calc(100vw - 1.5rem));
+  max-height: min(70vh, 420px);
   background: #fff;
   color: var(--ink);
   border: 4px solid var(--ink);
   box-shadow: 8px 8px 0 var(--ink);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .slash input {

@@ -732,6 +732,11 @@ button.owner-link {
   margin: 0.3rem 0 0.55rem;
 }
 
+.sample-empty {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+}
+
 .sample-tray {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
@@ -755,6 +760,10 @@ button.owner-link {
 .sample-swatch.on {
   outline: 3px solid var(--ink);
   background: color-mix(in oklab, var(--accent-2) 32%, #fff);
+}
+
+.sample-swatch.pickup {
+  outline: 2px dashed var(--accent);
 }
 
 .sample-thumb {

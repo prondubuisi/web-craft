@@ -3,15 +3,15 @@ import { AppearanceStack } from './AppearanceStack'
 import { SampleTray } from './SampleTray'
 import { actionError } from '../lib/catch'
 import { pushToast } from '../lib/toast'
-import { looksOf, toggleLook } from '../lib/looks'
+import { applyLook, EYEDROP_LABEL, looksOf, toggleLook } from '../lib/looks'
 import { assetUrl } from '../lib/paths'
 import { ART_LIBRARY } from '../lib/vibes'
 import { cutoutImage } from '../lib/cutout'
-import { bagForType, canHoldBag, samplesFor } from '../lib/samples'
+import { bagForType, canHoldBag, misregisterBlock, samplesFor, type Sample } from '../lib/samples'
 import { readFileAsDataUrl, readImageAsDataUrl } from '../lib/share'
 import type { Block, LookLayer, VibeId } from '../lib/types'
 import type { AttrBag } from '../lib/widgetLang'
-import { applyBag, combineBags, retarget, widgetsWithAttr } from '../lib/widgetLang'
+import { applyBag, combineBags, retarget, shuffleKids, widgetsWithAttr } from '../lib/widgetLang'
 import { ATTRS, LANES, WIDGETS, contentsFrom, widgetByType, type AttrId } from '../lib/widgets'
 
 export type Eyedropper = { on: boolean; bag: AttrBag | null }
@@ -28,6 +28,7 @@ export function Inspector({
   onEyedropper,
   onPreview,
   subSel,
+  pickup,
 }: {
   block: Block
   onChange: (next: Block, recordHistory?: boolean) => void
@@ -39,6 +40,7 @@ export function Inspector({
   onEyedropper?: (next: Eyedropper) => void
   onPreview?: (bag: AttrBag | null) => void
   subSel?: SubSel | null
+  pickup?: AttrBag | null
 }) {
   const meta = widgetByType(block.type)
   // Async work (uploads, cutouts) can resolve after the user has edited other
@@ -66,6 +68,15 @@ export function Inspector({
     const extra: LookLayer[] = samples.map((sample, i) => ({ label: sample.label, bag: bags[i] }))
     onChange({ ...next, looks: [...looks, ...extra] }, true)
   }
+
+  function misregister() {
+    onChange(misregisterBlock(block), true)
+  }
+
+  const pickupSample: Sample | null =
+    pickup && Object.keys(bagForType(block.type, pickup)).length
+      ? { label: EYEDROP_LABEL, attrs: meta.attrs, bag: pickup }
+      : null
 
   async function onUpload(file: File | undefined) {
     if (!file) return
@@ -156,20 +167,39 @@ export function Inspector({
           ? eyedropper.bag
             ? 'click a block on the page to paint this look. escape cancels.'
             : 'click a block on the page to pick up its look.'
-          : 'pick more than one. they stack. hover a scrap to preview.'}
+          : 'pick more than one. they stack. hover a scrap to preview. misregister rolls three.'}
       </p>
       <AppearanceStack block={block} vibe={vibe} onChange={onChange} />
-      {samples.length > 1 ? (
-        <button type="button" className="comic-btn small" style={{ marginBottom: 8 }} onClick={combineAll}>
-          combine every scrap that fits
-        </button>
-      ) : null}
+      <div className="cta-row" style={{ marginBottom: 8 }}>
+        {samples.length > 1 ? (
+          <button
+            type="button"
+            className="comic-btn small"
+            onClick={misregister}
+            title="Roll two or three scraps onto this block"
+          >
+            misregister
+          </button>
+        ) : null}
+        {samples.length > 1 ? (
+          <button type="button" className="comic-btn small" onClick={combineAll}>
+            combine every scrap that fits
+          </button>
+        ) : null}
+      </div>
       <SampleTray
         samples={samples}
+        pickup={pickupSample}
         activeLabels={activeLabels}
         query={sampleQuery}
         onQuery={setSampleQuery}
-        onToggle={plantSample}
+        onToggle={(sample) => {
+          if (sample.label === EYEDROP_LABEL) {
+            onChange(applyLook(block, { label: EYEDROP_LABEL, bag: bagForType(block.type, sample.bag) }), true)
+            return
+          }
+          plantSample(sample)
+        }}
         onPreview={(bag) => onPreview?.(bag)}
       />
       {looks.length > 0 && onLinkBag
@@ -383,6 +413,13 @@ export function Inspector({
             >
               drop last
             </button>
+            <button
+              className="tray-item"
+              disabled={block.panels.length < 2}
+              onClick={() => onChange(shuffleKids(block), true)}
+            >
+              shuffle
+            </button>
           </div>
           {subSel?.kind === 'panel' && block.panels[subSel.index] ? (
             <>
@@ -450,6 +487,13 @@ export function Inspector({
               onClick={() => onChange({ ...block, cards: block.cards.slice(0, -1) }, true)}
             >
               drop last
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.cards.length < 2}
+              onClick={() => onChange(shuffleKids(block), true)}
+            >
+              shuffle
             </button>
           </div>
           {subSel?.kind === 'card' && block.cards[subSel.index] ? (
@@ -590,6 +634,13 @@ export function Inspector({
               onClick={() => onChange({ ...block, panels: block.panels.slice(0, -1) }, true)}
             >
               drop last
+            </button>
+            <button
+              className="tray-item"
+              disabled={block.panels.length < 2}
+              onClick={() => onChange(shuffleKids(block), true)}
+            >
+              shuffle
             </button>
           </div>
           {subSel?.kind === 'panel' && block.panels[subSel.index] ? (

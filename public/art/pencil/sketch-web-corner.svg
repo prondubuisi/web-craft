@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <title>Pencil-sketch web corner</title>
+  <defs>
+    <filter id="grain-web" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.4" />
+    </filter>
+  </defs>
+  <g fill="none" stroke="#332f2b" stroke-linecap="round" filter="url(#grain-web)">
+    <!-- radiating spokes from the corner -->
+    <g stroke-width="1.6" opacity="0.72">
+      <path d="M8 8 L 210 40" />
+      <path d="M8 8 L 180 96" />
+      <path d="M8 8 L 150 150" />
+      <path d="M8 8 L 96 180" />
+      <path d="M8 8 L 40 210" />
+    </g>
+    <g stroke-width="1.1" opacity="0.5">
+      <path d="M10 10 L 205 44" />
+      <path d="M10 10 L 176 99" />
+      <path d="M10 10 L 146 153" />
+    </g>
+    <!-- concentric arcs, hand-wobbled -->
+    <path d="M60 6 C 40 24, 24 40, 6 60" stroke-width="1.7" opacity="0.8" />
+    <path d="M110 4 C 74 34, 34 74, 4 112" stroke-width="1.6" opacity="0.75" />
+    <path d="M160 6 C 104 46, 46 104, 8 162" stroke-width="1.5" opacity="0.7" />
+    <path d="M212 8 C 134 58, 58 134, 10 214" stroke-width="1.4" opacity="0.62" />
+    <path d="M262 10 C 164 70, 70 164, 12 264" stroke-width="1.3" opacity="0.5" />
+    <!-- second wobble pass for pencil weight -->
+    <path d="M62 9 C 42 27, 26 43, 9 63" stroke-width="0.9" opacity="0.4" />
+    <path d="M113 7 C 76 37, 37 76, 7 115" stroke-width="0.9" opacity="0.38" />
+    <path d="M164 9 C 106 49, 49 106, 11 165" stroke-width="0.9" opacity="0.32" />
+    <!-- torn strand for wear -->
+    <path d="M150 150 L 176 190" stroke-width="1.3" opacity="0.55" />
+    <path d="M96 180 L 118 226" stroke-width="1.2" opacity="0.5" />
+  </g>
+</svg>

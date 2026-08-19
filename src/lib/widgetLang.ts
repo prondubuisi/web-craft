@@ -53,6 +53,31 @@ export function combineBags(bags: AttrBag[]): AttrBag {
   return bags.reduce<AttrBag>((combined, bag) => ({ ...combined, ...bag }), {})
 }
 
+/** Reorder panels/cards in place. Membership stays the same. */
+export function shuffleKids(block: Block, rng: () => number = Math.random): Block {
+  function mix<T>(list: T[]): T[] {
+    const next = [...list]
+    for (let i = next.length - 1; i > 0; i--) {
+      const j = Math.min(i, Math.floor(rng() * (i + 1)))
+      const a = next[i]
+      const b = next[j]
+      next[i] = b
+      next[j] = a
+    }
+    return next
+  }
+  if (block.type === 'grid') {
+    return block.panels.length < 2 ? block : { ...block, panels: mix(block.panels) }
+  }
+  if (block.type === 'strip') {
+    return block.panels.length < 2 ? block : { ...block, panels: mix(block.panels) }
+  }
+  if (block.type === 'stack') {
+    return block.cards.length < 2 ? block : { ...block, cards: mix(block.cards) }
+  }
+  return block
+}
+
 /** Same id, new type. Shared ink / photo / cut / set come along. */
 export function retarget(block: Block, type: BlockType, vibe: VibeId): Block {
   if (block.type === type) return block

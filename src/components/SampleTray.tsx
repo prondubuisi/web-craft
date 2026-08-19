@@ -41,6 +41,7 @@ function SampleThumb({ sample }: { sample: Sample }) {
 
 export function SampleTray({
   samples,
+  pickup,
   activeLabels,
   query,
   onQuery,
@@ -48,6 +49,7 @@ export function SampleTray({
   onPreview,
 }: {
   samples: Sample[]
+  pickup?: Sample | null
   activeLabels: string[]
   query: string
   onQuery: (next: string) => void
@@ -78,6 +80,26 @@ export function SampleTray({
         placeholder="filter scraps — try pin"
         aria-label="Filter samples"
       />
+      {query.trim() && hits.length === 0 ? (
+        <p className="serif sample-empty">no scraps match “{query.trim()}”</p>
+      ) : null}
+      {pickup ? (
+        <div className="sample-tray" role="group" aria-label="picked-up look">
+          <button
+            type="button"
+            className={`sample-swatch pickup${activeLabels.includes(pickup.label) ? ' on' : ''}`}
+            title={pickup.label}
+            onMouseEnter={() => previewOn(pickup)}
+            onMouseLeave={previewOff}
+            onClick={() => onToggle(pickup)}
+          >
+            <span className="sample-thumb">
+              <SampleThumb sample={pickup} />
+            </span>
+            <span className="sample-swatch-label">this page</span>
+          </button>
+        </div>
+      ) : null}
       {ATTRS.filter((attr) => hits.some((sample) => sample.attrs.includes(attr))).map((attr) => (
         <div key={attr} className="sample-tray" role="group" aria-label={`${attr} samples`}>
           {hits

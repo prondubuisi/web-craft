@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { applyBag, combineBags, harvest, retarget } from './widgetLang'
+import { applyBag, combineBags, harvest, retarget, shuffleKids } from './widgetLang'
 import { createBlock } from './widgets'
 
 test('combineBags is later-wins and leaves unset fields alone', () => {
@@ -41,4 +41,20 @@ test('retarget keeps id and shared ink when heading becomes a quote', () => {
 test('retarget to the same type is identity', () => {
   const block = createBlock('hero', 'peni')
   assert.equal(retarget(block, 'hero', 'peni'), block)
+})
+
+test('shuffleKids keeps the same panels, just reordered', () => {
+  const grid = createBlock('grid', 'miles')
+  if (grid.type !== 'grid') throw new Error('expected grid')
+  const texts = grid.panels.map((panel) => panel.text)
+  const flipped = shuffleKids(grid, () => 0)
+  if (flipped.type !== 'grid') throw new Error('expected grid')
+  assert.notDeepEqual(
+    flipped.panels.map((panel) => panel.text),
+    texts,
+  )
+  assert.deepEqual(
+    [...flipped.panels.map((panel) => panel.text)].sort(),
+    [...texts].sort(),
+  )
 })

@@ -32,7 +32,7 @@ import { copyText, downloadJson, readImageAsDataUrl, tryEncodeShare } from '../l
 import { markShared } from '../lib/shared'
 import type { Block, BlockType, LookLayer, PreviewMode, VibeId, Zine } from '../lib/types'
 import { useHistory } from '../lib/useHistory'
-import { bagForType, linkBag, matchSample, SAMPLES, typeForSample } from '../lib/samples'
+import { bagForType, linkBag, matchSample, misregisterPage, SAMPLES, typeForSample } from '../lib/samples'
 import { applyBag, harvest, restylePageForVibe, type AttrBag } from '../lib/widgetLang'
 import { contentsFrom, createBlock, matchWidget, widgetByType } from '../lib/widgets'
 import { pushToast } from '../lib/toast'
@@ -71,6 +71,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   const [dropOpen, setDropOpen] = useState(false)
   const [dragId, setDragId] = useState<string | null>(null)
   const [eyedropper, setEyedropper] = useState<Eyedropper>({ on: false, bag: null })
+  const [pickupBag, setPickupBag] = useState<AttrBag | null>(null)
   const [ghostBag, setGhostBag] = useState<AttrBag | null>(null)
   const [pinLive, setPinLive] = useState<PinLive | null>(null)
   const [subSel, setSubSel] = useState<(SubSel & { blockId: string }) | null>(null)
@@ -145,6 +146,11 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     return [...widgets, ...scraps]
   }, [slash])
 
+  function rollPage() {
+    if (!zine.blocks.length) return
+    update(misregisterPage(zine.blocks))
+  }
+
   function update(next: Block[], record = true) {
     if (record) remember()
     setBlocks(zine.id, next)
@@ -157,6 +163,17 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     patchZine(zine.id, { vibe: next })
   }
 
+  function closeSlash() {
+    setSlashOpen(false)
+    setSlash('')
+    setSlashPick(0)
+  }
+
+  function openSheet(next: Sheet) {
+    closeSlash()
+    setSheet(next)
+  }
+
   function insertBlock(block: Block) {
     const idx = zine.blocks.findIndex((b) => b.id === selected)
     const next =
@@ -165,8 +182,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         : [...zine.blocks, block]
     update(next)
     setSelected(block.id)
-    setSlash('')
-    setSlashPick(0)
+    closeSlash()
     setSheet(null)
   }
 
@@ -283,7 +299,9 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   function onEyedropBlock(block: Block) {
     if (!eyedropper.on) return false
     if (!eyedropper.bag) {
-      setEyedropper({ on: true, bag: harvest(block) })
+      const bag = harvest(block)
+      setEyedropper({ on: true, bag })
+      setPickupBag(bag)
       setSelected(block.id)
       return true
     }
@@ -581,7 +599,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         }
       }
       if (e.key === 'Escape') {
-        setSlashOpen(false)
+        closeSlash()
         setSheet(null)
         setDropOpen(false)
         setEyedropper({ on: false, bag: null })
@@ -598,6 +616,14 @@ function EditorCanvas({ zine }: { zine: Zine }) {
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  useEffect(() => {
+    function onResize() {
+      if (window.innerWidth <= 859) closeSlash()
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   const modes = (
     <div className="mode-row">
       {(['page', 'phone', 'tablet', 'fold'] as PreviewMode[]).map((m) => (
@@ -610,6 +636,16 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           {m}
         </button>
       ))}
+      <button
+        type="button"
+        className={`icon-btn ${zine.scatter ? 'on' : ''}`}
+        onClick={() => patchZine(zine.id, { scatter: !zine.scatter })}
+        style={{ width: 'auto', padding: '0 8px' }}
+        aria-pressed={Boolean(zine.scatter)}
+        aria-label="Scatter floor layout"
+      >
+        floor
+      </button>
     </div>
   )
 
@@ -654,6 +690,15 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           >
             / add
           </ComicButton>
+          {zine.blocks.length > 0 ? (
+            <ComicButton
+              className="small"
+              onClick={rollPage}
+              title="Roll two or three scraps onto every block"
+            >
+              misregister
+            </ComicButton>
+          ) : null}
           <ComicButton className="small cyan" onClick={() => navigate(`/z/${zine.id}`)}>
             Preview
           </ComicButton>
@@ -664,7 +709,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             <span className="drop-ready hand">A heading and a picture is a page. Drop when it feels like one.</span>
           ) : null}
         </div>
-        <button className="icon-btn mobile-only" onClick={() => setSheet('more')} aria-label="More">
+        <button className="icon-btn mobile-only" onClick={() => openSheet('more')} aria-label="More">
           ☰
         </button>
       </header>
@@ -722,7 +767,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
           className={`canvas-wrap${eyedropper.on ? ' eyedropper' : ''}`}
           onClick={() => {
             setSelected(null)
-            setSlashOpen(false)
+            closeSlash()
             setSubSel(null)
           }}
         >
@@ -783,7 +828,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                   }
                   if (onEyedropBlock(block)) return
                   setSelected(block.id)
-                  setSlashOpen(false)
+                  closeSlash()
                   if (subSel && subSel.blockId !== block.id) setSubSel(null)
                 }}
                 onPointerDown={(e) => {
@@ -840,7 +885,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                   </button>
                   <button
                     className="icon-btn mobile-only"
-                    onClick={() => setSheet('inspect')}
+                    onClick={() => openSheet('inspect')}
                     aria-label="Inspect"
                   >
                     ✎
@@ -868,6 +913,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
                   onSubSelect={(kind, index) => {
                     setSelected(block.id)
                     setSubSel({ blockId: block.id, kind, index })
+                    closeSlash()
                   }}
                 />
               </div>
@@ -893,10 +939,19 @@ function EditorCanvas({ zine }: { zine: Zine }) {
               onEyedropper={setEyedropper}
               onPreview={setGhostBag}
               subSel={subSel?.blockId === selectedBlock.id ? subSel : null}
+              pickup={pickupBag}
             />
           ) : (
             <div>
               <p className="hand">nothing selected.</p>
+              {zine.blocks.length > 0 ? (
+                <>
+                  <ComicButton className="small" onClick={rollPage} title="Roll two or three scraps onto every block">
+                    misregister the page
+                  </ComicButton>
+                  <p className="serif">rolls two or three scraps onto every block. undo takes it back.</p>
+                </>
+              ) : null}
               <label>Vibe</label>
               <VibePicks
                 value={zine.vibe}
@@ -925,7 +980,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
         )}
       </div>
 
-      <button className="fab mobile-only" onClick={() => setSheet('tray')} aria-label="Add widget">
+      <button className="fab mobile-only" onClick={() => openSheet('tray')} aria-label="Add widget">
         +
       </button>
 
@@ -954,6 +1009,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             onEyedropper={setEyedropper}
             onPreview={setGhostBag}
             subSel={subSel?.blockId === selectedBlock.id ? subSel : null}
+            pickup={pickupBag}
           />
         </BottomSheet>
       ) : null}
@@ -974,6 +1030,11 @@ function EditorCanvas({ zine }: { zine: Zine }) {
             <ComicButton className="small" onClick={() => redo()}>
               Redo
             </ComicButton>
+            {zine.blocks.length > 0 ? (
+              <ComicButton className="small" onClick={rollPage}>
+                misregister
+              </ComicButton>
+            ) : null}
             <ComicButton className="small cyan" onClick={() => navigate(`/z/${zine.id}`)}>
               Preview
             </ComicButton>
@@ -1125,7 +1186,7 @@ function EditorCanvas({ zine }: { zine: Zine }) {
   )
 }
 
-const TOUR_STEPS = ['Add a block with /', 'Snap a photo onto the page', 'Drop your issue']
+const TOUR_STEPS = ['Add a block with /', 'Stack two scraps, then misregister', 'Drop your issue']
 
 function TourRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const tabRef = useRef<HTMLButtonElement>(null)

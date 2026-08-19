@@ -1,0 +1,268 @@
+{
+  "tags": [
+    "internship",
+    "animation",
+    "diary"
+  ],
+  "finish": "riso",
+  "series": "sophomore year",
+  "issueNo": 1,
+  "penName": "reyna",
+  "editionSize": 40,
+  "id": "sophomore-year",
+  "title": "sophomore year",
+  "vibe": "miles",
+  "blocks": [
+    {
+      "id": "3a0dc721-6f69-41cb-90d2-f88b95e6b506",
+      "type": "heading",
+      "text": "sophomore year.",
+      "size": "xl",
+      "looks": [
+        {
+          "label": "sophomore year",
+          "bag": {
+            "ink": "sophomore year."
+          }
+        }
+      ]
+    },
+    {
+      "id": "437a5952-6a81-430b-b97e-4ecb4bc14962",
+      "type": "sticker",
+      "text": "this page is a rooftop. stay as long as you want.",
+      "rotation": 2.4,
+      "src": "/art/pencil/sketch-badge.svg",
+      "looks": [
+        {
+          "label": "web corner",
+          "bag": {
+            "photo": "/art/pencil/sketch-web-corner.svg"
+          },
+          "linked": true
+        },
+        {
+          "label": "intern badge",
+          "bag": {
+            "photo": "/art/pencil/sketch-badge.svg"
+          }
+        },
+        {
+          "label": "hand tilt",
+          "bag": {
+            "tilt": 2.4
+          }
+        }
+      ]
+    },
+    {
+      "id": "ca821f08-0c6b-409a-8736-ae07964bc2cf",
+      "type": "hero",
+      "src": "/art/pencil/sketch-rooftop.svg",
+      "caption": "eleven weeks, one badge, no NDA about the coffee.",
+      "density": 0.55,
+      "split": 10,
+      "looks": [
+        {
+          "label": "web corner",
+          "bag": {
+            "photo": "/art/pencil/sketch-web-corner.svg"
+          },
+          "linked": true
+        },
+        {
+          "label": "rooftop skyline",
+          "bag": {
+            "photo": "/art/pencil/sketch-rooftop.svg"
+          }
+        },
+        {
+          "label": "grain",
+          "bag": {
+            "density": 0.55,
+            "split": 10
+          }
+        },
+        {
+          "label": "day one",
+          "bag": {
+            "ink": "eleven weeks, one badge, no NDA about the coffee."
+          }
+        }
+      ]
+    },
+    {
+      "id": "4b32d651-74ef-4fb4-b802-3a205a9ac4f8",
+      "type": "grid",
+      "layout": "three",
+      "panels": [
+        {
+          "text": "panel 12A",
+          "fill": "var(--accent)"
+        },
+        {
+          "text": "kept for the animatic",
+          "fill": "var(--accent-2)",
+          "src": "/art/pencil/sketch-storyboard.svg"
+        },
+        {
+          "text": "cut in review",
+          "fill": "var(--accent-3)"
+        }
+      ],
+      "looks": [
+        {
+          "label": "web corner",
+          "bag": {
+            "photo": "/art/pencil/sketch-web-corner.svg"
+          },
+          "linked": true
+        },
+        {
+          "label": "three",
+          "bag": {
+            "layout": "three"
+          }
+        },
+        {
+          "label": "storyboard",
+          "bag": {
+            "photo": "/art/pencil/sketch-storyboard.svg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "82530064-7776-4dea-86de-c2dc76c11e8c",
+      "type": "sticker",
+      "text": "the lightbox never turns off before 9.",
+      "rotation": -2,
+      "src": "/art/pencil/sketch-desk.svg",
+      "looks": [
+        {
+          "label": "web corner",
+          "bag": {
+            "photo": "/art/pencil/sketch-web-corner.svg"
+          },
+          "linked": true
+        },
+        {
+          "label": "lightbox desk",
+          "bag": {
+            "photo": "/art/pencil/sketch-desk.svg"
+          }
+        },
+        {
+          "label": "desk hours",
+          "bag": {
+            "ink": "the lightbox never turns off before 9."
+          }
+        }
+      ]
+    },
+    {
+      "id": "d90e4e25-48f2-4d29-b257-d84584f0c885",
+      "type": "hero",
+      "src": "/art/pencil/sketch-gesture.svg",
+      "caption": "keep the line of action. throw the costume.",
+      "density": 0.18,
+      "split": 14,
+      "looks": [
+        {
+          "label": "web corner",
+          "bag": {
+            "photo": "/art/pencil/sketch-web-corner.svg"
+          },
+          "linked": true
+        },
+        {
+          "label": "gesture study",
+          "bag": {
+            "photo": "/art/pencil/sketch-gesture.svg"
+          }
+        },
+        {
+          "label": "chroma tear",
+          "bag": {
+            "density": 0.18,
+            "split": 14
+          }
+        },
+        {
+          "label": "line of action",
+          "bag": {
+            "ink": "keep the line of action. throw the costume."
+          }
+        }
+      ]
+    },
+    {
+      "id": "c9cf5d81-f7c8-48b2-bdb3-fb28905b38ed",
+      "type": "quote",
+      "text": "you are not late. you are in-between.",
+      "cite": "the desk next to mine.",
+      "looks": [
+        {
+          "label": "the margin",
+          "bag": {
+            "cite": "the margin"
+          }
+        },
+        {
+          "label": "mentor note",
+          "bag": {
+            "ink": "you are not late. you are in-between."
+          }
+        }
+      ]
+    },
+    {
+      "id": "e330ce0a-b045-4be2-864d-bbcf89800133",
+      "type": "poll",
+      "question": "what still prints?",
+      "options": [
+        "the badge",
+        "the board",
+        "the gesture",
+        "the coffee"
+      ],
+      "looks": [
+        {
+          "label": "street ask",
+          "bag": {
+            "ink": "what still prints?",
+            "items": [
+              "one cheap copy",
+              "no bleed",
+              "the gutter"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "29ebf879-a614-4d05-b039-0c13fc487c8d",
+      "type": "colophon",
+      "edition": "first printing · 40 copies",
+      "press": "kitchen table riso",
+      "place": "wherever the toner is cheap",
+      "thanks": "to the desk next to mine, and the eleven weeks.",
+      "looks": [
+        {
+          "label": "kitchen table",
+          "bag": {
+            "cite": "kitchen table riso"
+          }
+        }
+      ]
+    }
+  ],
+  "owner": "you",
+  "createdAt": 1787143398464,
+  "updatedAt": 1787143398464,
+  "views": 0,
+  "likes": 0,
+  "remixes": 0,
+  "published": false,
+  "dropsAt": null
+}

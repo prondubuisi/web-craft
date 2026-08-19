@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <title>Pencil-sketch storyboard panel</title>
+  <defs>
+    <filter id="grain-board" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="14" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+    </filter>
+  </defs>
+  <g fill="none" stroke="#332f2b" stroke-linecap="round" filter="url(#grain-board)">
+    <!-- rough panel frame, double pass -->
+    <rect x="18" y="16" width="330" height="200" rx="4" stroke-width="2.2" opacity="0.85" />
+    <rect x="21" y="19" width="326" height="194" rx="4" stroke-width="1" opacity="0.4" />
+    <!-- horizon + rough action arrow, camera pan -->
+    <path d="M40 150 C 120 140, 220 100, 320 60" stroke-width="1.6" opacity="0.7" />
+    <path d="M300 52 L 320 60 L 302 74" stroke-width="1.6" opacity="0.7" stroke-linejoin="round" />
+    <!-- quick gesture mark standing in for a subject -->
+    <path d="M120 190 L 132 130" stroke-width="2" opacity="0.75" />
+    <path d="M132 130 C 140 108, 156 98, 172 96" stroke-width="1.8" opacity="0.7" />
+    <path d="M132 150 L 100 168" stroke-width="1.6" opacity="0.6" />
+    <path d="M132 150 L 160 160" stroke-width="1.6" opacity="0.6" />
+    <ellipse cx="134" cy="118" rx="10" ry="12" stroke-width="1.6" opacity="0.65" />
+    <!-- corner cross-hatch shading, unfinished-sketch feel -->
+    <g stroke-width="1" opacity="0.4">
+      <path d="M250 170 L 300 200" />
+      <path d="M260 165 L 310 195" />
+      <path d="M270 160 L 320 190" />
+      <path d="M280 155 L 330 185" />
+      <path d="M255 185 L 285 155" />
+      <path d="M270 195 L 300 165" />
+      <path d="M285 205 L 315 175" />
+    </g>
+    <!-- frame number + timing ticks below the panel -->
+    <text x="26" y="242" font-family="monospace" font-size="20" fill="#332f2b" stroke="none" opacity="0.8">12A</text>
+    <g stroke-width="1.4" opacity="0.6">
+      <path d="M20 260 L 20 270" />
+      <path d="M40 260 L 40 274" />
+      <path d="M60 260 L 60 268" />
+      <path d="M80 260 L 80 272" />
+      <path d="M100 260 L 100 266" />
+      <path d="M120 260 L 120 270" />
+    </g>
+    <path d="M18 258 L 200 254" stroke-width="1" opacity="0.4" />
+  </g>
+</svg>

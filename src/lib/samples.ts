@@ -1,10 +1,10 @@
 import { uid } from './id'
-import { mergeLinkedLooks } from './looks'
+import { applyLook, mergeLinkedLooks } from './looks'
 import type { Block, BlockType, LookLayer, VibeId } from './types'
-import { applyBag, combineBags, type AttrBag } from './widgetLang'
+import { applyBag, type AttrBag } from './widgetLang'
 import { WIDGETS, createBlock, widgetByType, type AttrId } from './widgets'
 
-export type Sample = { label: string; attrs: AttrId[]; bag: AttrBag }
+export type Sample = { label: string; attrs: AttrId[]; bag: AttrBag; tags?: string[] }
 
 /**
  * Shared scraps. Each sample is one or two cuts. The inspector shows scraps
@@ -38,6 +38,12 @@ export const SAMPLES: Sample[] = [
   { label: 'noir', attrs: ['photo'], bag: { photo: '/art/noir.jpg' } },
   { label: 'peni', attrs: ['photo'], bag: { photo: '/art/peni.jpg' } },
   { label: 'ham', attrs: ['photo'], bag: { photo: '/art/ham.jpg' } },
+  { label: 'web corner', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-web-corner.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'storyboard', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-storyboard.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'lightbox desk', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-desk.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'gesture study', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-gesture.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'rooftop skyline', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-rooftop.svg' }, tags: ['sketch', 'pencil', 'internship'] },
+  { label: 'intern badge', attrs: ['photo'], bag: { photo: '/art/pencil/sketch-badge.svg' }, tags: ['sketch', 'pencil', 'internship'] },
   { label: 'wake', attrs: ['set'], bag: { items: ['wake', 'wait', 'wander', 'write'] } },
   { label: 'knock', attrs: ['set'], bag: { items: ['knock', 'pause', 'nothing', 'leave'] } },
   {
@@ -135,7 +141,10 @@ export function matchSample(query: string): Sample[] {
   const q = query.replace(/^\//, '').toLowerCase()
   if (!q) return SAMPLES
   return SAMPLES.filter(
-    (sample) => sample.label.toLowerCase().includes(q) || sample.attrs.some((attr) => attr.includes(q)),
+    (sample) =>
+      sample.label.toLowerCase().includes(q) ||
+      sample.attrs.some((attr) => attr.includes(q)) ||
+      sample.tags?.some((tag) => tag.toLowerCase().includes(q)),
   )
 }
 
@@ -187,11 +196,46 @@ export function linkSample(blocks: Block[], sample: Sample): Block[] {
   return linkBag(blocks, sample.bag)
 }
 
+export type Rng = () => number
+
+export function pickN<T>(items: T[], n: number, rng: Rng = Math.random): T[] {
+  const pool = [...items]
+  const out: T[] = []
+  const want = Math.max(0, Math.min(n, pool.length))
+  while (out.length < want) {
+    const i = Math.min(pool.length - 1, Math.floor(rng() * pool.length))
+    out.push(pool.splice(i, 1)[0])
+  }
+  return out
+}
+
+function pickOne<T>(items: T[], rng: Rng): T | undefined {
+  return pickN(items, 1, rng)[0]
+}
+
+/** Two or three scraps that this widget can actually hold. Later still wins. */
+export function pickMisregister(type: BlockType, count = 3, rng: Rng = Math.random): LookLayer[] {
+  const pool = samplesFor(type).filter((sample) => canHoldBag(type, sample.bag))
+  return pickN(pool, Math.min(3, Math.max(2, count)), rng).map((sample) => ({
+    label: sample.label,
+    bag: bagForType(type, sample.bag),
+  }))
+}
+
+export function misregisterBlock(block: Block, rng: Rng = Math.random): Block {
+  return pickMisregister(block.type, 3, rng).reduce((next, layer) => applyLook(next, layer), block)
+}
+
+export function misregisterPage(blocks: Block[], rng: Rng = Math.random): Block[] {
+  return blocks.map((block) => misregisterBlock(block, rng))
+}
+
 /**
- * First page for Make / New issue. Keeps their title, plants the vibe photo
- * plus the grain scrap on the hero, and a hand tilt on the sticker.
+ * First page for Make / New issue. Keeps their title and the vibe photo so
+ * the issue still belongs to the vibe they picked; the trim, tilt, and
+ * sticker ink come from the scrap library so two new issues are not twins.
  */
-export function starterPage(title: string, vibe: VibeId): Block[] {
+export function starterPage(title: string, vibe: VibeId, rng: Rng = Math.random): Block[] {
   const heading: Block = {
     id: uid(),
     type: 'heading',
@@ -199,11 +243,25 @@ export function starterPage(title: string, vibe: VibeId): Block[] {
     size: 'xl',
   }
   const photo = SAMPLES.find((sample) => sample.label === vibe) ?? SAMPLES.find((sample) => sample.label === 'collage')
-  const grain = SAMPLES.find((sample) => sample.label === 'grain')
-  const tilt = SAMPLES.find((sample) => sample.label === 'hand tilt')
-  const hero = applyBag(
-    createBlock('hero', vibe),
-    combineBags([photo?.bag ?? {}, grain?.bag ?? {}]),
+  const trim = pickOne(
+    samplesForAttr('trim').filter((sample) => sample.bag.density !== undefined || sample.bag.split !== undefined),
+    rng,
   )
-  return [heading, hero, applyBag(createBlock('sticker', vibe), tilt?.bag ?? {})]
+  const tilt = pickOne(
+    samplesForAttr('trim').filter((sample) => sample.bag.tilt !== undefined),
+    rng,
+  )
+  const ink = pickOne(samplesForAttr('ink'), rng)
+  const pin = rng() < 0.45 ? pickOne(samplesForAttr('pin'), rng) : undefined
+
+  let hero = createBlock('hero', vibe)
+  if (photo) hero = applyLook(hero, { label: photo.label, bag: bagForType('hero', photo.bag) })
+  if (trim) hero = applyLook(hero, { label: trim.label, bag: bagForType('hero', trim.bag) })
+
+  let sticker = createBlock('sticker', vibe)
+  if (ink) sticker = applyLook(sticker, { label: ink.label, bag: bagForType('sticker', ink.bag) })
+  if (tilt) sticker = applyLook(sticker, { label: tilt.label, bag: bagForType('sticker', tilt.bag) })
+  if (pin) sticker = applyLook(sticker, { label: pin.label, bag: bagForType('sticker', pin.bag) })
+
+  return [heading, hero, sticker]
 }

@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { bagForType, canHoldBag, linkBag, matchSample } from './samples'
+import {
+  bagForType,
+  canHoldBag,
+  linkBag,
+  matchSample,
+  misregisterBlock,
+  pickMisregister,
+  pickN,
+  starterPage,
+} from './samples'
 import { createBlock } from './widgets'
 
 const mixed = {
@@ -48,6 +57,49 @@ test('matchSample filters pin scraps by attr substring', () => {
   assert.ok(hits.every((sample) => sample.label.includes('pin') || sample.attrs.some((attr) => attr.includes('pin'))))
 })
 
+test('matchSample finds pencil scraps by tag, not just label', () => {
+  const hits = matchSample('sketch')
+  assert.ok(hits.some((sample) => sample.label === 'intern badge'))
+  assert.ok(hits.every((sample) => sample.tags?.some((tag) => tag.includes('sketch'))))
+  assert.ok(matchSample('internship').some((sample) => sample.label === 'lightbox desk'))
+})
+
 function harvestInk(block: { type: string; text?: string }) {
   return 'text' in block ? block.text : undefined
 }
+
+function always(n: number) {
+  return () => n
+}
+
+test('pickN is deterministic with a stub rng', () => {
+  assert.deepEqual(pickN(['a', 'b', 'c', 'd'], 3, always(0)), ['a', 'b', 'c'])
+  assert.deepEqual(pickN(['a', 'b'], 5, always(0)), ['a', 'b'])
+})
+
+test('pickMisregister returns at most three scraps the widget can hold', () => {
+  const layers = pickMisregister('sticker', 3, always(0))
+  assert.ok(layers.length >= 2 && layers.length <= 3)
+  assert.ok(layers.every((layer) => Object.keys(layer.bag).length > 0))
+})
+
+test('misregisterBlock appends looks without dropping the block id', () => {
+  const block = createBlock('sticker', 'miles')
+  const next = misregisterBlock(block, always(0))
+  assert.equal(next.id, block.id)
+  assert.equal(next.type, 'sticker')
+  assert.ok((next.looks?.length ?? 0) >= 2)
+})
+
+test('starterPage keeps the title and vibe photo, varies the other scraps', () => {
+  const page = starterPage('rooftop hours', 'miles', always(0))
+  assert.equal(page.length, 3)
+  assert.equal(page[0].type, 'heading')
+  if (page[0].type !== 'heading') throw new Error('expected heading')
+  assert.equal(page[0].text, 'rooftop hours')
+  assert.equal(page[1].type, 'hero')
+  if (page[1].type !== 'hero') throw new Error('expected hero')
+  assert.equal(page[1].src, '/art/miles.jpg')
+  assert.ok((page[1].looks?.length ?? 0) >= 1)
+  assert.equal(page[2].type, 'sticker')
+})

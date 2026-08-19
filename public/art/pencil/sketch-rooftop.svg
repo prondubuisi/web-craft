@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
+  <title>Pencil-sketch Brooklyn rooftop skyline — water tower, fire escape</title>
+  <defs>
+    <filter id="grain-roof" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="41" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+    </filter>
+  </defs>
+  <g fill="none" stroke="#332f2b" stroke-linecap="round" filter="url(#grain-roof)">
+    <!-- rooftop ledge / horizon -->
+    <path d="M4 210 L 396 210" stroke-width="1.8" opacity="0.7" />
+    <!-- building block silhouettes, varying height, sketchy double outline -->
+    <g stroke-width="1.6" opacity="0.75">
+      <path d="M20 210 L 20 130 L 80 130 L 80 210" />
+      <path d="M90 210 L 90 90 L 140 90 L 140 210" />
+      <path d="M150 210 L 150 150 L 200 150 L 200 210" />
+      <path d="M260 210 L 260 110 L 320 110 L 320 210" />
+      <path d="M330 210 L 330 160 L 380 160 L 380 210" />
+    </g>
+    <!-- window hatch marks -->
+    <g stroke-width="1" opacity="0.45">
+      <path d="M100 105 L 112 105" /><path d="M118 105 L 130 105" />
+      <path d="M100 120 L 112 120" /><path d="M118 120 L 130 120" />
+      <path d="M100 135 L 112 135" /><path d="M118 135 L 130 135" />
+      <path d="M270 125 L 282 125" /><path d="M290 125 L 302 125" /><path d="M308 125 L 318 125" />
+      <path d="M270 140 L 282 140" /><path d="M290 140 L 302 140" /><path d="M308 140 L 318 140" />
+      <path d="M270 155 L 282 155" /><path d="M290 155 L 302 155" /><path d="M308 155 L 318 155" />
+    </g>
+    <!-- water tower on the near roof -->
+    <g stroke-width="1.6" opacity="0.75">
+      <path d="M180 150 L 176 100 C 176 88, 220 88, 220 100 L 216 150 Z" />
+      <path d="M170 100 L 226 100" />
+      <path d="M198 88 L 198 60" />
+      <path d="M186 60 L 210 60" />
+      <path d="M168 150 L 156 210" />
+      <path d="M228 150 L 240 210" />
+      <path d="M172 168 L 224 168" />
+      <path d="M170 190 L 226 190" />
+    </g>
+    <!-- fire escape zigzag on the left building -->
+    <g stroke-width="1.3" opacity="0.55">
+      <path d="M22 150 L 78 150 L 78 165 L 22 165 L 22 180 L 78 180 L 78 195" />
+      <path d="M30 150 L 30 210" />
+      <path d="M70 165 L 70 210" />
+    </g>
+    <!-- antenna + wobble pass for texture -->
+    <path d="M300 110 L 300 78" stroke-width="1.2" opacity="0.6" />
+    <path d="M290 88 L 310 88" stroke-width="1" opacity="0.5" />
+    <path d="M290 96 L 310 96" stroke-width="1" opacity="0.45" />
+    <path d="M4 212 L 396 208" stroke-width="0.8" opacity="0.3" />
+  </g>
+</svg>

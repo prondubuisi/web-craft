@@ -59,6 +59,12 @@ export const ART_LIBRARY = [
   '/art/ham.jpg',
   '/art/noir.jpg',
   '/art/collage-hero.jpg',
+  '/art/pencil/sketch-web-corner.svg',
+  '/art/pencil/sketch-storyboard.svg',
+  '/art/pencil/sketch-desk.svg',
+  '/art/pencil/sketch-gesture.svg',
+  '/art/pencil/sketch-rooftop.svg',
+  '/art/pencil/sketch-badge.svg',
 ]
 
 export function vibeById(id: VibeId): Vibe {

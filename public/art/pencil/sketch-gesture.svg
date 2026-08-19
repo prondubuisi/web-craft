@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <title>Pencil-sketch animator's gesture study — line of action, mid-leap</title>
+  <defs>
+    <filter id="grain-gesture" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="33" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6" />
+    </filter>
+  </defs>
+  <g fill="none" stroke="#332f2b" stroke-linecap="round" filter="url(#grain-gesture)">
+    <!-- line of action: one confident sweeping curve -->
+    <path d="M70 340 C 120 280, 130 200, 190 150 C 230 118, 280 96, 340 60"
+          stroke-width="3.4" opacity="0.85" />
+    <path d="M72 338 C 122 278, 132 198, 192 148 C 232 116, 282 94, 342 58"
+          stroke-width="1.2" opacity="0.35" />
+    <!-- gesture mass: a loose oval torso riding the line, no face/costume -->
+    <ellipse cx="180" cy="180" rx="30" ry="42" transform="rotate(-38 180 180)" stroke-width="2" opacity="0.7" />
+    <!-- trailing limb sweeps, quick construction lines -->
+    <path d="M160 210 C 120 240, 90 260, 60 300" stroke-width="2.2" opacity="0.65" />
+    <path d="M205 155 C 250 140, 290 110, 330 70" stroke-width="2.2" opacity="0.65" />
+    <path d="M195 205 C 210 250, 220 290, 210 336" stroke-width="2" opacity="0.6" />
+    <path d="M160 155 C 130 130, 108 110, 96 78" stroke-width="1.8" opacity="0.55" />
+    <!-- speed lines trailing the motion -->
+    <g stroke-width="1.4" opacity="0.45">
+      <path d="M40 360 C 90 320, 120 260, 160 220" />
+      <path d="M20 330 C 70 296, 100 244, 140 206" />
+      <path d="M8 296 C 56 268, 84 224, 118 190" />
+    </g>
+    <!-- impact / anticipation ticks near the leading hand -->
+    <g stroke-width="1.6" opacity="0.6">
+      <path d="M336 50 L 352 46" />
+      <path d="M330 40 L 344 30" />
+      <path d="M346 62 L 362 64" />
+    </g>
+  </g>
+</svg>
